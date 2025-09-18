@@ -1,0 +1,6 @@
+
+.reader-html img{max-width:100%;height:auto}
+.nav-fab{position:fixed;top:50%;transform:translateY(-50%);z-index:10}
+.nav-fab.left{left:16px}
+.nav-fab.right{right:16px}
+.text-decoration-none{text-decoration:none;color:inherit}

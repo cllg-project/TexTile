@@ -1,0 +1,17 @@
+/* Variable Roman (upright) */
+@font-face {
+  font-family: 'Junicode';
+  font-style: normal;
+  font-weight: 300 800;            /* variable weight range */
+  font-display: swap;
+  src: url('https://htr-united.github.io/Junicode-font/webfiles/JunicodeVF-Roman.woff2') format('woff2');
+}
+
+/* Variable Italic */
+@font-face {
+  font-family: 'Junicode';
+  font-style: italic;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url('https://htr-united.github.io/Junicode-font/webfiles/JunicodeVF-Italic.woff2') format('woff2');
+}
