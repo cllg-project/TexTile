@@ -28,10 +28,10 @@
                   <v-btn variant="text" @click="clearHits">Clear</v-btn>
                 </div>
 
-                <v-radio-group v-model="searchMode" inline class="mb-2" density="compact">
+                <!-- <v-radio-group v-model="searchMode" inline class="mb-2" density="compact">
                   <v-radio label="Form" value="form" />
                   <v-radio label="Lemma (coming soon)" value="lemma" disabled />
-                </v-radio-group>
+                </v-radio-group> -->
 
                 <div v-if="searching" class="mt-4"><v-progress-linear indeterminate /></div>
                 <v-alert v-else-if="matches.length === 0" type="info" variant="tonal">No results yet.</v-alert>
@@ -122,6 +122,24 @@
 
         <!-- RIGHT: display controls -->
         <v-col cols="12" md="3">
+          <!-- Transcription Quality Disclaimer -->
+          <v-alert
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+            closable
+            v-model="showDisclaimer"
+          >
+            <template #prepend>
+              <v-icon>mdi-information-outline</v-icon>
+            </template>
+            <div class="text-body-2">
+              <strong>Automatic Transcription Notice:</strong>
+              This text is the result of automatic transcription. A sampled evaluation has shown an error rate varying between 6 and 20% on 600 random different manuscripts.
+            </div>
+          </v-alert>
+
           <v-expansion-panels multiple>
             <v-expansion-panel>
               <v-expansion-panel-title>Display</v-expansion-panel-title>
@@ -192,6 +210,9 @@ const highlightTerm = ref('')
 let keyListenerBound = false
 const pageCtrl = ref(null)
 const searchCtrl = ref(null)
+
+/* Disclaimer state */
+const showDisclaimer = ref(true)
 /* Text size state */
 const LS_KEY = 'readerTextPx'
 const minPx = 14
@@ -247,6 +268,9 @@ async function loadPage(){
   await nextTick()
   readerEl.value?.removeAttribute('data-enhanced')
   enhanceTeiHtml()
+  
+  // Ensure we apply highlighting with the current highlight term
+  await nextTick()
   applyHighlight()
 }
 function enhanceTeiHtml(){
@@ -357,6 +381,8 @@ function copyCitation(){ navigator.clipboard?.writeText(citation.value).catch(()
 function applyHighlight(){
   const root = readerEl.value
   if (!root) return
+  
+  // Clear existing highlights
   root.querySelectorAll('mark.dts-hit').forEach(mark => {
     const parent = mark.parentNode
     if (!parent) return
@@ -396,8 +422,11 @@ function applyHighlight(){
     if (tail) frag.appendChild(document.createTextNode(tail))
     textNode.parentNode.replaceChild(frag, textNode)
   }
+  
   const first = root.querySelector('mark.dts-hit')
-  if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  if (first) {
+    first.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
 }
 
 /* Arrow keys only for page nav when not typing/selecting */
@@ -420,13 +449,35 @@ function onKey(e){
 
 watch(() => route.query.highlight, (h) => {
   const s = typeof h === 'string' ? h : ''
-  if (s !== highlightTerm.value) { highlightTerm.value = s; applyHighlight() }
-})
+  if (s !== highlightTerm.value) { 
+    highlightTerm.value = s
+    // Also update the search field to show what we're highlighting
+    if (s && !searchQ.value) {
+      searchQ.value = s
+    }
+    // Apply highlight immediately if content is already loaded
+    if (html.value) {
+      nextTick(() => applyHighlight())
+    }
+  }
+}, { immediate: true })
 onMounted(async () => {
   if (!keyListenerBound) {
     window.addEventListener('keydown', onKey)
     keyListenerBound = true
   }
+  
+  // Initialize highlight term from query parameter
+  const highlightQuery = route.query.highlight
+  if (highlightQuery && typeof highlightQuery === 'string') {
+    highlightTerm.value = highlightQuery
+    searchQ.value = highlightQuery
+    // Ensure the search panel is expanded if we have a highlight
+    if (!openPanels.value.includes(0)) {
+      openPanels.value.push(0)
+    }
+  }
+  
   await loadNav()
 })
 
