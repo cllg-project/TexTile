@@ -3,12 +3,13 @@ import en from './locales/en.js'
 import fr from './locales/fr.js'
 
 // Get saved language or default to English
-const savedLocale = localStorage.getItem('comma-reader-locale') || 'en'
+const savedLocale = (typeof window !== 'undefined' && localStorage.getItem('comma-reader-locale')) || 'en'
 
 const i18n = createI18n({
   legacy: false,
   locale: savedLocale,
   fallbackLocale: 'en',
+  globalInjection: true,
   messages: {
     en,
     fr
@@ -18,7 +19,9 @@ const i18n = createI18n({
 // Save locale changes to localStorage
 export function setLocale(locale) {
   i18n.global.locale.value = locale
-  localStorage.setItem('comma-reader-locale', locale)
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('comma-reader-locale', locale)
+  }
 }
 
 export function getCurrentLocale() {

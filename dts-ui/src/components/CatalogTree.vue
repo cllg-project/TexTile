@@ -4,7 +4,7 @@
       <v-list-item
         v-if="node.kind==='resource'"
         :title="node.title"
-        :subtitle="node.id"
+        :subtitle="node.location || node.id"
         :to="{ name:'document', params:{ resource: encodeURIComponent(node.id) } }"
         prepend-icon="mdi-file-document-outline"
       />

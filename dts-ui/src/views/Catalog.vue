@@ -2,7 +2,8 @@
   <v-container fluid class="py-0 px-0">
     <v-sheet color="primary" class="py-4">
       <v-container>
-        <h1 class="text-h2 font-weight-bold text-white">Catalog</h1>
+        <h1 class="text-h2 font-weight-bold text-white">{{ $t('catalog.title') }}</h1>
+        <p class="text-white opacity-90">{{ $t('catalog.subtitle') }}</p>
       </v-container>
     </v-sheet>
 
@@ -16,7 +17,7 @@
             :items="suggestions"
             item-title="title"
             item-value="value"
-            label="Browse manuscripts by title or ID"
+            :label="$t('catalog.searchPlaceholder')"
             prepend-inner-icon="mdi-format-list-bulleted"
             clearable 
             hide-details 
@@ -48,15 +49,15 @@
                 >
                   {{ type.icon }}
                 </v-icon>
-                {{ type.shortLabel }}
+                {{ $t(`catalog.searchTypes.${type.value}`) }}
               </v-btn>
             </v-btn-toggle>
 
             <!-- Search Input -->
             <v-text-field
               v-model="metadataQuery"
-              :label="currentSearchType.inputLabel"
-              :placeholder="currentSearchType.placeholder"
+              :label="$t(`catalog.searchTypes.${selectedSearchType}`)"
+              :placeholder="$t(`catalog.placeholders.${selectedSearchType}`)"
               prepend-inner-icon="mdi-magnify"
               clearable
               hide-details
@@ -87,29 +88,57 @@
           >
             <v-btn value="legacy" size="small">
               <v-icon start>mdi-format-list-bulleted</v-icon>
-              Browse
+              {{ $t('catalog.legacyBrowse') }}
             </v-btn>
             <v-btn value="metadata" size="small">
               <v-icon start>mdi-database-search</v-icon>
-              Search
+              {{ $t('catalog.metadataSearch') }}
             </v-btn>
           </v-btn-toggle>
         </v-col>
         
         <v-spacer />
-        <v-btn class="mr-2" variant="tonal" @click="expandAll" :loading="isExpanding">Expand all</v-btn>
-        <v-btn variant="tonal" @click="collapseAll">Collapse all</v-btn>
+        <!-- expand/collapse buttons -->
+        <!-- <v-btn class="mr-2" variant="tonal" @click="expandAll" :loading="isExpanding">{{ $t('catalog.expandAll') }}</v-btn>
+        <v-btn variant="tonal" @click="collapseAll">{{ $t('catalog.collapseAll') }}</v-btn> -->
       </v-row>
 
       <v-card>
         <v-card-text>
-          <div v-if="hasSearchQuery && filtered.length === 0" class="text-center py-4 text-grey">
+          <!-- Error display -->
+          <v-alert
+            v-if="searchError"
+            type="error"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+            closable
+            @click:close="searchError = ''"
+          >
+            {{ searchError }}
+          </v-alert>
+
+          <!-- Loading indicator -->
+          <div v-if="isLoading" class="text-center py-8">
+            <v-progress-circular
+              indeterminate
+              size="64"
+              color="primary"
+              class="mb-4"
+            />
+            <p class="text-h6">{{ searchMode === 'metadata' ? 'Searching manuscripts...' : 'Loading catalog...' }}</p>
+          </div>
+
+          <!-- No results -->
+          <div v-else-if="hasSearchQuery && filtered.length === 0 && !searchError" class="text-center py-4 text-grey">
             <v-icon size="48" class="mb-2">mdi-magnify</v-icon>
-            <p>No manuscripts found matching "{{ currentQuery }}"</p>
+            <p>{{ $t('catalog.noResults') }}</p>
             <p class="text-caption">
               {{ searchMode === 'metadata' ? 'Try different metadata terms like "latin", "Tournai", "1301"' : 'Try searching by title, ID, or partial matches' }}
             </p>
           </div>
+
+          <!-- Results found -->
           <div v-else-if="hasSearchQuery" class="mb-3">
             <v-chip 
               :color="searchMode === 'metadata' ? currentSearchType.color : 'primary'" 
@@ -117,11 +146,36 @@
               size="small"
             >
               <v-icon start size="small">{{ searchMode === 'metadata' ? currentSearchType.icon : 'mdi-format-list-bulleted' }}</v-icon>
-              {{ filtered.length }} manuscript{{ filtered.length !== 1 ? 's' : '' }} found
-              {{ searchMode === 'metadata' ? `(${currentSearchType.shortLabel.toLowerCase()} search)` : '(browse)' }}
+              {{ filtered.length }} {{ itemTypeText }}{{ filtered.length !== 1 ? 's' : '' }} found
+              {{ searchMode === 'metadata' ? `(${currentSearchType.value} search)` : '(browse)' }}
             </v-chip>
           </div>
-          <CatalogTree :nodes="filtered" ref="treeRef" />
+
+          <!-- Pagination info for browse mode -->
+          <div v-else-if="!hasSearchQuery && paginatedResults.length > 0" class="mb-3">
+            <v-chip variant="outlined" size="small" color="primary">
+              <v-icon start size="small">mdi-format-list-bulleted</v-icon>
+              Showing {{ paginatedResults.length }} of {{ filtered.length }} {{ itemTypeText }}{{ filtered.length !== 1 ? 's' : '' }}
+            </v-chip>
+          </div>
+
+          <!-- Catalog Tree -->
+          <div v-if="!isLoading">
+            <CatalogTree :nodes="paginatedResults" ref="treeRef" />
+            
+            <!-- Load More Button -->
+            <div v-if="hasMoreItems" class="text-center mt-4">
+              <v-btn 
+                variant="outlined" 
+                color="primary"
+                :loading="isLoadingMore"
+                @click="loadMoreItems"
+                prepend-icon="mdi-chevron-down"
+              >
+                Load {{ Math.min(itemsPerPage, filtered.length - displayedItemsCount) }} more
+              </v-btn>
+            </div>
+          </div>
         </v-card-text>
       </v-card>
 
@@ -146,9 +200,16 @@ const metadataQuery = ref('')
 const allResources = ref([]) // Store all resources for comprehensive search
 const isLoading = ref(false)
 
+// Pagination
+const itemsPerPage = 25
+const displayedItemsCount = ref(itemsPerPage)
+const isLoadingMore = ref(false)
+
 // Search mode and functionality
 const searchMode = ref('legacy') // 'legacy' or 'metadata'
 const manuscriptResults = ref([]) // Results from manuscript search
+const hasSearchBeenPerformed = ref(false) // Track if a search has been performed
+const searchError = ref('') // Store search error messages
 
 // Metadata search types configuration
 const selectedSearchType = ref('general')
@@ -156,36 +217,21 @@ const selectedSearchType = ref('general')
 const searchTypes = [
   {
     value: 'general',
-    label: 'General Search',
-    shortLabel: 'General',
-    inputLabel: 'Search all metadata fields',
-    placeholder: 'e.g., Tournai, manuscript, notes, content...',
-    description: 'Search across all metadata fields (content, language, location, notes, etc.)',
     color: 'primary',
     icon: 'mdi-database-search',
     endpoint: '/manuscripts/'
   },
   {
     value: 'language',
-    label: 'Language Search',
-    shortLabel: 'Language',
-    inputLabel: 'Search by manuscript language',
-    placeholder: 'e.g., lat, fre, "lat, fre", latin...',
-    description: 'Search specifically for manuscript languages',
     color: 'success',
     icon: 'mdi-translate',
     endpoint: '/manuscripts/language/'
   },
   {
     value: 'date',
-    label: 'Date Search',
-    shortLabel: 'Date',
-    inputLabel: 'Search by manuscript date',
-    placeholder: 'e.g., 1301, 1300-1400, after 1200, before 1500, 14th century, exactly 1250',
-    description: 'Search by manuscript creation dates and date ranges with flexible syntax',
     color: 'warning',
     icon: 'mdi-calendar',
-    endpoint: '/manuscripts/date/'
+    endpoint: '/manuscripts/range/' // Now uses range endpoint for simple ranges
   }
 ]
 
@@ -196,6 +242,7 @@ const currentSearchType = computed(() => {
 // Build suggestions for legacy browse mode
 const suggestions = computed(() => {
   const items = [...nodes.value]
+  // Only include pre-loaded resources if available
   allResources.value.forEach(resource => {
     if (!items.find(item => item.id === resource.id)) {
       items.push(resource)
@@ -210,29 +257,52 @@ const suggestions = computed(() => {
 
 // Helper computed properties for search display
 const hasSearchQuery = computed(() => {
-  return searchMode.value === 'metadata' 
-    ? metadataQuery.value?.trim()
-    : q.value?.trim()
+  if (searchMode.value === 'metadata') {
+    // Only show search query state if search has been performed
+    return metadataQuery.value?.trim() && hasSearchBeenPerformed.value
+  }
+  return q.value?.trim()
 })
 
 const currentQuery = computed(() => {
   return searchMode.value === 'metadata' ? metadataQuery.value : q.value
 })
 
+// Determine the correct item type for display
+const itemTypeText = computed(() => {
+  if (searchMode.value === 'metadata') {
+    return 'manuscript'
+  }
+  
+  // For legacy mode, determine based on what's in the filtered results
+  if (!filtered.value.length) return 'item'
+  
+  const hasCollections = filtered.value.some(item => item.kind === 'collection')
+  const hasResources = filtered.value.some(item => item.kind === 'resource')
+  
+  if (hasCollections && hasResources) {
+    return 'item' // Mixed results
+  } else if (hasCollections) {
+    return 'collection'
+  } else {
+    return 'manuscript'
+  }
+})
+
 // Filtered results based on search mode
 const filtered = computed(() => {
   if (searchMode.value === 'metadata') {
-    // Show metadata search results if we have them and a query was made
-    if (metadataQuery.value?.trim()) {
-      if (manuscriptResults.value.length > 0) {
-        // Filter the original tree structure to show only matching manuscripts and their parent collections
-        return filterTreeForMetadataResults(nodes.value, manuscriptResults.value)
-      } else {
-        // Return empty array when search was performed but no results found
-        return []
-      }
+    // If we have search results from metadata search, show them
+    if (manuscriptResults.value.length > 0) {
+      return filterTreeForMetadataResults(nodes.value, manuscriptResults.value)
     }
-    // Show all nodes when no search is performed in metadata mode
+    
+    // If there's a query but no results, show empty (only if search was actually performed)
+    if (metadataQuery.value?.trim() && hasSearchBeenPerformed.value) {
+      return []
+    }
+    
+    // No query, show all nodes
     return nodes.value
   }
   
@@ -245,6 +315,7 @@ const filtered = computed(() => {
     String(n.id).toLowerCase().includes(s)
   )
   
+  // Include any pre-loaded resources that match (but don't force loading)
   const resourceMatches = allResources.value.filter(r =>
     r.title.toLowerCase().includes(s) || 
     String(r.id).toLowerCase().includes(s)
@@ -253,17 +324,49 @@ const filtered = computed(() => {
   return [...topLevelMatches, ...resourceMatches]
 })
 
-async function load(){
-  const resp = await fetchRootCollection()
-  raw.value = typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2)
-  nodes.value = parseMembers(resp)
+// Paginated results for display
+const paginatedResults = computed(() => {
+  const allResults = filtered.value
   
-  // Load all resources for comprehensive search
-  await loadAllResources()
+  // If searching, show all results (no pagination for search)
+  if (hasSearchQuery.value) {
+    return allResults
+  }
+  
+  // Apply pagination for browsing mode
+  return allResults.slice(0, displayedItemsCount.value)
+})
+
+// Check if there are more items to load
+const hasMoreItems = computed(() => {
+  return !hasSearchQuery.value && displayedItemsCount.value < filtered.value.length
+})
+
+// Function to load more items
+function loadMoreItems() {
+  displayedItemsCount.value += itemsPerPage
 }
 
-// Recursively load all resources from collections for better search
+// Reset pagination when search changes
+function resetPagination() {
+  displayedItemsCount.value = itemsPerPage
+}
+
+async function load(){
+  isLoading.value = true
+  try {
+    const resp = await fetchRootCollection()
+    raw.value = typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2)
+    nodes.value = parseMembers(resp)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Optional: Load all resources from collections (only when needed for comprehensive search)
 async function loadAllResources() {
+  if (allResources.value.length > 0) return // Already loaded
+  
   isLoading.value = true
   const discovered = new Set()
   const toProcess = [...nodes.value]
@@ -330,12 +433,43 @@ function collapseAll() {
 function filterTreeForMetadataResults(treeNodes, searchResults) {
   // Simply return the search results as flat resources without trying to organize them
   // This avoids creating fake collections that don't exist on the server
-  return searchResults.map(result => ({
-    kind: 'resource',
-    id: result.collection,
-    title: result.title || result.manuscript_title || result.name || `Manuscript ${result.collection}`,
-    metadata: result.metadata
-  }))
+  return searchResults.map(result => {
+    // Use the collection URL directly as ID for routing (like normal catalog)
+    // Don't extract - use the full collection URL as the ID
+    const collectionId = result.collection
+    
+    // Create a proper manuscript title from the location
+    // Extract manuscript identifier from location like "Grenoble. Bibliothèque municipale, Ms.1005 Rés."
+    let manuscriptTitle = result.title
+    if (result.location && result.location.includes('Ms.')) {
+      // Extract just the manuscript number/identifier
+      const msMatch = result.location.match(/Ms\.\s*([^,.\s]+(?:\s+[^,.\s]+)*)/i)
+      if (msMatch) {
+        manuscriptTitle = `Ms. ${msMatch[1]}`
+      }
+    } else if (result.location) {
+      // Fallback: use the last part of the location
+      const parts = result.location.split(',')
+      manuscriptTitle = parts[parts.length - 1]?.trim() || result.title
+    }
+    
+    return {
+      kind: 'resource',
+      id: collectionId, // Use full collection URL for routing
+      title: manuscriptTitle,
+      location: result.location, // This will be shown as subtitle
+      metadata: {
+        location: result.location,
+        language: result.language,
+        start_year: result.start_year,
+        page_count: result.page_count,
+        tokens: result.tokens,
+        ark_portail: result.ark_portail,
+        filename: result.filename,
+        ...result.metadata
+      }
+    }
+  })
 }
 
 // Function to recursively expand all collections until resources are reached
@@ -369,27 +503,30 @@ async function expandAllToResources() {
 async function performMetadataSearch(query, searchType) {
   if (!query?.trim()) {
     manuscriptResults.value = []
+    hasSearchBeenPerformed.value = false
+    searchError.value = ''
     return
   }
   
   isLoading.value = true
+  hasSearchBeenPerformed.value = true
+  searchError.value = ''
+  
   try {
     const result = await searchManuscripts(query, 50, searchType || selectedSearchType.value)
-    manuscriptResults.value = result.manuscripts || result.items || []
+    const items = result.items || result.manuscripts || []
+    manuscriptResults.value = items
     
     // Auto-expand tree to show search results at resource level
     if (manuscriptResults.value.length > 0) {
-      // Wait for the DOM to update with the new filtered tree structure
       await nextTick()
-      // Wait a bit more to ensure the tree component is fully rendered
       await new Promise(resolve => setTimeout(resolve, 200))
-      
-      // Recursively expand all collections until resources are visible
       await expandAllToResources()
     }
   } catch (error) {
     console.error('Metadata search failed:', error)
     manuscriptResults.value = []
+    searchError.value = error.message || 'Search failed. Please try again.'
   } finally {
     isLoading.value = false
   }
@@ -400,12 +537,32 @@ watch(searchMode, () => {
   q.value = ''
   metadataQuery.value = ''
   manuscriptResults.value = []
+  hasSearchBeenPerformed.value = false
+  searchError.value = ''
+  resetPagination()
 })
 
 // Watch for search type changes to clear results
 watch(selectedSearchType, () => {
   metadataQuery.value = ''
   manuscriptResults.value = []
+  hasSearchBeenPerformed.value = false
+  searchError.value = ''
+  resetPagination()
+})
+
+// Reset search performed flag when query is cleared
+watch(metadataQuery, (newValue) => {
+  if (!newValue?.trim()) {
+    hasSearchBeenPerformed.value = false
+    manuscriptResults.value = []
+    searchError.value = ''
+  }
+})
+
+// Reset pagination when legacy search query changes
+watch(q, () => {
+  resetPagination()
 })
 
 onMounted(load)

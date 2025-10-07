@@ -40,7 +40,7 @@
   </v-app-bar>
 </template>
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import { setLocale, getCurrentLocale } from '../i18n'
@@ -57,11 +57,25 @@ const availableLanguages = [
   { code: 'fr', name: 'Français', icon: 'mdi-web', flag: '🇫🇷' }
 ]
 
+// Theme persistence
+const THEME_STORAGE_KEY = 'vuetify-theme'
+
 function toggleTheme() { 
-  theme.global.name.value = nextTheme.value 
+  const newTheme = nextTheme.value
+  theme.global.name.value = newTheme
+  // Save theme preference to localStorage
+  localStorage.setItem(THEME_STORAGE_KEY, newTheme)
 }
 
 function switchLanguage(langCode) {
   setLocale(langCode)
 }
+
+// Load saved theme on component mount
+onMounted(() => {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY)
+  if (savedTheme && (savedTheme === 'dark' || savedTheme === 'light')) {
+    theme.global.name.value = savedTheme
+  }
+})
 </script>

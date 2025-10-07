@@ -22,4 +22,22 @@ export default defineConfig({
     // '/_dts': { target: process.env.VITE_DTS_BASE_URL || 'http://localhost:5000', changeOrigin: true, rewrite: p => p.replace(/^\/_dts/, '') }
     // }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Ensure locale files are properly chunked and not tree-shaken
+        manualChunks: (id) => {
+          if (id.includes('/locales/')) {
+            return 'locales'
+          }
+        }
+      }
+    }
+  },
+  define: {
+    // Vue i18n v9 feature flags
+    __VUE_I18N_FULL_INSTALL__: true,
+    __VUE_I18N_LEGACY_API__: false,
+    __INTLIFY_PROD_DEVTOOLS__: false,
+  }
 })

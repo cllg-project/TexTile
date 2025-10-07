@@ -39,7 +39,7 @@ export default {
     placeholders: {
       general: 'e.g., Tournai, manuscript, notes, content...',
       language: 'e.g., lat, fre, "lat, fre", latin...',
-      date: 'e.g., 1301, 1300-1400, after 1200, before 1500, 14th century, exactly 1250'
+      date: 'e.g., 0-1600, 800, 1301, 800-1500, after 1200, before 1500, 14th century, around 1250'
     }
   },
   collection: {
@@ -57,6 +57,21 @@ export default {
     search: 'Search',
     settings: 'Settings',
     citation: 'Citation',
+    info: {
+      title: 'Document Info',
+      metadata: 'Metadata',
+      author: 'Author',
+      origin: 'Origin',
+      date: 'Date',
+      language: 'Language',
+      type: 'Type',
+      description: 'Description',
+      id: 'ID',
+      keywords: 'Keywords',
+      sources: 'Sources',
+      identifiers: 'Identifiers',
+      unknownLanguage: 'Unknown'
+    },
     previousPage: 'Previous Page',
     nextPage: 'Next Page',
     goToPage: 'Go to passage',
@@ -92,6 +107,7 @@ export default {
     traditional: 'Traditional',
     vector: 'Semantic',
     hybrid: 'Hybrid',
+    comingSoon: 'Coming Soon',
     searchButton: 'Search',
     virtualKeyboard: 'Virtual Keyboard',
     results: 'Results',
@@ -164,7 +180,7 @@ export default {
     }
   },
   about: {
-    title: 'About CoMMA Reader',
+    title: 'CoMMA Reader',
     subtitle: 'Transcribing the Middle Ages',
     description: 'Browsable manuscripts c. 800–1600, preserving original spelling and abbreviations.',
     projectTitle: 'About the Project',
@@ -184,7 +200,10 @@ export default {
       preservation: 'Texts preserve original abbreviations, spellings, and layout features — useful for research, but not a substitute for human transcription.',
       readFull: 'Read Full About',
       preprint: 'Preprint (PDF)',
-      copyCitation: 'Copy Citation'
+      copyCitation: 'Copy Citation',
+      tryItNow: 'Try it Now',
+      searchPlaceholder: 'Search through 2.5B tokens of medieval text...',
+      downloadCorpus: 'Download Corpus'
     },
     detailed: {
       title: 'About this Corpus',
@@ -207,6 +226,96 @@ export default {
     citation: {
       copied: 'Citation copied',
       failed: 'Copy failed — please copy manually'
+    }
+  },
+  projectInfo: {
+    overline: 'Medieval Manuscript Corpus',
+    title: 'CoMMA - Automatic Transcription of Medieval Written Heritage',
+    subtitle: 'A unique worldwide corpus of medieval manuscripts automatically transcribed using artificial intelligence.',
+    introduction: {
+      corpus: 'We have created a unique worldwide corpus of medieval manuscripts, automatically transcribed using artificial intelligence (HTR – Handwritten Text Recognition). It is the logical continuation of our previous work around ',
+      catmusUrl: 'https://inria.hal.science/hal-04453952',
+      catmusDescription: ', a massive dataset for training handwriting recognition models in medieval manuscripts.',
+      paper: 'The corpus presented here is described in an article, in English, also presenting its limitations and the framework of its creation: ',
+      paperUrl: 'URL_PAPER',
+      paperLink: 'PAPER URL'
+    },
+    features: {
+      title: 'Corpus Features',
+      items: [
+        {
+          title: 'A massive corpus:',
+          description: 'more than 23,000 manuscripts, approximately 2.5 billion words in Latin and Old French.'
+        },
+        {
+          title: 'Significant chronological span:',
+          description: 'from the 9th century to the 16th century inclusive!'
+        },
+        {
+          title: 'Sources from major European digital libraries:',
+          description: '(BnF Gallica, Bodleian, e-codices, etc.).'
+        },
+        {
+          title: 'An innovative approach:',
+          description: 'texts automatically transcribed from images, without editorial normalization, allowing exploration of the richness and diversity of medieval writing.'
+        },
+        {
+          title: 'A tool for science and technology:',
+          description: 'freely available resource, useful both for digital humanities (language history, philology, book history) and computer science (training automatic language processing models).'
+        },
+        {
+          title: 'Prospects:',
+          description: 'the corpus will be progressively enriched with new collections and new medieval languages, starting with Spanish and other Latin traditions.'
+        }
+      ]
+    },
+    limitations: {
+      title: 'Known Limitations',
+      transcription: 'Automatic transcription is not perfect — depending on the manuscripts, the error can vary between 6% and 25%, and some difficult documents (cursive writing, damaged pages, poor quality digitizations) can produce even less reliable results. Errors such as "ri" for "n" are not excluded, but others producing nothing sensible are not impossible.',
+      coverage: 'Not all BnF manuscripts are present, just as the corpus is the result of the very biases of different institutions in terms of digitization of their collections.'
+    },
+    projects: {
+      title: 'Projects and Funding',
+      description: 'This corpus was produced as part of the ',
+      colafUrl: 'https://colaf.huma-num.fr/',
+      and: ' and',
+      biblissima: 'Produced with the help of the Biblissima+ equipment of excellence for source identification and metadata, and software such as Kraken or eScriptorium.'
+    },
+    technology: {
+      title: 'Technologies Used',
+      dtsUi: {
+        name: 'DTS-UI-NAME',
+        description: 'developed by Hassen Aguili, whose code is available at ',
+        url: 'ADDRESS',
+        linkText: 'ADDRESS'
+      },
+      mydapytains: {
+        name: 'MyDapytains',
+        description: 'developed by Thibault Clérice, funded by the PIQ CLLG project (ANR Mention), available at ',
+        url: 'ADDRESS',
+        linkText: 'ADDRESS'
+      }
+    },
+    stats: {
+      title: 'Corpus Statistics',
+      manuscripts: 'Manuscripts',
+      words: 'Words',
+      timespan: 'Time Period'
+    },
+    languages: {
+      title: 'Languages',
+      latin: 'Medieval Latin',
+      oldFrench: 'Old French',
+      upcoming: 'Spanish (upcoming)'
+    },
+    sources: {
+      title: 'Main Sources',
+      others: 'And others...'
+    },
+    contact: {
+      title: 'Contact',
+      description: 'For any questions or suggestions regarding the corpus.',
+      button: 'Contact the Team'
     }
   },
   common: {

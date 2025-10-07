@@ -18,6 +18,69 @@
             <div class="hero-decoration"></div>
           </div>
         </div>
+        
+        <!-- Search Bar with Download Button -->
+        <div class="search-section mt-8">
+          <div class="d-flex align-center justify-center" style="gap: 1rem;">
+            <!-- Animated Search Bar -->
+            <div class="search-container" style="max-width: 500px; flex: 1;">
+              <v-text-field
+                v-model="searchQuery"
+                :placeholder="$t('about.intro.searchPlaceholder')"
+                variant="outlined"
+                density="comfortable"
+                class="search-field"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                hide-details
+                @keyup.enter="performSearch"
+              >
+                <template #append-inner>
+                  <v-btn
+                    color="primary"
+                    variant="flat"
+                    size="small"
+                    class="search-btn"
+                    @click="performSearch"
+                    :disabled="!searchQuery?.trim()"
+                  >
+                    Search
+                  </v-btn>
+                </template>
+              </v-text-field>
+            </div>
+            
+            <!-- Expandable Download Button -->
+            <div class="download-button-container">
+              <v-btn
+                class="download-expandable-btn"
+                color="teal"
+                variant="elevated"
+                size="large"
+                href="https://huggingface.co/datasets/comma-project/comma-jsonl"
+                target="_blank"
+                rel="noopener"
+              >
+                <v-icon class="download-icon">mdi-download</v-icon>
+                <span class="download-text">{{ $t('about.intro.downloadCorpus') }}</span>
+              </v-btn>
+            </div>
+          </div>
+          
+          <!-- Quick Search Suggestions -->
+          <div class="d-flex justify-center flex-wrap mt-4">
+            <v-chip
+              v-for="suggestion in quickSearches"
+              :key="suggestion"
+              class="ma-1 suggestion-chip"
+              variant="outlined"
+              size="small"
+              @click="searchQuery = suggestion; performSearch()"
+            >
+              {{ suggestion }}
+            </v-chip>
+          </div>
+        </div>
       </v-container>
     </div>
 
@@ -171,6 +234,11 @@
         </v-card-text>
       </v-card>
 
+
+
+
+
+
       <!-- Full about section - simplified for now -->
       <v-expand-transition>
         <v-card v-if="showFullAbout" class="mb-6 detailed-card" elevation="4">
@@ -261,13 +329,26 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const showFullAbout = ref(false)
 const snackbar = ref(false)
 const snackbarMsg = ref('')
 const preprintUrl = 'https://example.org/path/to/preprint.pdf'
+
+// Search functionality
+const searchQuery = ref('')
+const quickSearches = ref([
+  'amor',
+  'deus',
+  'rex',
+  'ecclesia',
+  'sanctus',
+  'miraculum'
+])
 
 function showFull(){ showFullAbout.value = true }
 function hideFull(){ showFullAbout.value = false }
@@ -294,6 +375,19 @@ async function copyCitation(){
 
 function openProject(){
   window.open('#', '_blank', 'noopener')
+}
+
+function performSearch() {
+  if (!searchQuery.value?.trim()) return
+  
+  // Navigate to search view with the query
+  router.push({
+    name: 'search',
+    query: {
+      q: searchQuery.value.trim(),
+      type: 'traditional'
+    }
+  })
 }
 </script>
 
@@ -736,6 +830,397 @@ function openProject(){
     height: 120px !important;
     padding: 12px !important;
     border-radius: 20px !important;
+  }
+  
+  .search-container {
+    padding: 0 16px;
+  }
+  
+  .search-field {
+    margin-bottom: 16px;
+  }
+  
+  .suggestion-chip {
+    margin: 4px 2px;
+  }
+  
+  .download-card {
+    margin-top: 16px;
+  }
+}
+
+/* Search Hero Card Animations */
+.search-hero-card {
+  border-radius: 24px !important;
+  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.search-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #6750a4, #8e24aa, #00bcd4);
+  margin: -2px;
+  border-radius: 24px;
+  z-index: -1;
+}
+
+.search-container {
+  position: relative;
+  z-index: 2;
+}
+
+:deep(.search-field .v-field) {
+  border-radius: 16px !important;
+  background: white;
+  box-shadow: 
+    0 8px 32px rgba(103, 80, 164, 0.1),
+    0 4px 16px rgba(103, 80, 164, 0.05);
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.search-field .v-field:hover) {
+  box-shadow: 
+    0 12px 48px rgba(103, 80, 164, 0.15),
+    0 6px 24px rgba(103, 80, 164, 0.08);
+  transform: translateY(-2px);
+}
+
+:deep(.search-field .v-field--focused) {
+  border-color: #6750a4;
+  box-shadow: 
+    0 16px 64px rgba(103, 80, 164, 0.2),
+    0 8px 32px rgba(103, 80, 164, 0.1),
+    0 0 0 4px rgba(103, 80, 164, 0.1);
+  transform: translateY(-4px);
+}
+
+:deep(.search-field .v-field__input) {
+  font-size: 1.1rem;
+  font-weight: 400;
+  padding: 16px 20px;
+}
+
+.search-btn {
+  border-radius: 12px !important;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  transform: scale(1.05);
+}
+
+.suggestion-chip {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-color: rgba(103, 80, 164, 0.3) !important;
+  color: #6750a4 !important;
+}
+
+.suggestion-chip:hover {
+  background-color: rgba(103, 80, 164, 0.1) !important;
+  border-color: #6750a4 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(103, 80, 164, 0.2);
+}
+
+/* Download Card Animations */
+.download-card {
+  border-radius: 24px !important;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.download-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 30% 70%, rgba(0, 150, 136, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(0, 188, 212, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.download-content {
+  position: relative;
+  z-index: 2;
+}
+
+.download-icon {
+  transition: transform 0.8s cubic-bezier(0.25,0.46,0.45,0.94), margin-right 0.3s ease;
+}
+.download-button-container:hover .download-icon {
+  margin-right: 8px;
+  transform: rotate(360deg);
+}
+
+.download-card:hover .download-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 16px 32px rgba(0, 150, 136, 0.3);
+}
+
+.download-btn {
+  border-radius: 16px !important;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  padding: 12px 32px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.download-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.download-btn:hover::before {
+  left: 100%;
+}
+
+.download-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 
+    0 16px 32px rgba(0, 150, 136, 0.3),
+    0 8px 16px rgba(0, 150, 136, 0.15);
+}
+
+.download-btn:active {
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Action buttons improvements */
+.action-btn {
+  border-radius: 16px !important;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.action-btn:hover::before {
+  left: 100%;
+}
+
+.action-btn:hover {
+  transform: translateY(-3px);
+}
+
+/* Gradient text utility */
+.gradient-text-primary {
+  background: linear-gradient(135deg, #6750a4, #8e24aa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Search Section in Hero */
+.search-section {
+  position: relative;
+  z-index: 4;
+}
+
+.search-container {
+  position: relative;
+}
+
+:deep(.search-field .v-field) {
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.search-field .v-field:hover) {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.2),
+    0 6px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+:deep(.search-field .v-field--focused) {
+  background: rgba(255, 255, 255, 1);
+  border-color: #6750a4;
+  box-shadow: 
+    0 16px 64px rgba(103, 80, 164, 0.3),
+    0 8px 32px rgba(103, 80, 164, 0.2),
+    0 0 0 4px rgba(103, 80, 164, 0.1);
+  transform: translateY(-4px);
+}
+
+:deep(.search-field .v-field__input) {
+  font-size: 1.1rem;
+  font-weight: 400;
+  padding: 16px 20px;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.search-btn {
+  border-radius: 12px !important;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+  transform: scale(1.05);
+}
+
+.suggestion-chip {
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  color: white !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.suggestion-chip:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Expandable Download Button */
+.download-button-container {
+  width: 56px;
+  transition: width 0.3s ease; /* default when not hovered */
+}
+.download-button-container:hover {
+  width: 220px;
+  transition: width 3s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.download-expandable-btn {
+  width: 100%;                    /* take the container’s animated width */
+  border-radius: 50px !important;
+  height: 56px !important;
+  padding: 0 16px !important;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 150, 136, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* not width here */
+}
+
+
+.download-expandable-btn:hover {
+  min-width: 220px !important;
+  padding: 0 24px !important;
+  box-shadow: 
+    0 16px 32px rgba(0, 150, 136, 0.4),
+    0 8px 16px rgba(0, 150, 136, 0.2);
+  transform: translateY(-2px);
+}
+
+.download-icon {
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  flex-shrink: 0;
+}
+
+.download-expandable-btn:hover .download-icon {
+  margin-right: 8px;
+  transform: rotate(360deg);
+}
+
+.download-text {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  max-width: 0;                      /* numeric, animatable */
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition:
+    opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94) 0.2s,
+    max-width 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+.download-button-container:hover .download-text {
+  opacity: 1;
+  max-width: 220px;
+}
+.download-expandable-btn:hover .download-text {
+  opacity: 1;
+  width: auto;
+  transition-delay: 0.2s, 0s;
+}
+
+/* Responsive adjustments for search section */
+@media (max-width: 768px) {
+  .search-section {
+    margin-top: 2rem !important;
+  }
+  
+  .search-section .d-flex {
+    flex-direction: column;
+    gap: 16px !important;
+    align-items: stretch !important;
+  }
+  
+  .search-container {
+    max-width: 100% !important;
+  }
+  
+  .download-expandable-btn {
+    align-self: center;
+  }
+  
+  .download-expandable-btn:hover {
+    min-width: 180px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-section .d-flex {
+    gap: 12px !important;
+  }
+  
+  .download-expandable-btn:hover {
+    min-width: 160px !important;
+  }
+  
+  .suggestion-chip {
+    margin: 2px !important;
+    font-size: 0.75rem !important;
   }
 }
 </style>

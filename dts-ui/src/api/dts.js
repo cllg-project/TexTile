@@ -50,7 +50,7 @@ export async function fetchEntryPoint() {
  * GET /collection
  */
 export async function fetchRootCollection() {
-  const url = `${BASE}/collection`;
+  const url = `${BASE}/collection/`;
   const text = await fetchText(url);
   if (looksLikeJsonString(text)) {
     const j = safeJsonParse(text);
@@ -79,7 +79,7 @@ export async function fetchCollectionRaw(id) {
  */
 export async function fetchNavigation(resource, tree, signal) {
   const treeParam = tree ? `&tree=${encodeURIComponent(tree)}` : ''
-  const down = 100
+  const down = 1
   const url = `${BASE}/navigation/?resource=${encodeURIComponent(resource)}${treeParam}&down=${down}`
   const text = await fetchText(url, {
     headers: { Accept: 'application/json' },
@@ -253,7 +253,9 @@ export async function searchAll(q, page = 1, size = 25, searchType = 'traditiona
 
 /**
  * Manuscript-level metadata search
- * GET /manuscripts/?q=...&size=...
+ * - General/Language: GET /manuscripts/?q=...&size=...
+ * - Date ranges: GET /manuscripts/range/?q=800-1400&size=...
+ * - Complex dates: GET /manuscripts/date/?exact_start=800&size=...
  * Returns manuscript collections with metadata
  */
 export async function searchManuscripts(q, size = 25, searchType = 'general') {
@@ -262,18 +264,34 @@ export async function searchManuscripts(q, size = 25, searchType = 'general') {
   let url;
   
   if (searchType === 'date') {
-    // Parse date query and build appropriate URL parameters
+    // Parse date query to determine the best format
     const dateParams = parseDateQuery(q);
-    const params = new URLSearchParams();
     
-    // Add date-specific parameters
-    if (dateParams.exact_start) params.append('exact_start', dateParams.exact_start);
-    if (dateParams.exact_stop) params.append('exact_stop', dateParams.exact_stop);
-    if (dateParams.start_year) params.append('start_year', dateParams.start_year);
-    if (dateParams.stop_year) params.append('stop_year', dateParams.stop_year);
-    params.append('size', size);
+    // Check if we have at least one valid date parameter
+    const hasDateParams = dateParams.exact_start !== undefined || dateParams.exact_stop !== undefined || 
+                          dateParams.start_year !== undefined || dateParams.stop_year !== undefined;
     
-    url = `${base}/manuscripts/date/?${params.toString()}`;
+    if (!hasDateParams) {
+      throw new Error('Invalid date query. Please use formats like: "0-1600", "800", "800-1400", "after 1200", "before 1500", "13th century"');
+    }
+    
+    // If it's a simple range (start_year and stop_year), use the simpler /manuscripts/range/ endpoint
+    if (dateParams.start_year !== undefined && dateParams.stop_year !== undefined && !dateParams.exact_start && !dateParams.exact_stop) {
+      const rangeQuery = `${dateParams.start_year}-${dateParams.stop_year}`;
+      url = `${base}/manuscripts/range/?q=${encodeURIComponent(rangeQuery)}&size=${size}`;
+    } else {
+      // For complex queries (exact matches, single-sided ranges), use /manuscripts/date/
+      const params = new URLSearchParams();
+      
+      // Add date-specific parameters
+      if (dateParams.exact_start) params.append('exact_start', dateParams.exact_start);
+      if (dateParams.exact_stop) params.append('exact_stop', dateParams.exact_stop);
+      if (dateParams.start_year) params.append('start_year', dateParams.start_year);
+      if (dateParams.stop_year) params.append('stop_year', dateParams.stop_year);
+      params.append('size', size);
+      
+      url = `${base}/manuscripts/date/?${params.toString()}`;
+    }
   } else {
     // For general and language searches, use the q parameter
     const endpoints = {
@@ -306,55 +324,72 @@ function parseDateQuery(query) {
   const params = {};
   const q = query.trim().toLowerCase();
   
-  // Match patterns like "1300-1400" or "1300 to 1400"
-  const rangeMatch = q.match(/(\d{4})\s*[-–to]\s*(\d{4})/);
+  // Match any range with hyphen (e.g., "0-1600", "10-1500", "800-1400")
+  const rangeMatch = q.match(/(\d+)\s*-\s*(\d+)/);
   if (rangeMatch) {
     params.start_year = parseInt(rangeMatch[1]);
     params.stop_year = parseInt(rangeMatch[2]);
     return params;
   }
   
-  // Match "after YYYY" or "from YYYY"
-  const afterMatch = q.match(/(?:after|from|since)\s+(\d{4})/);
+  // Match patterns with "to" (e.g., "800 to 1400")
+  const toMatch = q.match(/(\d+)\s+to\s+(\d+)/);
+  if (toMatch) {
+    params.start_year = parseInt(toMatch[1]);
+    params.stop_year = parseInt(toMatch[2]);
+    return params;
+  }
+  
+  // Match "after YYYY" or "from YYYY" (English and French)
+  const afterMatch = q.match(/(?:after|from|since|après|depuis|dès)\s+(\d+)/);
   if (afterMatch) {
     params.start_year = parseInt(afterMatch[1]);
     return params;
   }
   
-  // Match "before YYYY" or "until YYYY"
-  const beforeMatch = q.match(/(?:before|until|up to)\s+(\d{4})/);
+  // Match "before YYYY" or "until YYYY" (English and French)
+  const beforeMatch = q.match(/(?:before|until|up to|avant|jusqu'à|jusqu'en)\s+(\d+)/);
   if (beforeMatch) {
     params.stop_year = parseInt(beforeMatch[1]);
     return params;
   }
   
-  // Match "exactly YYYY" or "exact YYYY"
-  const exactMatch = q.match(/(?:exactly?|exact)\s+(\d{4})/);
+  // Match "exactly YYYY" or "exact YYYY" (English and French)
+  const exactMatch = q.match(/(?:exactly?|exact|exactement|précisément)\s+(\d+)/);
   if (exactMatch) {
     params.exact_start = parseInt(exactMatch[1]);
     return params;
   }
   
-  // Match "end in YYYY" or "ended in YYYY"
-  const endMatch = q.match(/(?:end(?:ed)?\s+(?:in\s+)?|stop(?:ped)?\s+(?:in\s+)?)(\d{4})/);
+  // Match "end in YYYY" or "ended in YYYY" (English and French)
+  const endMatch = q.match(/(?:end(?:ed)?\s+(?:in\s+)?|stop(?:ped)?\s+(?:in\s+)?|fin(?:i)?\s+(?:en\s+)?|terminé\s+(?:en\s+)?)(\d+)/);
   if (endMatch) {
     params.exact_stop = parseInt(endMatch[1]);
     return params;
   }
   
-  // Match century patterns like "13th century" or "14th c."
-  const centuryMatch = q.match(/(\d{1,2})(?:th|st|nd|rd)\s*c(?:entury|\.)?/);
+  // Match century patterns (English and French)
+  const centuryMatch = q.match(/(\d{1,2})(?:th|st|nd|rd|ème|e)\s*(?:c(?:entury|\.)?|siècle|s\.?)/);
   if (centuryMatch) {
     const century = parseInt(centuryMatch[1]);
-    const startYear = (century - 1) * 100;
-    const endYear = century * 100 - 1;
+    const startYear = (century - 1) * 100 + 1; // e.g. 13th century = 1201-1300
+    const endYear = century * 100;
     params.start_year = startYear;
     params.stop_year = endYear;
     return params;
   }
   
+  // Match "around YYYY" or "circa YYYY" (English and French)
+  const aroundMatch = q.match(/(?:around|circa|about|near|vers|environ|proche de|autour de)\s+(\d+)/);
+  if (aroundMatch) {
+    const year = parseInt(aroundMatch[1]);
+    params.start_year = year - 50;
+    params.stop_year = year + 50;
+    return params;
+  }
+  
   // Simple year match (treat as exact_start)
-  const yearMatch = q.match(/\b(\d{4})\b/);
+  const yearMatch = q.match(/\b(\d+)\b/);
   if (yearMatch) {
     params.exact_start = parseInt(yearMatch[1]);
     return params;

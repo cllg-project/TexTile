@@ -2,58 +2,58 @@
   <v-container class="py-6">
     <!-- Search guide -->
     <v-alert variant="tonal" type="info" class="mb-6">
-      <div class="text-subtitle-1 mb-2">SEARCH GUIDE</div>
+      <div class="text-subtitle-1 mb-2">{{ $t('search.searchGuide') }}</div>
       
       <!-- Traditional Search Operators (shown only for traditional search) -->
       <div v-if="searchType === 'traditional'">
-        <div class="text-subtitle-2 mb-2">Traditional Search Operators</div>
+        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.traditional.title') }}</div>
         <v-row>
           <v-col cols="12" md="6">
-            <div class="rule"><v-chip size="x-small" label>+</v-chip>&nbsp;signifies AND operation</div>
-            <div class="rule"><v-chip size="x-small" label>|</v-chip>&nbsp;signifies OR operation</div>
-            <div class="rule"><v-chip size="x-small" label>-</v-chip>&nbsp;negates a single token</div>
-            <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;wraps tokens to make a phrase</div>
+            <div class="rule"><v-chip size="x-small" label>+</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.and') }}</div>
+            <div class="rule"><v-chip size="x-small" label>|</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.or') }}</div>
+            <div class="rule"><v-chip size="x-small" label>-</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.not') }}</div>
+            <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.phrase') }}</div>
           </v-col>
           <v-col cols="12" md="6">
-            <div class="rule"><v-chip size="x-small" label>*</v-chip>&nbsp;at the end of a term is a prefix query</div>
-            <div class="rule"><v-chip size="x-small" label>( )</v-chip>&nbsp;signify precedence</div>
-            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;after a word = fuzziness</div>
-            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;after a phrase = slop</div>
+            <div class="rule"><v-chip size="x-small" label>*</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.prefix') }}</div>
+            <div class="rule"><v-chip size="x-small" label>( )</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.precedence') }}</div>
+            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.fuzziness') }}</div>
+            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.slop') }}</div>
           </v-col>
         </v-row>
       </div>
 
       <!-- Semantic Search Guide -->
       <div v-if="searchType === 'vector'">
-        <div class="text-subtitle-2 mb-2">Semantic Search Tips</div>
+        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.vector.title') }}</div>
         <v-row>
           <v-col cols="12" md="6">
-            <div class="rule">• Use natural language queries</div>
-            <div class="rule">• Searches for conceptual similarity</div>
-            <div class="rule">• Finds spelling variations automatically</div>
-            <div class="rule">• Works with medieval abbreviations</div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.natural') }}</div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.conceptual') }}</div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.variations') }}</div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.abbreviations') }}</div>
           </v-col>
           <v-col cols="12" md="6">
-            <div class="rule">• Try: <v-chip size="x-small" label>"homme pauvre"</v-chip></div>
-            <div class="rule">• Try: <v-chip size="x-small" label>"cheval"</v-chip></div>
-            <div class="rule">• Try: <v-chip size="x-small" label>"amour courtois"</v-chip></div>
-            <div class="rule">• Results ranked by similarity</div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.try1') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.poor') }}</v-chip></div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.try2') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.horse') }}</v-chip></div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.try3') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.love') }}</v-chip></div>
+            <div class="rule">• {{ $t('search.guides.vector.tips.ranking') }}</div>
           </v-col>
         </v-row>
       </div>
 
       <!-- Hybrid Search Guide -->
       <div v-if="searchType === 'hybrid'">
-        <div class="text-subtitle-2 mb-2">Hybrid Search</div>
-        <div class="rule">Combines traditional exact matching with semantic similarity for comprehensive results.</div>
-        <div class="rule">Use any query type - the system will find both exact matches and conceptually similar content.</div>
+        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.hybrid.title') }}</div>
+        <div class="rule">{{ $t('search.guides.hybrid.description') }}</div>
+        <div class="rule">{{ $t('search.guides.hybrid.usage') }}</div>
       </div>
     </v-alert>
 
     <!-- Search Type Selector -->
     <v-card class="mb-4" variant="outlined">
       <v-card-text class="py-3">
-        <div class="text-subtitle-2 mb-3">Search Method</div>
+        <div class="text-subtitle-2 mb-3">{{ $t('search.searchMethod') }}</div>
         <v-btn-toggle
           v-model="searchType"
           mandatory
@@ -63,30 +63,32 @@
         >
           <v-btn value="traditional" size="small">
             <v-icon start>mdi-text-search</v-icon>
-            Traditional
+            {{ $t('search.traditional') }}
           </v-btn>
-          <v-btn value="vector" size="small">
+          <v-btn value="vector" size="small" disabled>
             <v-icon start>mdi-brain</v-icon>
-            Semantic
+            {{ $t('search.vector') }}
+            <v-chip size="x-small" class="ml-1" variant="tonal" color="grey">{{ $t('search.comingSoon') }}</v-chip>
           </v-btn>
-          <v-btn value="hybrid" size="small">
+          <v-btn value="hybrid" size="small" disabled>
             <v-icon start>mdi-merge</v-icon>
-            Hybrid
+            {{ $t('search.hybrid') }}
+            <v-chip size="x-small" class="ml-1" variant="tonal" color="grey">{{ $t('search.comingSoon') }}</v-chip>
           </v-btn>
         </v-btn-toggle>
         
         <div class="text-caption text-grey">
           <div v-if="searchType === 'traditional'">
             <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            Fast exact matching with Boolean operators and wildcards
+            {{ $t('search.descriptions.traditional') }}
           </div>
           <div v-if="searchType === 'vector'">
             <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            Semantic similarity search - finds conceptually similar content and spelling variants
+            {{ $t('search.descriptions.vector') }}
           </div>
           <div v-if="searchType === 'hybrid'">
             <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            Combines traditional and semantic search for comprehensive results
+            {{ $t('search.descriptions.hybrid') }}
           </div>
         </div>
       </v-card-text>
@@ -112,7 +114,7 @@
         :loading="loading"
       >
         <v-icon start>{{ searchTypeIcon }}</v-icon>
-        Search
+        {{ $t('search.searchButton') }}
       </v-btn>
     </div>
 
@@ -130,28 +132,28 @@
     <!-- Results header -->
     <div v-if="loaded" class="d-flex align-center justify-space-between mt-4 mb-2">
       <div class="text-body-2">
-        Showing {{ start }}–{{ end }} of {{ total }}
+        {{ $t('search.showingResults', { start, end, total }) }}
       </div>
       <div class="d-flex align-center" style="gap:8px">
         <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)">
-          <v-icon start>mdi-page-first</v-icon> first
+          <v-icon start>mdi-page-first</v-icon> {{ $t('search.pagination.first') }}
         </v-btn>
         <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)">
-          <v-icon start>mdi-chevron-left</v-icon> prev
+          <v-icon start>mdi-chevron-left</v-icon> {{ $t('search.pagination.prev') }}
         </v-btn>
-        <span class="text-caption">page {{ page }} of {{ pages }}</span>
+        <span class="text-caption">{{ $t('search.pagination.page', { current: page, total: pages }) }}</span>
         <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)">
-          next <v-icon end>mdi-chevron-right</v-icon>
+          {{ $t('search.pagination.next') }} <v-icon end>mdi-chevron-right</v-icon>
         </v-btn>
         <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)">
-          last <v-icon end>mdi-page-last</v-icon>
+          {{ $t('search.pagination.last') }} <v-icon end>mdi-page-last</v-icon>
         </v-btn>
       </div>
     </div>
 
     <v-progress-linear v-if="loading" indeterminate class="mt-6" />
     <v-alert v-else-if="loaded && items.length===0" type="info" variant="tonal" class="mt-6">
-      No results.
+      {{ $t('search.noResults') }}
     </v-alert>
 
     <!-- Hybrid Results Display -->
@@ -160,7 +162,7 @@
       <div v-if="hybridResults.traditional && hybridResults.traditional.items.length > 0" class="mb-6">
         <div class="d-flex align-center mb-3">
           <v-icon class="mr-2" color="primary">mdi-text-search</v-icon>
-          <h3 class="text-h6">Traditional Search Results</h3>
+          <h3 class="text-h6">{{ $t('search.sections.traditional') }}</h3>
           <v-chip class="ml-2" size="small" variant="outlined" color="primary">
             {{ hybridResults.traditional.total }}
           </v-chip>
@@ -183,7 +185,7 @@
                   {{ hit.title || hit.manuscript_title || hit.name || `Document ${hit.collection}` }} • {{ hit.ref }}
                 </RouterLink>
                 <div class="d-flex align-center gap-1">
-                  <v-chip size="x-small" label variant="tonal" color="primary">text match</v-chip>
+                  <v-chip size="x-small" label variant="tonal" color="primary">{{ $t('search.results.textMatch') }}</v-chip>
                   <v-chip v-if="hit.score" size="x-small" label variant="outlined">
                     {{ hit.score.toFixed(1) }}
                   </v-chip>
@@ -201,7 +203,7 @@
       <div v-if="hybridResults.vector && hybridResults.vector.items.length > 0">
         <div class="d-flex align-center mb-3">
           <v-icon class="mr-2" color="success">mdi-brain</v-icon>
-          <h3 class="text-h6">Semantic Search Results</h3>
+          <h3 class="text-h6">{{ $t('search.sections.semantic') }}</h3>
           <v-chip class="ml-2" size="small" variant="outlined" color="success">
             {{ hybridResults.vector.total }}
           </v-chip>
@@ -224,7 +226,7 @@
                   {{ hit.title || hit.manuscript_title || hit.name || `Document ${hit.collection}` }} • {{ hit.ref }}
                 </RouterLink>
                 <div class="d-flex align-center gap-1">
-                  <v-chip size="x-small" label variant="tonal" color="success">semantic</v-chip>
+                  <v-chip size="x-small" label variant="tonal" color="success">{{ $t('search.results.semantic') }}</v-chip>
                   <v-chip v-if="hit.score" size="x-small" label variant="outlined" color="success">
                     {{ (hit.score * 100).toFixed(0) }}%
                   </v-chip>
@@ -236,7 +238,7 @@
               
               <!-- Show matched phrases for vector search -->
               <div v-if="hit.matched_phrases && hit.matched_phrases.length > 0" class="matched-phrases mt-2">
-                <div class="text-caption text-grey mb-1">Semantic matches:</div>
+                <div class="text-caption text-grey mb-1">{{ $t('search.results.semanticMatches') }}</div>
                 <div class="phrase-tags">
                   <v-chip
                     v-for="phrase in hit.matched_phrases"
@@ -252,7 +254,7 @@
               </div>
               
               <div v-if="hit.language" class="text-caption text-grey mt-1">
-                Language: {{ hit.language }}
+                {{ $t('search.results.language') }} {{ hit.language }}
               </div>
             </v-list-item-subtitle>
           </v-list-item>
@@ -284,7 +286,7 @@
                 variant="tonal"
                 :color="searchType === 'vector' ? 'success' : 'primary'"
               >
-                {{ searchType === 'vector' ? 'semantic' : 'text match' }}
+                {{ searchType === 'vector' ? $t('search.results.semantic') : $t('search.results.textMatch') }}
               </v-chip>
               <v-chip 
                 v-if="hit.score" 
@@ -303,7 +305,7 @@
           
           <!-- Show matched phrases for vector search -->
           <div v-if="hit.matched_phrases && hit.matched_phrases.length > 0" class="matched-phrases mt-2">
-            <div class="text-caption text-grey mb-1">Semantic matches:</div>
+            <div class="text-caption text-grey mb-1">{{ $t('search.results.semanticMatches') }}</div>
             <div class="phrase-tags">
               <v-chip
                 v-for="phrase in hit.matched_phrases"
@@ -319,7 +321,7 @@
           </div>
           
           <div v-if="hit.language && searchType === 'vector'" class="text-caption text-grey mt-1">
-            Language: {{ hit.language }}
+            {{ $t('search.results.language') }} {{ hit.language }}
           </div>
         </v-list-item-subtitle>
       </v-list-item>
@@ -335,6 +337,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { searchAll } from '../api/dts'
 import CatmusKeyboard from '../components/CatmusKeyboard.vue'
 
@@ -358,16 +361,12 @@ const hybridResults = ref(null)
 const showKeyboard = ref(false)
 const inputRef = ref()
 
+// Import for translations
+const { t } = useI18n()
+
 // Computed properties for dynamic UI
 const searchPlaceholder = computed(() => {
-  switch (searchType.value) {
-    case 'vector':
-      return 'Search semantically (e.g., "homme pauvre", "cheval")…'
-    case 'hybrid':
-      return 'Search with both traditional and semantic methods…'
-    default:
-      return 'Search with Boolean operators (+, -, |, *, "phrases")…'
-  }
+  return t(`search.placeholders.${searchType.value}`)
 })
 
 const searchTypeIcon = computed(() => {
@@ -437,7 +436,16 @@ async function run(p = page.value){
   pushState()
   
   try {
-    const res = await searchAll(q.value, page.value, size.value, searchType.value)
+    // Normalize medieval text: v->u, j->i for better search results
+    // Also apply NFD (Unicode Normalization Form Decomposed) for proper handling of combining characters
+    const normalizedQuery = q.value
+      .replace(/V/g, "U")
+      .replace(/v/g, "u")
+      .replace(/J/g, "I")
+      .replace(/j/g, "i")
+      .normalize('NFD')
+    
+    const res = await searchAll(normalizedQuery, page.value, size.value, searchType.value)
     
     if (searchType.value === 'hybrid') {
       // Handle hybrid search results
@@ -476,10 +484,18 @@ function pushState(){
 }
 
 function toDoc(hit){
+  // Use the same normalization for highlighting as we use for search
+  const normalizedQuery = q.value
+    .replace(/V/g, "U")
+    .replace(/v/g, "u")
+    .replace(/J/g, "I")
+    .replace(/j/g, "i")
+    .normalize('NFD')
+    
   return {
     name: 'documentRef',
     params: { resource: encodeURIComponent(hit.collection), ref: hit.ref },
-    query: { highlight: q.value }
+    query: { highlight: normalizedQuery }
   }
 }
 

@@ -39,7 +39,7 @@ export default {
     placeholders: {
       general: 'ex. Tournai, manuscrit, notes, contenu...',
       language: 'ex. lat, fre, "lat, fre", latin...',
-      date: 'ex. 1301, 1300-1400, après 1200, avant 1500, 14ème siècle, exactement 1250'
+      date: 'ex. 0-1600, 800, 1301, 800-1500, après 1200, avant 1500, 14ème siècle, vers 1250'
     }
   },
   collection: {
@@ -57,6 +57,21 @@ export default {
     search: 'Recherche',
     settings: 'Paramètres',
     citation: 'Citation',
+    info: {
+      title: 'Infos du Document',
+      metadata: 'Métadonnées',
+      author: 'Auteur',
+      origin: 'Origine',
+      date: 'Date',
+      language: 'Langue',
+      type: 'Type',
+      description: 'Description',
+      id: 'ID',
+      keywords: 'Mots-clés',
+      sources: 'Sources',
+      identifiers: 'Identifiants',
+      unknownLanguage: 'Inconnu'
+    },
     previousPage: 'Page Précédente',
     nextPage: 'Page Suivante',
     goToPage: 'Aller au passage',
@@ -92,6 +107,7 @@ export default {
     traditional: 'Traditionnelle',
     vector: 'Sémantique',
     hybrid: 'Hybride',
+    comingSoon: 'Bientôt Disponible',
     searchButton: 'Rechercher',
     virtualKeyboard: 'Clavier Virtuel',
     results: 'Résultats',
@@ -164,7 +180,7 @@ export default {
     }
   },
   about: {
-    title: 'À Propos de CoMMA Reader',
+    title: 'CoMMA Reader',
     subtitle: 'Transcrire le Moyen Âge',
     description: 'Manuscrits navigables vers 800–1600, préservant l\'orthographe et les abréviations originales.',
     projectTitle: 'À Propos du Projet',
@@ -184,7 +200,10 @@ export default {
       preservation: 'Les textes préservent les abréviations, orthographes et caractéristiques de mise en page originales — utiles pour la recherche, mais ne remplacent pas la transcription humaine.',
       readFull: 'Lire le Texte Complet',
       preprint: 'Prépublication (PDF)',
-      copyCitation: 'Copier la Citation'
+      copyCitation: 'Copier la Citation',
+      tryItNow: 'Essayez maintenant',
+      searchPlaceholder: 'Rechercher dans 2,5 milliards de tokens de texte médiéval...',
+      downloadCorpus: 'Télécharger le Corpus'
     },
     detailed: {
       title: 'À propos de ce Corpus',
@@ -207,6 +226,96 @@ export default {
     citation: {
       copied: 'Citation copiée',
       failed: 'Échec de la copie — veuillez copier manuellement'
+    }
+  },
+  projectInfo: {
+    overline: 'Corpus de Manuscrits Médiévaux',
+    title: 'CoMMA - Transcription Automatique du Patrimoine Écrit Médiéval',
+    subtitle: 'Un corpus unique au monde de manuscrits médiévaux transcrits automatiquement grâce à l\'intelligence artificielle.',
+    introduction: {
+      corpus: 'Nous avons constitué un corpus unique au monde de manuscrits médiévaux, transcrits automatiquement grâce à l\'intelligence artificielle (HTR – Handwritten Text Recognition). Il est la suite logique de nos travaux antérieurs autour de ',
+      catmusUrl: 'https://inria.hal.science/hal-04453952',
+      catmusDescription: ', un jeu de données massif pour l\'entraînement de modèle de reconnaissance d\'écriture manuscrite dans les manuscrits médiévaux.',
+      paper: 'Le corpus présenté ici est décrit dans un article, en anglais, présentant aussi ses limites et le cadre de sa création: ',
+      paperUrl: 'URL_PAPER',
+      paperLink: 'URL PAPER'
+    },
+    features: {
+      title: 'Caractéristiques du Corpus',
+      items: [
+        {
+          title: 'Un corpus massif :',
+          description: 'plus de 23 000 manuscrits, environ 2,5 milliards de mots en latin et en ancien français.'
+        },
+        {
+          title: 'Un empan chronologique important :',
+          description: 'du 9e siècle au 16e siècle inclu !'
+        },
+        {
+          title: 'Des sources issues de grandes bibliothèques numériques européennes :',
+          description: '(BnF Gallica, Bodleian, e-codices, etc.).'
+        },
+        {
+          title: 'Une approche innovante :',
+          description: 'textes transcrits automatiquement à partir des images, sans normalisation éditoriale, permettant d\'explorer la richesse et la diversité de l\'écrit médiéval.'
+        },
+        {
+          title: 'Un outil pour les sciences et les technologies :',
+          description: 'ressource librement disponible, utile aussi bien pour les humanités numériques (histoire de la langue, philologie, histoire du livre) que pour les sciences informatiques (entraînement de modèles de traitement automatique du langage).'
+        },
+        {
+          title: 'Perspectives :',
+          description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, à commencer par l\'espagnol et d\'autres traditions latines.'
+        }
+      ]
+    },
+    limitations: {
+      title: 'Limites Connues',
+      transcription: 'La transcription automatique n\'est pas parfaite — selon les manuscrits, l\'erreur peut varier entre 6 % et 25 %, et certains documents difficiles (écriture cursive, pages endommagées, numérisations de faible qualité) peuvent produire des résultats encore moins fiables. Des erreurs telles que "ri" pour "n" ne sont pas exclues, mais d\'autres ne produisant rien de sensé ne sont pas impossibles.',
+      coverage: 'Tous les manuscrits de la BnF ne sont pas présents, de même que le corpus est le fruit des biais même des différentes institutions en termes de numérisation de leurs fonds.'
+    },
+    projects: {
+      title: 'Projets et Financements',
+      description: 'Ce corpus a été produit dans le cadre des projets ',
+      colafUrl: 'https://colaf.huma-num.fr/',
+      and: ' et',
+      biblissima: 'Produit avec l\'aide de l\'équipex Biblissima+ pour l\'identification des sources et les métadonnées, et des logiciels tels que Kraken ou eScriptorium.'
+    },
+    technology: {
+      title: 'Technologies Utilisées',
+      dtsUi: {
+        name: 'DTS-UI-NAME',
+        description: 'développé par Hassen Aguili, dont le code est disponible à l\'adresse ',
+        url: 'ADRESSE',
+        linkText: 'ADRESSE'
+      },
+      mydapytains: {
+        name: 'MyDapytains',
+        description: 'développé par Thibault Clérice, financé par le projet PIQ CLLG (Mention ANR), disponible à l\'adresse ',
+        url: 'ADRESSE',
+        linkText: 'ADRESSE'
+      }
+    },
+    stats: {
+      title: 'Statistiques du Corpus',
+      manuscripts: 'Manuscrits',
+      words: 'Mots',
+      timespan: 'Période'
+    },
+    languages: {
+      title: 'Langues',
+      latin: 'Latin Médiéval',
+      oldFrench: 'Ancien Français',
+      upcoming: 'Espagnol (à venir)'
+    },
+    sources: {
+      title: 'Sources Principales',
+      others: 'Et d\'autres...'
+    },
+    contact: {
+      title: 'Contact',
+      description: 'Pour toute question ou suggestion concernant le corpus.',
+      button: 'Contacter l\'Équipe'
     }
   },
   common: {

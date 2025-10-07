@@ -1,14 +1,14 @@
 <template>
   <div class="container" :style="{ gridTemplateColumns: (leftCollapsed? '0 1fr 300px' : '280px 1fr 300px') }">
     <aside v-show="!leftCollapsed">
-      <RouterLink to="/catalog" class="btn" style="margin-bottom:8px;display:inline-block">← Back to Catalog</RouterLink>
-      <h4>Collections</h4>
+      <RouterLink to="/catalog" class="btn" style="margin-bottom:8px;display:inline-block">← {{ $t('collection.backToCatalog') }}</RouterLink>
+      <h4>{{ $t('collection.collections') }}</h4>
       <ul class="list">
         <li v-for="c in data.collections" :key="c.identifier">
           <RouterLink :to="{ name: 'collection', params: { id: c.identifier } }">{{ c.title }}</RouterLink>
         </li>
       </ul>
-      <h4 style="margin-top:16px">Resources</h4>
+      <h4 style="margin-top:16px">{{ $t('collection.resources') }}</h4>
       <ul class="list">
         <li v-for="r in data.resources" :key="r.identifier">
           <RouterLink :to="{ name: 'document', params: { resource: encodeURIComponent(r.identifier) } }">{{ r.title }}</RouterLink>
@@ -21,15 +21,15 @@
           <h2 style="margin:0 0 6px 0">{{ data.title }}</h2>
           <p class="muted">ID: <span class="code">{{ id }}</span></p>
         </div>
-        <button class="collapse-btn" @click="leftCollapsed=!leftCollapsed">{{ leftCollapsed? '⟨ show left' : 'hide left ⟩' }}</button>
+        <button class="collapse-btn" @click="leftCollapsed=!leftCollapsed">{{ leftCollapsed? `⟨ ${$t('collection.showLeft')}` : `${$t('collection.hideLeft')} ⟩` }}</button>
       </div>
       <details style="margin-top:16px">
-        <summary>Raw response (debug)</summary>
+        <summary>{{ $t('collection.rawResponse') }}</summary>
         <pre><code>{{ raw }}</code></pre>
       </details>
     </main>
     <div class="rightpanel">
-      <p class="muted">Pick a resource to open the reader.</p>
+      <p class="muted">{{ $t('collection.pickResource') }}</p>
     </div>
   </div>
 </template>
