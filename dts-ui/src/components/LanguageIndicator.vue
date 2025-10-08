@@ -1,19 +1,17 @@
 <template>
   <v-chip 
-    v-if="showLanguageIndicator"
+    v-if="showVersionIndicator"
     size="small" 
     variant="outlined" 
-    class="language-indicator"
+    class="version-indicator"
   >
-    <v-icon start size="small">mdi-translate</v-icon>
-    {{ getCurrentLanguageName() }}
+    <v-icon start size="small">mdi-information-outline</v-icon>
+    v{{ appVersion }}
   </v-chip>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { getCurrentLocale } from '../i18n'
 
 const props = defineProps({
   show: {
@@ -22,22 +20,14 @@ const props = defineProps({
   }
 })
 
-const { t } = useI18n()
-const currentLocale = computed(() => getCurrentLocale())
-const showLanguageIndicator = computed(() => props.show)
-
-const languages = {
-  en: 'English',
-  fr: 'Français'
-}
-
-function getCurrentLanguageName() {
-  return languages[currentLocale.value] || currentLocale.value
-}
+const showVersionIndicator = computed(() => props.show)
+const appVersion = computed(() => {
+  return import.meta.env.VITE_APP_VERSION || '1.0.0'
+})
 </script>
 
 <style scoped>
-.language-indicator {
+.version-indicator {
   position: fixed;
   bottom: 16px;
   right: 16px;
@@ -46,7 +36,7 @@ function getCurrentLanguageName() {
   transition: opacity 0.3s ease;
 }
 
-.language-indicator:hover {
+.version-indicator:hover {
   opacity: 1;
 }
 </style>

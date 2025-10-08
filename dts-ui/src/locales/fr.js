@@ -96,7 +96,7 @@ export default {
     },
     disclaimer: {
       title: 'Avis de Transcription Automatique :',
-      text: 'Ce texte est le résultat d\'une transcription automatique. Une évaluation par échantillonnage a montré un taux d\'erreur variant entre 6 et 20% sur 600 manuscrits différents choisis au hasard. Certains manuscrits peuvent afficher des résultats médiocres.'
+      text: 'Ce texte est le résultat d\'une transcription automatique. Une évaluation par échantillonnage a montré un taux d\'erreur variant entre 0 et 100% sur 600 manuscrits différents choisis au hasard, avec une moyenne inférieure à 10% CER globalement.'
     }
   },
   search: {

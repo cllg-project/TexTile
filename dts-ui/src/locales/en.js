@@ -96,7 +96,7 @@ export default {
     },
     disclaimer: {
       title: 'Automatic Transcription Notice:',
-      text: 'This text is the result of automatic transcription. A sampled evaluation has shown an error rate varying between 6 and 20% on 600 random different manuscripts.'
+      text: 'This text is the result of automatic transcription. A sampled evaluation has shown an error rate varying between 0 and 100% on 600 random different manuscripts, with an average of below 10% CER overall.'
     }
   },
   search: {

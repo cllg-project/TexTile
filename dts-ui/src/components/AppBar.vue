@@ -13,8 +13,9 @@
       <!-- Language Switcher -->
       <v-menu>
         <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" :title="$t('language.switch')">
-            <v-icon class="text-white">mdi-translate</v-icon>
+          <v-btn variant="text" v-bind="props" :title="$t('language.switch')" class="text-white language-activator">
+            <span class="lang-flag" aria-hidden="true">{{ currentLanguageFlag }}</span>
+            <span class="lang-name">{{ currentLanguageName }}</span>
           </v-btn>
         </template>
         <v-list>
@@ -51,6 +52,15 @@ const { locale } = useI18n()
 const isDark = computed(() => theme.global.current.value.dark)
 const nextTheme = computed(() => theme.global.name.value === 'dark' ? 'light' : 'dark')
 const currentLocale = computed(() => getCurrentLocale())
+const currentLanguageName = computed(() => {
+  const lang = availableLanguages.find(l => l.code === currentLocale.value)
+  return lang ? lang.name : 'English'
+})
+
+const currentLanguageFlag = computed(() => {
+  const lang = availableLanguages.find(l => l.code === currentLocale.value)
+  return lang ? lang.flag : '🏳️'
+})
 
 const availableLanguages = [
   { code: 'en', name: 'English', icon: 'mdi-web', flag: '🇬🇧' },
@@ -79,3 +89,18 @@ onMounted(() => {
   }
 })
 </script>
+
+<style scoped>
+.language-activator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.lang-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+.lang-name {
+  display: inline-block;
+}
+</style>

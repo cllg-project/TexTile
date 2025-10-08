@@ -77,5 +77,6 @@ function displayChar(ch){
   font-family: inherit;      /* inherit Junicode */
   font-size: 1.1rem;
   line-height: 1.15;
+  text-transform: none !important; /* Ensure no uppercase transformation */
 }
 </style>

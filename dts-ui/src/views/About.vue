@@ -21,49 +21,77 @@
         
         <!-- Search Bar with Download Button -->
         <div class="search-section mt-8">
-          <div class="d-flex align-center justify-center" style="gap: 1rem;">
-            <!-- Animated Search Bar -->
-            <div class="search-container" style="max-width: 500px; flex: 1;">
-              <v-text-field
-                v-model="searchQuery"
-                :placeholder="$t('about.intro.searchPlaceholder')"
-                variant="outlined"
-                density="comfortable"
-                class="search-field"
-                prepend-inner-icon="mdi-magnify"
-                clearable
-                hide-details
-                @keyup.enter="performSearch"
-              >
-                <template #append-inner>
-                  <v-btn
-                    color="primary"
-                    variant="flat"
-                    size="small"
-                    class="search-btn"
-                    @click="performSearch"
-                    :disabled="!searchQuery?.trim()"
-                  >
-                    Search
-                  </v-btn>
-                </template>
-              </v-text-field>
-            </div>
+          <div class="search-container-with-arrows">
+            <!-- Left Arrow - Background Layer -->
+            <div 
+              ref="leftArrow" 
+              class="arrow-left"
+              :style="{ 
+                width: '169px', 
+                height: '161px'
+              }"
+            ></div>
             
-            <!-- Expandable Download Button -->
-            <div class="download-button-container">
-              <v-btn
-                class="download-expandable-btn"
-                color="teal"
-                variant="elevated"
-                size="large"
-                href="https://huggingface.co/datasets/comma-project/comma-jsonl"
-                target="_blank"
-                rel="noopener"
-              >
-                <v-icon class="download-icon">mdi-download</v-icon>
-                <span class="download-text">{{ $t('about.intro.downloadCorpus') }}</span>
-              </v-btn>
+            <!-- Right Arrow - Background Layer -->
+            <div 
+              ref="rightArrow" 
+              class="arrow-right"
+              :style="{ 
+                width: '169px', 
+                height: '161px'
+              }"
+            ></div>
+            
+            <!-- Top Arrows - Extra Layer -->
+            <div 
+              ref="topArrow1" 
+              class="arrow-top-1"
+              :style="{ 
+                width: '169px', 
+                height: '161px'
+              }"
+            ></div>
+            
+            <div 
+              ref="topArrow3" 
+              class="arrow-top-3"
+              :style="{ 
+                width: '169px', 
+                height: '161px'
+              }"
+            ></div>
+            
+            <!-- Main Search Section - Foreground -->
+            <div class="d-flex align-center justify-center main-search-area" style="gap: 1rem;">
+              <!-- Animated Search Bar -->
+              <div class="search-container" style="max-width: 500px; flex: 1;">
+                <v-text-field
+                  v-model="searchQuery"
+                  :placeholder="$t('about.intro.searchPlaceholder')"
+                  variant="outlined"
+                  density="comfortable"
+                  class="search-field"
+                  prepend-inner-icon="mdi-magnify"
+                  clearable
+                  hide-details
+                  @keyup.enter="performSearch"
+                >
+                  <template #append-inner>
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      size="small"
+                      class="search-btn"
+                      @click="performSearch"
+                      :disabled="!searchQuery?.trim()"
+                    >
+                      Search
+                    </v-btn>
+                  </template>
+                </v-text-field>
+              </div>
+              
+
             </div>
           </div>
           
@@ -230,6 +258,21 @@
             >
               {{ $t('about.intro.copyCitation') }}
             </v-btn>
+                          <!-- Expandable Download Button -->
+              <div class="download-button-container">
+                <v-btn
+                  class="download-expandable-btn"
+                  color="teal"
+                  variant="elevated"
+                  size="large"
+                  href="https://huggingface.co/datasets/comma-project/comma-jsonl"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <v-icon class="download-icon">mdi-download</v-icon>
+                  <span class="download-text">{{ $t('about.intro.downloadCorpus') }}</span>
+                </v-btn>
+              </div>
           </div>
         </v-card-text>
       </v-card>
@@ -327,9 +370,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import lottie from 'lottie-web'
+import arrow1Animation from '@/assets/arrow5.json'
+import Arrow2Animation from '@/assets/arrow3.json'
+import Arrow3Animation from '@/assets/arrow6.json'
+import Arrow5Animation from '@/assets/arrow11.json'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -338,6 +386,12 @@ const showFullAbout = ref(false)
 const snackbar = ref(false)
 const snackbarMsg = ref('')
 const preprintUrl = 'https://example.org/path/to/preprint.pdf'
+
+// Arrow refs
+const leftArrow = ref(null)
+const rightArrow = ref(null)
+const topArrow1 = ref(null)
+const topArrow3 = ref(null)
 
 // Search functionality
 const searchQuery = ref('')
@@ -389,6 +443,113 @@ function performSearch() {
     }
   })
 }
+
+// Initialize Lottie animations
+let leftArrowAnimation = null
+let rightArrowAnimation = null
+let topArrow1Animation = null
+let topArrow3Animation = null
+
+// Function to change animation colors
+function changeAnimationColor(animationData, newColor) {
+  const modifiedData = JSON.parse(JSON.stringify(animationData))
+  
+  // Function to recursively find and change stroke colors
+  function updateColors(obj) {
+    if (Array.isArray(obj)) {
+      obj.forEach(updateColors)
+    } else if (typeof obj === 'object' && obj !== null) {
+      if (obj.ty === 'st' && obj.c && obj.c.k) { // stroke color
+        obj.c.k = newColor // [r, g, b, a] where values are 0-1
+      }
+      Object.values(obj).forEach(updateColors)
+    }
+  }
+  
+  updateColors(modifiedData)
+  return modifiedData
+}
+
+onMounted(() => {
+  if (leftArrow.value) {
+    // Change to white: [1, 1, 1, 1]
+    // Change to blue: [0.2, 0.4, 0.8, 1]
+    // Change to red: [0.8, 0.2, 0.2, 1]
+    const coloredArrowData = changeAnimationColor(Arrow2Animation, [1, 1, 1, 1])
+    
+    leftArrowAnimation = lottie.loadAnimation({
+      container: leftArrow.value,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      animationData: coloredArrowData
+    })
+    
+    // Play animation every 10 seconds
+    const playLeftArrow = () => {
+      leftArrowAnimation.goToAndPlay(1000)
+    }
+    leftArrowAnimation.goToAndPlay(0) // Play once immediately
+    setInterval(playLeftArrow, 4000) // Then every 5 seconds
+  }
+  
+  if (rightArrow.value) {
+    // Apply same color change to right arrow
+    const coloredArrowData = changeAnimationColor(arrow1Animation, [1, 1, 1, 1])
+    
+    rightArrowAnimation = lottie.loadAnimation({
+      container: rightArrow.value,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      animationData: coloredArrowData
+    })
+    
+    // Play animation every 10 seconds
+    const playRightArrow = () => {
+      rightArrowAnimation.goToAndPlay(1000)
+    }
+    rightArrowAnimation.goToAndPlay(0) // Play once immediately
+    setInterval(playRightArrow, 4000) // Then every 5 seconds
+  }
+  
+  // Initialize top arrows (using different arrow animations)
+  if (topArrow1.value) {
+    const coloredArrowData = changeAnimationColor(Arrow3Animation, [1, 1, 1, 1])
+    
+    topArrow1Animation = lottie.loadAnimation({
+      container: topArrow1.value,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      animationData: coloredArrowData
+    })
+    
+    const playTopArrow1 = () => {
+      topArrow1Animation.goToAndPlay(1000)
+    }
+    topArrow1Animation.goToAndPlay(0)
+    setInterval(playTopArrow1, 4000) // Every 5 seconds
+  }
+  
+  if (topArrow3.value) {
+    const coloredArrowData = changeAnimationColor(Arrow5Animation, [1, 1, 1, 1])
+    
+    topArrow3Animation = lottie.loadAnimation({
+      container: topArrow3.value,
+      renderer: 'svg',
+      loop: false,
+      autoplay: false,
+      animationData: coloredArrowData
+    })
+    
+    const playTopArrow3 = () => {
+      topArrow3Animation.goToAndPlay(1000)
+    }
+    topArrow3Animation.goToAndPlay(0)
+    setInterval(playTopArrow3, 4000) // Every 4 seconds
+  }
+})
 </script>
 
 <style scoped>
@@ -517,7 +678,7 @@ function performSearch() {
 
 /* Enhanced Stats Cards */
 .stats-row {
-  margin-top: -2rem;
+  /*margin-top: -2rem; */
   position: relative;
   z-index: 3;
 }
@@ -1055,6 +1216,95 @@ function performSearch() {
   z-index: 4;
 }
 
+/* Arrow Container */
+.search-container-with-arrows {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.main-search-area {
+  flex: 1;
+  max-width: 600px;
+  position: relative;
+  z-index: 2;
+}
+
+.arrow-left,
+.arrow-right {
+  position: absolute;
+  opacity: 0.6;
+  filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3)) 
+          brightness(0) saturate(100%) 
+          invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+  transition: all 0.3s ease;
+  z-index: 1;
+  pointer-events: none; /* Prevents blocking interactions */
+}
+
+.arrow-left {
+  left: -150px; /* Adjust this value to move left arrow */
+  top: 50%;
+  transform: translateY(-15%) translateX(175%) rotate(-40deg) scaleY(-1);
+}
+
+.arrow-right {
+  right: -150px; /* Adjust this value to move right arrow */
+  top: 50%;
+  transform: translateY(-23%) translateX(-180%) rotate(200deg) scaleY(-1);
+}
+
+.arrow-left:hover,
+.arrow-right:hover {
+  opacity: 0.8;
+  transform: translateY(-50%) scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(255, 255, 255, 0.5))
+          brightness(0) saturate(100%) 
+          invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+}
+
+.arrow-left:hover {
+  transform: translateY(-50%) rotate(180deg) scaleY(-1) scale(1.1);
+}
+
+/* Top Arrows */
+.arrow-top-1,
+.arrow-top-3 {
+  position: absolute;
+  opacity: 0.6;
+  filter: drop-shadow(0 4px 8px rgba(255, 255, 255, 0.3)) 
+          brightness(0) saturate(100%) 
+          invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+  transition: all 0.3s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.arrow-top-1 {
+  top: -120px;
+  left: -50px;
+  transform: rotate(35deg) translateY(-40%) translateX(78%);
+}
+
+.arrow-top-3 {
+  top: -120px;
+  right: -50px;
+  transform: rotate(135deg) translateY(80%) translateX(65%);
+}
+
+.arrow-top-1:hover,
+.arrow-top-3:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+  filter: drop-shadow(0 6px 12px rgba(255, 255, 255, 0.5))
+          brightness(0) saturate(100%) 
+          invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+}
+
 .search-container {
   position: relative;
 }
@@ -1135,7 +1385,8 @@ function performSearch() {
 .download-expandable-btn {
   width: 100%;                    /* take the container’s animated width */
   border-radius: 50px !important;
-  height: 56px !important;
+  margin-top: 8px !important  ;
+  height: 44px !important;
   padding: 0 16px !important;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 150, 136, 0.3);
@@ -1190,7 +1441,16 @@ function performSearch() {
     margin-top: 2rem !important;
   }
   
-  .search-section .d-flex {
+  .arrow-left,
+  .arrow-right {
+    display: none; /* Hide arrows on mobile */
+  }
+  
+  .main-search-area {
+    max-width: 100% !important;
+  }
+  
+  .main-search-area .d-flex {
     flex-direction: column;
     gap: 16px !important;
     align-items: stretch !important;
@@ -1206,6 +1466,32 @@ function performSearch() {
   
   .download-expandable-btn:hover {
     min-width: 180px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .arrow-left {
+    left: -100px; /* Closer to search bar on tablets */
+  }
+  
+  .arrow-right {
+    right: -100px; /* Closer to search bar on tablets */
+  }
+  
+  .arrow-left,
+  .arrow-right {
+    width: 80px !important;
+    height: 50px !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  .arrow-left {
+    left: -200px; /* Further away on larger screens */
+  }
+  
+  .arrow-right {
+    right: -200px; /* Further away on larger screens */
   }
 }
 
