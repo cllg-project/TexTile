@@ -166,13 +166,22 @@
             <!-- Load More Button -->
             <div v-if="hasMoreItems" class="text-center mt-4">
               <v-btn 
-                variant="outlined" 
+                variant="text" 
                 color="primary"
+                size="large"
                 :loading="isLoadingMore"
                 @click="loadMoreItems"
-                prepend-icon="mdi-chevron-down"
+                class="main-load-more-btn"
+                block
               >
-                Load {{ Math.min(itemsPerPage, filtered.length - displayedItemsCount) }} more
+                <v-icon start>mdi-dots-horizontal</v-icon>
+                <span v-if="rootPagination?.hasNext">
+                  Load More Collections
+                </span>
+                <span v-else>
+                  Show {{ Math.min(itemsPerPage, filtered.length - displayedItemsCount) }} More
+                </span>
+                <v-icon end>mdi-chevron-down</v-icon>
               </v-btn>
             </div>
           </div>
@@ -334,17 +343,36 @@ const paginatedResults = computed(() => {
   }
   
   // Apply pagination for browsing mode
-  return allResults.slice(0, displayedItemsCount.value)
+  const result = allResults.slice(0, displayedItemsCount.value)
+  
+  console.log('paginatedResults computed:', {
+    allResultsLength: allResults.length,
+    displayedItemsCount: displayedItemsCount.value,
+    resultLength: result.length,
+    nodesLength: nodes.value.length
+  })
+  
+  return result
 })
 
 // Check if there are more items to load
 const hasMoreItems = computed(() => {
-  return !hasSearchQuery.value && displayedItemsCount.value < filtered.value.length
+  if (hasSearchQuery.value) return false
+  
+  // For browse mode, check if there are more paginated items from the server
+  // or more local items that haven't been displayed yet
+  return rootPagination.value?.hasNext || displayedItemsCount.value < filtered.value.length
 })
 
 // Function to load more items
-function loadMoreItems() {
-  displayedItemsCount.value += itemsPerPage
+async function loadMoreItems() {
+  // If there are more items from server pagination, load them
+  if (rootPagination.value?.hasNext) {
+    await loadMoreRootItems()
+  } else {
+    // Otherwise, just show more of the already loaded items
+    displayedItemsCount.value += itemsPerPage
+  }
 }
 
 // Reset pagination when search changes
@@ -352,14 +380,71 @@ function resetPagination() {
   displayedItemsCount.value = itemsPerPage
 }
 
+// Pagination state for root collection
+const rootPagination = ref(null)
+
 async function load(){
   isLoading.value = true
   try {
-    const resp = await fetchRootCollection()
+    const resp = await fetchRootCollection(1)
     raw.value = typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2)
-    nodes.value = parseMembers(resp)
+    
+    const { members, pagination } = parseMembers(resp)
+    nodes.value = members
+    rootPagination.value = pagination
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadMoreRootItems() {
+  console.log('loadMoreRootItems called, hasNext:', rootPagination.value?.hasNext)
+  
+  if (!rootPagination.value?.hasNext) return
+  
+  isLoadingMore.value = true
+  
+  try {
+    // Extract page number from next URL
+    const nextUrl = rootPagination.value.next
+    const pageMatch = nextUrl.match(/[?&]page=(\d+)/)
+    const nextPage = pageMatch ? parseInt(pageMatch[1], 10) : 2
+    
+    console.log('Fetching page:', nextPage)
+    
+    const resp = await fetchRootCollection(nextPage)
+    const { members, pagination } = parseMembers(resp)
+    
+    console.log('Got response:', {
+      membersCount: members?.length,
+      paginationHasNext: pagination?.hasNext,
+      paginationNext: pagination?.next
+    })
+    
+    if (members && members.length > 0) {
+      const beforeLength = nodes.value.length
+      
+      // Add new items to nodes array
+      nodes.value.splice(nodes.value.length, 0, ...members)
+      
+      // IMPORTANT: Update displayedItemsCount to show the new items
+      displayedItemsCount.value = nodes.value.length
+      
+      console.log('Updated nodes from', beforeLength, 'to', nodes.value.length)
+      console.log('Updated displayedItemsCount to', displayedItemsCount.value)
+    }
+    
+    // Update pagination - try triggering reactivity more explicitly
+    const oldPagination = rootPagination.value
+    rootPagination.value = pagination ? { ...pagination } : null
+    
+    console.log('Updated pagination from', oldPagination?.hasNext, 'to', rootPagination.value?.hasNext)
+    
+  } catch (error) {
+    console.error('Failed to load more root items:', error)
+  } finally {
+    isLoadingMore.value = false
+    console.log('loadMoreRootItems finished, new hasNext:', rootPagination.value?.hasNext)
   }
 }
 
@@ -379,19 +464,31 @@ async function loadAllResources() {
         if (node.kind === 'collection' && !discovered.has(node.id)) {
           discovered.add(node.id)
           try {
-            const resp = await fetchCollectionRaw(node.id)
-            const members = parseMembers(resp)
+            // Load all pages for this collection
+            let page = 1
+            let hasMore = true
             
-            members.forEach(member => {
-              if (member.kind === 'resource') {
-                // Add to allResources if not already present
-                if (!allResources.value.find(r => r.id === member.id)) {
-                  allResources.value.push(member)
+            while (hasMore) {
+              const resp = await fetchCollectionRaw(node.id, 'children', page)
+              const { members, pagination } = parseMembers(resp)
+              
+              members.forEach(member => {
+                if (member.kind === 'resource') {
+                  // Add to allResources if not already present
+                  if (!allResources.value.find(r => r.id === member.id)) {
+                    allResources.value.push(member)
+                  }
+                } else if (member.kind === 'collection' && !discovered.has(member.id)) {
+                  toProcess.push(member)
                 }
-              } else if (member.kind === 'collection' && !discovered.has(member.id)) {
-                toProcess.push(member)
-              }
-            })
+              })
+              
+              hasMore = pagination?.hasNext || false
+              page++
+              
+              // Safety limit to prevent infinite loops
+              if (page > 50) break
+            }
           } catch (error) {
             console.warn(`Failed to load collection ${node.id}:`, error)
           }
@@ -484,16 +581,21 @@ async function expandAllToResources() {
   while (attempts < maxAttempts) {
     attempts++
     
-    // Call expandAll and wait for it to complete
-    await treeRef.value.expandAll()
-    
-    // Wait a bit for any async loading to complete
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Check if there are still loading indicators (means more expansion might be needed)
-    const loadingElements = document.querySelectorAll('.v-progress-circular')
-    if (loadingElements.length === 0) {
-      // No more loading, expansion is likely complete
+    try {
+      // Call expandAll and wait for it to complete
+      await treeRef.value.expandAll()
+      
+      // Wait a bit for any async loading to complete
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Check if there are still loading indicators (means more expansion might be needed)
+      const loadingElements = document.querySelectorAll('.v-progress-circular')
+      if (loadingElements.length === 0) {
+        // No more loading, expansion is likely complete
+        break
+      }
+    } catch (error) {
+      console.warn('Error during expansion:', error)
       break
     }
   }
@@ -572,5 +674,44 @@ watch(q, () => {
   resetPagination()
 })
 
+// Debug watcher for pagination changes
+watch(rootPagination, (newPagination, oldPagination) => {
+  console.log('Pagination changed:', {
+    old: oldPagination,
+    new: newPagination,
+    hasNext: newPagination?.hasNext
+  })
+}, { deep: true })
+
 onMounted(load)
 </script>
+
+<style scoped>
+.main-load-more-btn {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: normal !important;
+  border: 1px dashed rgba(var(--v-theme-primary), 0.4) !important;
+  border-radius: 12px !important;
+  min-height: 48px !important;
+  transition: all 0.3s ease !important;
+  margin: 0 auto;
+  max-width: 300px;
+}
+
+.main-load-more-btn:hover {
+  border-color: rgba(var(--v-theme-primary), 0.7) !important;
+  background-color: rgba(var(--v-theme-primary), 0.06) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.25);
+}
+
+.main-load-more-btn:not(.v-btn--loading):hover {
+  transform: translateY(-2px);
+}
+
+.main-load-more-btn.v-btn--loading {
+  opacity: 0.7;
+  transform: none !important;
+}
+</style>

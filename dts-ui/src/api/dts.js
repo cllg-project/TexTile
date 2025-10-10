@@ -32,6 +32,15 @@ function safeJsonParse(text) {
 /* ------------------------------- fetchers ---------------------------- */
 
 /**
+ * Extract page number from a pagination URL
+ */
+function extractPageFromUrl(url) {
+  if (!url) return null;
+  const match = url.match(/[?&]page=(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
  * DTS Entry point (optional, not required by UI but handy for debugging)
  * GET /
  */
@@ -46,11 +55,15 @@ export async function fetchEntryPoint() {
 }
 
 /**
- * Root catalog
- * GET /collection
+ * Root catalog with pagination support
+ * GET /collection/?nav=children&page=...
  */
-export async function fetchRootCollection() {
-  const url = `${BASE}/collection/`;
+export async function fetchRootCollection(page = 1) {
+  const params = new URLSearchParams();
+  params.append('nav', 'children');
+  if (page > 1) params.append('page', page.toString());
+  
+  const url = `${BASE}/collection/?${params.toString()}`;
   const text = await fetchText(url);
   if (looksLikeJsonString(text)) {
     const j = safeJsonParse(text);
@@ -123,15 +136,30 @@ export async function fetchPage(resource, ref, media = 'html', signal, tree = ''
 
 /**
  * Extract members from a DTS collection-like response.
- * Returns array of { kind: 'collection'|'resource', id, title }
+ * Returns { members: array, pagination: object }
  */
 export function parseMembers(resp) {
-  const out = [];
-  if (!resp || typeof resp !== 'object') return out;
+  const members = [];
+  let pagination = null;
+
+  if (!resp || typeof resp !== 'object') return { members, pagination };
+
+  // Extract pagination info from view property
+  if (resp.view && typeof resp.view === 'object') {
+    pagination = {
+      current: resp.view['@id'],
+      first: resp.view.first,
+      last: resp.view.last,
+      next: resp.view.next,
+      previous: resp.view.previous || resp.view.prev,
+      hasNext: !!resp.view.next,
+      hasPrevious: !!(resp.view.previous || resp.view.prev)
+    };
+  }
 
   // DTS 1-alpha uses "member"
   const items = resp.member || resp.members || [];
-  if (!Array.isArray(items)) return out;
+  if (!Array.isArray(items)) return { members, pagination };
 
   for (const it of items) {
     const type = String(it?.['@type'] || it?.type || '').toLowerCase();
@@ -141,13 +169,13 @@ export function parseMembers(resp) {
     const title = it?.title || it?.label || id;
 
     if (type.includes('collection')) {
-      out.push({ kind: 'collection', id, title });
+      members.push({ kind: 'collection', id, title });
     } else {
       // Treat anything else as a resource for browsing purposes
-      out.push({ kind: 'resource', id, title });
+      members.push({ kind: 'resource', id, title });
     }
   }
-  return out;
+  return { members, pagination };
 }
 
 /**

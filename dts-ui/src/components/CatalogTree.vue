@@ -15,11 +15,40 @@
         </v-list-item>
         <v-expand-transition>
           <div v-show="isOpen(node)" class="pl-6">
-            <CatalogTree 
-              v-if="children[nodeKey(node)]" 
-              :nodes="children[nodeKey(node)]" 
-              :ref="(el) => { if (el) childTreeRefs.set(nodeKey(node), el) }"
-            />
+            <div v-if="children[nodeKey(node)]">
+              <div class="children-container">
+                <CatalogTree 
+                  :key="`tree-${nodeKey(node)}`"
+                  :nodes="children[nodeKey(node)]" 
+                  :ref="(el) => { if (el) childTreeRefs.set(nodeKey(node), el) }"
+                />
+              </div>
+              <!-- Load More Button for paginated results -->
+              <div 
+                v-if="pagination[nodeKey(node)]?.hasNext" 
+                class="load-more-container"
+              >
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  size="small"
+                  :loading="loadingMore.has(nodeKey(node))"
+                  @click.stop="loadMore(node)"
+                  class="load-more-btn"
+                  block
+                  :disabled="loadingMore.has(nodeKey(node))"
+                >
+                  <template v-if="!loadingMore.has(nodeKey(node))">
+                    <v-icon start size="16">mdi-dots-horizontal</v-icon>
+                    Load More
+                    <v-icon end size="16">mdi-chevron-down</v-icon>
+                  </template>
+                  <template v-else>
+                    Loading...
+                  </template>
+                </v-btn>
+              </div>
+            </div>
             <v-progress-circular v-else indeterminate size="20" class="my-2"></v-progress-circular>
           </div>
         </v-expand-transition>
@@ -33,7 +62,9 @@ import { fetchCollectionRaw, parseMembers } from '../api/dts'
 
 const props = defineProps({ nodes: { type: Array, required: true } })
 const open = ref(new Set())
-const children = reactive({})
+const children = ref({}) // Use ref instead of reactive for better tracking
+const pagination = ref({}) // Use ref instead of reactive
+const loadingMore = ref(new Set()) // Track which collections are loading more
 
 function nodeKey(n){ return `${n.kind}:${n.id}` }
 function isOpen(n){ return open.value.has(nodeKey(n)) }
@@ -42,9 +73,53 @@ async function toggle(n){
   const k = nodeKey(n)
   if (isOpen(n)) { open.value.delete(k); return }
   open.value.add(k)
-  if (n.kind==='collection' && !children[k]){
-    const resp = await fetchCollectionRaw(n.id)
-    children[k] = parseMembers(resp)
+  if (n.kind==='collection' && !children.value[k]){
+    await loadCollectionPage(n, 1)
+  }
+}
+
+async function loadCollectionPage(node, page = 1) {
+  const k = nodeKey(node)
+  
+  const resp = await fetchCollectionRaw(node.id, 'children', page)
+  const { members, pagination: paginationInfo } = parseMembers(resp)
+  
+  if (page === 1) {
+    // First page - replace existing data
+    children.value[k] = [...members] // Create new array for reactivity
+  } else {
+    // Subsequent pages - append to existing data with proper reactivity
+    if (!children.value[k]) children.value[k] = []
+    // Create a new array with all items to trigger reactivity
+    children.value[k] = [...children.value[k], ...members]
+  }
+  
+  // Store pagination info
+  pagination.value[k] = paginationInfo
+  
+  // Force reactivity update
+  await nextTick()
+}
+
+async function loadMore(node) {
+  const k = nodeKey(node)
+  const currentPagination = pagination.value[k]
+  
+  if (!currentPagination?.hasNext) return
+  
+  loadingMore.value.add(k)
+  
+  try {
+    // Extract page number from next URL
+    const nextUrl = currentPagination.next
+    const pageMatch = nextUrl.match(/[?&]page=(\d+)/)
+    const nextPage = pageMatch ? parseInt(pageMatch[1], 10) : 2
+    
+    await loadCollectionPage(node, nextPage)
+  } catch (error) {
+    console.error(`Failed to load more for collection ${node.id}:`, error)
+  } finally {
+    loadingMore.value.delete(k)
   }
 }
 
@@ -67,11 +142,11 @@ async function expandAll() {
           open.value.add(k)
           
           // Queue loading if not already loaded
-          if (!children[k]) {
+          if (!children.value[k]) {
             toLoad.push({ node, key: k })
           } else {
             // Process already loaded children
-            processNodes(children[k])
+            processNodes(children.value[k])
           }
         }
       }
@@ -87,11 +162,10 @@ async function expandAll() {
     
     await Promise.all(batch.map(async ({ node, key }) => {
       try {
-        const resp = await fetchCollectionRaw(node.id)
-        children[key] = parseMembers(resp)
+        await loadCollectionPage(node, 1)
         
         // Process the newly loaded children
-        processNodes(children[key])
+        processNodes(children.value[key])
       } catch (error) {
         console.warn(`Failed to expand collection ${node.id}:`, error)
       }
@@ -139,10 +213,70 @@ function collapseAll() {
 // Expose methods to parent
 defineExpose({
   expandAll,
-  collapseAll
+  collapseAll,
+  loadMore
 })
 </script>
 <style scoped>
 .cursor-pointer{cursor:pointer}
 .rotate-90{transform:rotate(90deg)}
+
+/* Transition animations for smooth expansion */
+.v-expand-transition-enter-active,
+.v-expand-transition-leave-active {
+  transition: all 0.3s ease;
+}
+
+.v-expand-transition-enter-from,
+.v-expand-transition-leave-to {
+  opacity: 0;
+}
+
+/* Children container for smooth animations */
+.children-container {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Load More Button Styling */
+.load-more-container {
+  margin: 8px 0;
+  padding: 0 4px;
+}
+
+.load-more-btn {
+  text-transform: none !important;
+  font-weight: normal !important;
+  letter-spacing: normal !important;
+  opacity: 0.8;
+  border: 1px dashed rgba(var(--v-theme-primary), 0.3) !important;
+  border-radius: 8px !important;
+  min-height: 32px !important;
+  transition: all 0.2s ease !important;
+}
+
+.load-more-btn:hover:not([disabled]) {
+  opacity: 1;
+  border-color: rgba(var(--v-theme-primary), 0.6) !important;
+  background-color: rgba(var(--v-theme-primary), 0.04) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(var(--v-theme-primary), 0.2);
+}
+
+/* Loading and disabled state styling */
+.load-more-btn:disabled,
+.load-more-btn.v-btn--loading {
+  opacity: 0.6;
+  transform: none !important;
+}
 </style>

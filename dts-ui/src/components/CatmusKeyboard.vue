@@ -68,7 +68,8 @@ function displayChar(ch){
 <style scoped>
 .junicode {
   font-family: 'Junicode', ui-serif, serif;
-  font-feature-settings: 'liga' 1, 'hlig' 1, 'calt' 0;
+  /* Disable discretionary and standard ligatures to preserve MUFI/medieval glyph sequences */
+  font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0;
 }
 .kb-row + .kb-row { margin-top: 8px; }
 .kb-keys { display: flex; flex-wrap: wrap; gap: 6px; }

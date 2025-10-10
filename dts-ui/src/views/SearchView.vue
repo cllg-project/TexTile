@@ -688,7 +688,8 @@ watch(() => route.query, () => {
 :deep(.junicode-input input),
 :deep(.junicode-input textarea) {
   font-family: 'Junicode', ui-serif, serif !important;
-  font-feature-settings: 'liga' 1, 'hlig' 1, 'calt' 0;
+  /* Disable ligatures to avoid automatic glyph substitution (important for medieval text) */
+  font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0 !important;
   font-size: 1.05rem;
   line-height: 1.2;
 }

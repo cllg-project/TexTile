@@ -1140,7 +1140,9 @@ watch(
 :deep(.reader-html) {
   font-family: 'Junicode', 'Noto Serif', serif;
   font-variation-settings: "wght" 600;
-  font-variant-ligatures: common discretionary contextual;
+  /* Disable typographic ligatures to keep medieval letterforms literal and avoid unexpected substitutions */
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0;
   font-variant-numeric: oldstyle-nums;
   /* dynamic size from control */
   font-size: var(--reader-font-size, 18px);
