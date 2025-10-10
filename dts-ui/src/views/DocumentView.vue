@@ -197,7 +197,7 @@
                         @click="doSearch" 
                         variant="tonal" 
                         icon="mdi-magnify"
-                        class="square-btn"
+                        class="search-action-btn"
                         v-bind="props"
                       />
                     </template>
@@ -209,7 +209,7 @@
                         variant="tonal" 
                         @click="clearHits"
                         icon="mdi-close"
-                        class="square-btn"
+                        class="search-action-btn"
                         v-bind="props"
                       />
                     </template>
@@ -814,12 +814,26 @@ async function doSearch(){
 
   searching.value = true
   try {
-    const url = `${BASE}/search/?q=${encodeURIComponent(searchQ.value)}&resource=${encodeURIComponent(resource)}`
+    // Use updated API endpoint with pagination support
+    const params = new URLSearchParams()
+    params.append('q', searchQ.value)
+    params.append('resource', resource)
+    params.append('mode', 'exact')
+    params.append('page', '1') // First page for in-document search
+    params.append('size', '50') // Reasonable size for in-document search
+    
+    const url = `${BASE}/search/?${params.toString()}`
     const res = await fetch(url, { signal: ctrl.signal })
     if (!res.ok) throw new Error('Search failed')
     const data = await res.json()
-    const items = Array.isArray(data) ? data : (data.items || [])
-    matches.value = items.filter(d => d?.ref).map(d => ({ ref: d.ref, snippet: d.snippet || '' }))
+    
+    // Handle the response format with total and items
+    const items = data.items || []
+    matches.value = items.filter(d => d?.ref).map(d => ({ 
+      ref: d.ref, 
+      snippet: d.snippet || '',
+      title: d.title || ''
+    }))
     highlightTerm.value = searchQ.value
   } catch (e) {
     if (e.name !== 'AbortError') console.warn('search failed', e)
@@ -1199,6 +1213,15 @@ watch(
 :deep(mark.dts-hit){
   background: rgba(255, 214, 51, 0.65);
   padding: 0 .15em; border-radius: 3px;
+}
+
+/* Search action buttons - square-ish style */
+.search-action-btn {
+  width: 40px !important; 
+  height: 40px !important; 
+  min-width: 40px !important;
+  border-radius: 8px !important;
+  font-size: 18px;
 }
 
 /* Right sidebar controls */

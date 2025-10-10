@@ -125,18 +125,25 @@ export default {
       vector: 'Recherche sémantique (ex. "homme pauvre", "cheval")…',
       hybrid: 'Recherche avec les méthodes traditionnelle et sémantique…'
     },
+    mode: {
+      title: 'Mode de Recherche',
+      exact: 'Correspondance Exacte',
+      partial: 'Correspondance Partielle',
+      fuzzy: 'Correspondance Floue',
+      abbreviations: 'Activer les alternatives d\'abréviations (ex. p̄ = par/per)',
+      abbreviationsHelp: 'Développe automatiquement les abréviations médiévales comme p̄ → par/per, q̄ → que/qui',
+      descriptions: {
+        exact: 'Recherche uniquement les correspondances de phrases exactes',
+        partial: 'Permet les correspondances de mots partiels et la recherche de sous-chaînes',
+        fuzzy: 'Permet les correspondances approximatives avec tolérance aux fautes de frappe'
+      }
+    },
     guides: {
       traditional: {
-        title: 'Opérateurs de Recherche Traditionnelle',
+        title: 'Conseils de Recherche',
         tips: {
-          and: 'signifie l\'opération ET',
-          or: 'signifie l\'opération OU',
-          not: 'nie un seul token',
-          phrase: 'entoure les tokens pour former une phrase',
-          prefix: 'à la fin d\'un terme est une requête de préfixe',
-          precedence: 'signifient la précédence',
-          fuzziness: 'après un mot = flou',
-          slop: 'après une phrase = écart'
+          multiWord: 'pour rechercher plusieurs mots, ex. "deus,deum"',
+          phrase: 'pour phrase exacte, ex. "la bouche"'
         }
       },
       vector: {

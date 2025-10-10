@@ -9,16 +9,8 @@
         <div class="text-subtitle-2 mb-2">{{ $t('search.guides.traditional.title') }}</div>
         <v-row>
           <v-col cols="12" md="6">
-            <div class="rule"><v-chip size="x-small" label>+</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.and') }}</div>
-            <div class="rule"><v-chip size="x-small" label>|</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.or') }}</div>
-            <div class="rule"><v-chip size="x-small" label>-</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.not') }}</div>
+            <div class="rule"><v-chip size="x-small" label>,</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.multiWord') }}</div>
             <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.phrase') }}</div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="rule"><v-chip size="x-small" label>*</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.prefix') }}</div>
-            <div class="rule"><v-chip size="x-small" label>( )</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.precedence') }}</div>
-            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.fuzziness') }}</div>
-            <div class="rule"><v-chip size="x-small" label>~num</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.slop') }}</div>
           </v-col>
         </v-row>
       </div>
@@ -51,7 +43,7 @@
     </v-alert>
 
     <!-- Search Type Selector -->
-    <v-card class="mb-4" variant="outlined">
+    <!-- <v-card class="mb-4" variant="outlined">
       <v-card-text class="py-3">
         <div class="text-subtitle-2 mb-3">{{ $t('search.searchMethod') }}</div>
         <v-btn-toggle
@@ -92,7 +84,7 @@
           </div>
         </div>
       </v-card-text>
-    </v-card>
+    </v-card> -->
 
     <!-- Query bar + keyboard toggle -->
     <div class="d-flex align-center" style="gap:12px">
@@ -117,6 +109,75 @@
         {{ $t('search.searchButton') }}
       </v-btn>
     </div>
+
+    <!-- Search Mode Options (only for traditional search) -->
+    <v-card v-if="searchType === 'traditional'" class="mt-4" variant="outlined">
+      <v-card-text class="py-3">
+        <div class="text-subtitle-2 mb-3">{{ $t('search.mode.title') }}</div>
+        
+        <div class="d-flex align-center gap-4 mb-3">
+          <v-btn-toggle
+            v-model="searchMode"
+            mandatory
+            variant="outlined"
+            density="compact"
+            class="flex-shrink-0"
+          >
+            <v-btn 
+              value="exact" 
+              size="small"
+              :color="searchMode === 'exact' ? 'primary' : undefined"
+            >
+              {{ $t('search.mode.exact') }}
+            </v-btn>
+            <v-btn 
+              value="partial" 
+              size="small"
+              :color="searchMode === 'partial' ? 'success' : undefined"
+            >
+              {{ $t('search.mode.partial') }}
+            </v-btn>
+            <v-btn 
+              value="fuzzy" 
+              size="small"
+              :color="searchMode === 'fuzzy' ? 'warning' : undefined"
+            >
+              {{ $t('search.mode.fuzzy') }}
+            </v-btn>
+          </v-btn-toggle>
+
+          <v-checkbox
+            v-model="enableAbbreviations"
+            :label="$t('search.mode.abbreviations')"
+            density="compact"
+            color="info"
+            hide-details
+            :disabled="searchMode !== 'fuzzy'"
+            class="flex-shrink-0"
+          />
+        </div>
+
+        <div class="text-caption text-grey">
+          {{ $t('search.mode.abbreviationsHelp') }}
+        </div>
+
+        <!-- Mode descriptions -->
+        <div class="mt-2 text-caption text-grey">
+          <div v-if="searchMode === 'exact'">
+            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
+            {{ $t('search.mode.descriptions.exact') }}
+          </div>
+          <div v-if="searchMode === 'partial'">
+            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
+            {{ $t('search.mode.descriptions.partial') }}
+          </div>
+          <div v-if="searchMode === 'fuzzy'">
+            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
+            {{ $t('search.mode.descriptions.fuzzy') }}
+          </div>
+        </div>
+      </v-card-text>
+    </v-card>
 
     <!-- Virtual keyboard -->
     <v-expand-transition>
@@ -349,11 +410,14 @@ const page = ref(Number(route.query.page || 1))
 const size = ref(25)
 const searchType = ref(route.query.type || 'traditional')
 
+// Search mode options for traditional search
+const searchMode = ref(route.query.mode || 'exact')
+const enableAbbreviations = ref(route.query.abbrev === 'true')
+
 const loading = ref(false)
 const loaded  = ref(false)
 const total   = ref(0)
 const items   = ref([])
-const mode    = ref('form') // placeholder
 
 // Hybrid search results
 const hybridResults = ref(null)
@@ -438,14 +502,28 @@ async function run(p = page.value){
   try {
     // Normalize medieval text: v->u, j->i for better search results
     // Also apply NFD (Unicode Normalization Form Decomposed) for proper handling of combining characters
-    const normalizedQuery = q.value
+    let normalizedQuery = q.value
       .replace(/V/g, "U")
       .replace(/v/g, "u")
       .replace(/J/g, "I")
       .replace(/j/g, "i")
       .normalize('NFD')
     
-    const res = await searchAll(normalizedQuery, page.value, size.value, searchType.value)
+    // Apply abbreviation alternatives if enabled (only for fuzzy mode)
+    if (enableAbbreviations.value && searchType.value === 'traditional' && searchMode.value === 'fuzzy') {
+      normalizedQuery = applyAbbreviationAlternatives(normalizedQuery)
+      console.log('Abbreviation expansion applied:', normalizedQuery) // Debug log
+    }
+    
+    let res
+    if (searchType.value === 'hybrid') {
+      res = await searchAll(normalizedQuery, page.value, size.value, 'hybrid', 'exact')
+    } else if (searchType.value === 'traditional') {
+      res = await searchAll(normalizedQuery, page.value, size.value, 'traditional', searchMode.value)
+    } else {
+      // Vector search doesn't use mode
+      res = await searchAll(normalizedQuery, page.value, size.value, searchType.value, 'exact')
+    }
     
     if (searchType.value === 'hybrid') {
       // Handle hybrid search results
@@ -472,13 +550,46 @@ async function run(p = page.value){
   }
 }
 
+// Function to apply abbreviation alternatives for medieval texts
+function applyAbbreviationAlternatives(query) {
+  // Common medieval abbreviations and their alternatives
+  const abbreviations = {
+    // p with stroke = par/per
+    'ꝑ': '(par|per)',
+    'p̄': '(par|per)',
+    // q with stroke = que/qui
+    'q̄': '(que|qui)',
+    'ꝙ': '(que|qui)',
+    // Common Latin contractions
+    'dñs': '(dominus|dns)',
+    'dm̄': '(dominum|domino)',
+    'xp̄i': '(christi|xpi)',
+    'ih̄u': '(ihesu|jesu)',
+    // Add more abbreviations as needed
+    'p̄p': '(propter|prep)',
+    'q̄d': '(quod|qd)',
+    'ꝰ': '(us|vs)', // us abbreviation mark
+  }
+  
+  let expandedQuery = query
+  
+  // Replace each abbreviation with its alternatives in regex format
+  for (const [abbrev, alternatives] of Object.entries(abbreviations)) {
+    expandedQuery = expandedQuery.replace(new RegExp(abbrev, 'g'), alternatives)
+  }
+  
+  return expandedQuery
+}
+
 function pushState(){
   router.replace({ 
     name: 'search', 
     query: { 
       q: q.value || undefined, 
       page: page.value > 1 ? page.value : undefined,
-      type: searchType.value !== 'traditional' ? searchType.value : undefined
+      type: searchType.value !== 'traditional' ? searchType.value : undefined,
+      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined,
+      abbrev: enableAbbreviations.value ? 'true' : undefined
     } 
   })
 }
@@ -509,10 +620,26 @@ watch(searchType, () => {
   }
 })
 
+// Watch for search mode changes
+watch(searchMode, (newMode) => {
+  // Disable abbreviations when not in fuzzy mode
+  if (newMode !== 'fuzzy') {
+    enableAbbreviations.value = false
+  }
+  pushState()
+})
+
+// Watch for abbreviation changes
+watch(enableAbbreviations, () => {
+  pushState()
+})
+
 watch(() => route.query, () => {
   q.value = route.query.q?.toString() || ''
   page.value = Number(route.query.page || 1)
   searchType.value = route.query.type || 'traditional'
+  searchMode.value = route.query.mode || 'exact'
+  enableAbbreviations.value = route.query.abbrev === 'true'
   run(page.value)
 })
 </script>

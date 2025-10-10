@@ -125,18 +125,25 @@ export default {
       vector: 'Search semantically (e.g., "homme pauvre", "cheval")…',
       hybrid: 'Search with both traditional and semantic methods…'
     },
+    mode: {
+      title: 'Search Mode',
+      exact: 'Exact Match',
+      partial: 'Partial Match', 
+      fuzzy: 'Fuzzy Match',
+      abbreviations: 'Enable abbreviation alternatives (e.g. p̄ = par/per)',
+      abbreviationsHelp: 'Automatically expands medieval abbreviations like p̄ → par/per, q̄ → que/qui',
+      descriptions: {
+        exact: 'Search for exact phrase matches only',
+        partial: 'Allow partial word matches and substring search',
+        fuzzy: 'Allow approximate matches with typo tolerance'
+      }
+    },
     guides: {
       traditional: {
-        title: 'Traditional Search Operators',
+        title: 'Search Tips',
         tips: {
-          and: 'signifies AND operation',
-          or: 'signifies OR operation',
-          not: 'negates a single token',
-          phrase: 'wraps tokens to make a phrase',
-          prefix: 'at the end of a term is a prefix query',
-          precedence: 'signify precedence',
-          fuzziness: 'after a word = fuzziness',
-          slop: 'after a phrase = slop'
+          multiWord: 'for multiple word search, e.g. "deus,deum"',
+          phrase: 'for exact phrase, e.g. "la bouche"'
         }
       },
       vector: {

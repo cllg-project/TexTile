@@ -513,7 +513,14 @@ async function performMetadataSearch(query, searchType) {
   searchError.value = ''
   
   try {
-    const result = await searchManuscripts(query, 50, searchType || selectedSearchType.value)
+    // Use pagination for general and language searches, but not for date searches
+    let result
+    if (searchType === 'date') {
+      result = await searchManuscripts(query, 1, 50, searchType)
+    } else {
+      result = await searchManuscripts(query, 1, 50, searchType)
+    }
+    
     const items = result.items || result.manuscripts || []
     manuscriptResults.value = items
     

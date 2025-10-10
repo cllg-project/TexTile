@@ -60,11 +60,16 @@ export async function fetchRootCollection() {
 }
 
 /**
- * Collection by id (IRI or slug)
- * GET /collection/?id=...
+ * Collection by id with pagination support
+ * GET /collection/?id=...&nav=...&page=...
  */
-export async function fetchCollectionRaw(id) {
-  const url = `${BASE}/collection/?id=${encodeURIComponent(id)}`;
+export async function fetchCollectionRaw(id, nav = 'children', page = 1) {
+  const params = new URLSearchParams();
+  if (id) params.append('id', id);
+  if (nav) params.append('nav', nav);
+  if (page) params.append('page', page.toString());
+  
+  const url = `${BASE}/collection/?${params.toString()}`;
   const text = await fetchText(url);
   if (looksLikeJsonString(text)) {
     const j = safeJsonParse(text);
@@ -91,10 +96,26 @@ export async function fetchNavigation(resource, tree, signal) {
 
 /**
  * Fetch a page (passage) in HTML or XML
- * GET /document/?resource=...&ref=...&mediaType=html|application/xml
+ * GET /document/?resource=...&ref=...&mediaType=html|application/xml&tree=...
+ * Also supports range retrieval with start/end parameters
  */
-export async function fetchPage(resource, ref, media = 'html', signal) {
-  const url = `${BASE}/document/?resource=${encodeURIComponent(resource)}&ref=${encodeURIComponent(ref)}&mediaType=${encodeURIComponent(media)}`;
+export async function fetchPage(resource, ref, media = 'html', signal, tree = '', startRef = null, endRef = null) {
+  const params = new URLSearchParams();
+  params.append('resource', resource);
+  params.append('mediaType', media);
+  
+  if (tree) params.append('tree', tree);
+  
+  if (startRef && endRef) {
+    // Range retrieval
+    params.append('start', startRef);
+    params.append('end', endRef);
+  } else if (ref) {
+    // Single page retrieval
+    params.append('ref', ref);
+  }
+  
+  const url = `${BASE}/document/?${params.toString()}`;
   return fetchText(url, { signal });
 }
 
@@ -181,59 +202,53 @@ export function extractRefsFromNavigation(nav) {
   return [];
 }
 
-/* ----------------------------- search hook --------------------------- */
+/* ----------------------------- search functions ---------------------- */
 
 /**
- * Resource-scoped search (Elasticsearch-backed).
- *   [{ ref: "f9-f-004v-005", snippet?: "<em>hit</em> ..." }, ...]
+ * Text search with mode support (exact, fuzzy, partial) and pagination
+ * GET /search/?q=...&resource=...&mode=...&page=...&size=...
  */
-
-export async function searchInResource(q, resource, size = 50) {
-  const base = import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000';
-  const url = `${base}/search/?q=${encodeURIComponent(q)}&resource=${encodeURIComponent(resource)}&size=${size}`;
+export async function searchInResource(q, resource, size = 50, mode = 'exact', page = 1) {
+  const params = new URLSearchParams();
+  params.append('q', q);
+  params.append('mode', mode);
+  params.append('page', page.toString());
+  params.append('size', size.toString());
+  if (resource) params.append('resource', resource);
+  
+  const url = `${BASE}/search/?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('Search failed');
-  return await res.json(); // [{ ref, snippet }]
+  return await res.json();
 }
-export async function searchAll(q, page = 1, size = 25, searchType = 'traditional') {
-  const base = import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000';
+
+/**
+ * Global text search across all resources
+ * Supports both traditional and hybrid search modes
+ */
+export async function searchAll(q, page = 1, size = 25, searchType = 'traditional', mode = 'exact', resource = null) {
+  const params = new URLSearchParams();
+  params.append('q', q);
+  params.append('page', page.toString());
+  params.append('size', size.toString());
   
-  // Build URL based on search type
+  if (resource) params.append('resource', resource);
+  
   let endpoint;
-  switch (searchType) {
-    case 'vector':
-      endpoint = '/search/vector/';
-      break;
-    case 'hybrid':
-      endpoint = '/search/hybrid/';
-      break;
-    case 'traditional':
-    default:
-      endpoint = '/search/';
-      break;
+  if (searchType === 'hybrid') {
+    endpoint = '/search/hybrid/';
+    // Hybrid search doesn't use mode parameter
+  } else {
+    endpoint = '/search/';
+    params.append('mode', mode); // Mode only applies to traditional search
   }
   
-  const url = `${base}${endpoint}?q=${encodeURIComponent(q)}&page=${page}&size=${size}`;
+  const url = `${BASE}${endpoint}?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${searchType} search failed`);
   const data = await res.json();
   
-  // Backend now handles all highlighting and snippet creation
-  // Just return the data as-is for all search types
-  if (searchType === 'vector' || searchType === 'hybrid') {
-    return data;
-  }
-  
-  if (Array.isArray(data)) {
-    // backward-compat for old array format
-    const DEFAULT_COLLECTION = import.meta.env.VITE_DTS_DEFAULT_COLLECTION || 'testID';
-    const items = data.map(d => ({
-      collection: d.collection || d.resource || DEFAULT_COLLECTION,
-      ref: d.ref,
-      snippet: d.snippet || d.content || '',
-    })).filter(d => d.ref);
-    return { total: items.length, items };
-  }
+  // Ensure consistent response format
   return {
     total: data.total || 0,
     items: (data.items || []).map(d => ({
@@ -252,16 +267,17 @@ export async function searchAll(q, page = 1, size = 25, searchType = 'traditiona
 
 
 /**
- * Manuscript-level metadata search
- * - General/Language: GET /manuscripts/?q=...&size=...
+ * Manuscript catalog search with pagination support
+ * - General: GET /manuscripts/?q=...&page=...&size=...
+ * - Language: GET /manuscripts/language/?q=...&page=...&size=...
  * - Date ranges: GET /manuscripts/range/?q=800-1400&size=...
  * - Complex dates: GET /manuscripts/date/?exact_start=800&size=...
  * Returns manuscript collections with metadata
  */
-export async function searchManuscripts(q, size = 25, searchType = 'general') {
-  const base = import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000';
+export async function searchManuscripts(q, page = 1, size = 25, searchType = 'general') {
+  const params = new URLSearchParams();
   
-  let url;
+  let endpoint;
   
   if (searchType === 'date') {
     // Parse date query to determine the best format
@@ -277,32 +293,35 @@ export async function searchManuscripts(q, size = 25, searchType = 'general') {
     
     // If it's a simple range (start_year and stop_year), use the simpler /manuscripts/range/ endpoint
     if (dateParams.start_year !== undefined && dateParams.stop_year !== undefined && !dateParams.exact_start && !dateParams.exact_stop) {
+      endpoint = '/manuscripts/range/';
       const rangeQuery = `${dateParams.start_year}-${dateParams.stop_year}`;
-      url = `${base}/manuscripts/range/?q=${encodeURIComponent(rangeQuery)}&size=${size}`;
+      params.append('q', rangeQuery);
+      params.append('size', size.toString()); // Range endpoint doesn't use pagination
     } else {
       // For complex queries (exact matches, single-sided ranges), use /manuscripts/date/
-      const params = new URLSearchParams();
+      endpoint = '/manuscripts/date/';
       
       // Add date-specific parameters
-      if (dateParams.exact_start) params.append('exact_start', dateParams.exact_start);
-      if (dateParams.exact_stop) params.append('exact_stop', dateParams.exact_stop);
-      if (dateParams.start_year) params.append('start_year', dateParams.start_year);
-      if (dateParams.stop_year) params.append('stop_year', dateParams.stop_year);
-      params.append('size', size);
-      
-      url = `${base}/manuscripts/date/?${params.toString()}`;
+      if (dateParams.exact_start) params.append('exact_start', dateParams.exact_start.toString());
+      if (dateParams.exact_stop) params.append('exact_stop', dateParams.exact_stop.toString());
+      if (dateParams.start_year) params.append('start_year', dateParams.start_year.toString());
+      if (dateParams.stop_year) params.append('stop_year', dateParams.stop_year.toString());
+      params.append('size', size.toString()); // Date endpoint doesn't use pagination
     }
   } else {
-    // For general and language searches, use the q parameter
+    // For general and language searches with pagination support
     const endpoints = {
       general: '/manuscripts/',
       language: '/manuscripts/language/'
     };
     
-    const endpoint = endpoints[searchType] || endpoints.general;
-    url = `${base}${endpoint}?q=${encodeURIComponent(q)}&size=${size}`;
+    endpoint = endpoints[searchType] || endpoints.general;
+    params.append('q', q);
+    params.append('page', page.toString());
+    params.append('size', size.toString());
   }
   
+  const url = `${BASE}${endpoint}?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) {
     const errorText = await res.text().catch(() => '');
@@ -397,15 +416,59 @@ function parseDateQuery(query) {
   
   return params;
 }
+
+/**
+ * Helper function for hybrid search
+ */
+export async function searchHybrid(q, page = 1, size = 25, resource = null) {
+  return searchAll(q, page, size, 'hybrid', 'exact', resource);
+}
+
+/**
+ * Helper function for fuzzy search
+ */
+export async function searchFuzzy(q, page = 1, size = 25, resource = null) {
+  return searchAll(q, page, size, 'traditional', 'fuzzy', resource);
+}
+
+/**
+ * Helper function for partial search
+ */
+export async function searchPartial(q, page = 1, size = 25, resource = null) {
+  return searchAll(q, page, size, 'traditional', 'partial', resource);
+}
+
+/**
+ * Helper function for exact search (default mode)
+ */
+export async function searchExact(q, page = 1, size = 25, resource = null) {
+  return searchAll(q, page, size, 'traditional', 'exact', resource);
+}
+
 /* ----------------------------- url helpers --------------------------- */
 
 /**
  * Build a document URL (useful for downloads/exports).
- * media can be 'html' or 'application/xml'
+ * Supports both single page and range retrieval
+ * media can be 'html', 'application/xml', or 'text/html'
  */
-export function buildDocumentUrl(resource, ref, media = 'html', tree = '') {
-  const qTree = tree ? `&tree=${encodeURIComponent(tree)}` : '';
-  return `${BASE}/document/?resource=${encodeURIComponent(resource)}&ref=${encodeURIComponent(ref)}${qTree}&mediaType=${encodeURIComponent(media)}`;
+export function buildDocumentUrl(resource, ref, media = 'html', tree = '', startRef = null, endRef = null) {
+  const params = new URLSearchParams();
+  params.append('resource', resource);
+  params.append('mediaType', media);
+  
+  if (tree) params.append('tree', tree);
+  
+  if (startRef && endRef) {
+    // Range retrieval
+    params.append('start', startRef);
+    params.append('end', endRef);
+  } else if (ref) {
+    // Single page retrieval
+    params.append('ref', ref);
+  }
+  
+  return `${BASE}/document/?${params.toString()}`;
 }
 
 export { BASE as DTS_BASE_URL };
