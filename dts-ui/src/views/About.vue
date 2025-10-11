@@ -161,9 +161,9 @@
                 <v-icon size="32" color="white">mdi-translate</v-icon>
               </div>
               <div>
-                <div class="stat-number gradient-text-orange">2</div>
+                <div class="stat-number gradient-text-orange">3</div>
                 <div class="stat-label">{{ $t('about.stats.languages') }}</div>
-                <div class="stat-sublabel">{{ $t('about.stats.languageSubtitle') }}</div>
+                <div class="stat-sublabel">Latin, Old French & Italian</div>
               </div>
             </v-card-text>
           </v-card>
@@ -192,7 +192,7 @@
               >
                 <div>
                   <div class="chip-label">Languages</div>
-                  <div class="chip-value">Latin, Old French</div>
+                  <div class="chip-value">Latin, Old French, Italian</div>
                 </div>
               </v-chip>
             </v-col>
@@ -243,7 +243,7 @@
               size="large"
               class="ma-2 action-btn" 
               prepend-icon="mdi-file-pdf-box"
-              :href="preprintUrl" 
+              @click="openPreprint" 
               target="_blank" 
               rel="noopener"
             >
@@ -344,7 +344,7 @@
               size="large"
               class="ma-2" 
               prepend-icon="mdi-email"
-              href="mailto:corpus-team@example.org"
+              :href="`mailto:${config.contactEmail}`"
             >
               {{ $t('about.contact.contactTeam') }}
             </v-btn>
@@ -378,6 +378,7 @@ import arrow1Animation from '@/assets/arrow5.json'
 import Arrow2Animation from '@/assets/arrow3.json'
 import Arrow3Animation from '@/assets/arrow6.json'
 import Arrow5Animation from '@/assets/arrow11.json'
+import config from '@/config/urls.js'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -385,7 +386,7 @@ const router = useRouter()
 const showFullAbout = ref(false)
 const snackbar = ref(false)
 const snackbarMsg = ref('')
-const preprintUrl = 'https://example.org/path/to/preprint.pdf'
+
 
 // Arrow refs
 const leftArrow = ref(null)
@@ -408,18 +409,9 @@ function showFull(){ showFullAbout.value = true }
 function hideFull(){ showFullAbout.value = false }
 
 async function copyCitation(){
-  const text = 'Transcribing the Middle Ages: A Massive 2.5-Billion-Token Corpus of Medieval Latin and French. (2025). [Corpus & pipeline description]. Authors. DOI: insert-DOI-here.'
+  const text = config.citationText
   try{
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text)
-    } else {
-      const ta = document.createElement('textarea')
-      ta.value = text
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand('copy')
-      document.body.removeChild(ta)
-    }
+    await navigator.clipboard.writeText(text)
     snackbarMsg.value = t('about.citation.copied')
   } catch {
     snackbarMsg.value = t('about.citation.failed')
@@ -428,7 +420,11 @@ async function copyCitation(){
 }
 
 function openProject(){
-  window.open('#', '_blank', 'noopener')
+  window.open(config.projectPageUrl, '_blank', 'noopener')
+}
+
+function openPreprint(){
+  window.open(config.preprintUrl, '_blank', 'noopener')
 }
 
 function performSearch() {
@@ -1375,19 +1371,15 @@ onMounted(() => {
 
 /* Expandable Download Button */
 .download-button-container {
-  width: 56px;
-  transition: width 0.3s ease; /* default when not hovered */
-}
-.download-button-container:hover {
   width: 220px;
-  transition: width 3s cubic-bezier(0.25,0.46,0.45,0.94);
+  transition: width 0.3s ease;
 }
 .download-expandable-btn {
   width: 100%;                    /* take the container’s animated width */
   border-radius: 50px !important;
   margin-top: 8px !important  ;
   height: 44px !important;
-  padding: 0 16px !important;
+  padding: 0 24px !important;
   overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 150, 136, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease; /* not width here */
@@ -1406,33 +1398,19 @@ onMounted(() => {
 .download-icon {
   transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   flex-shrink: 0;
+  margin-right: 8px;
 }
 
 .download-expandable-btn:hover .download-icon {
-  margin-right: 8px;
   transform: rotate(360deg);
 }
 
 .download-text {
   display: inline-block;
-  overflow: hidden;
   white-space: nowrap;
-  opacity: 0;
-  max-width: 0;                      /* numeric, animatable */
+  opacity: 1;
   font-size: 0.8rem;
   font-weight: 600;
-  transition:
-    opacity 0.5s cubic-bezier(0.25,0.46,0.45,0.94) 0.2s,
-    max-width 0.6s cubic-bezier(0.25,0.46,0.45,0.94);
-}
-.download-button-container:hover .download-text {
-  opacity: 1;
-  max-width: 220px;
-}
-.download-expandable-btn:hover .download-text {
-  opacity: 1;
-  width: auto;
-  transition-delay: 0.2s, 0s;
 }
 
 /* Responsive adjustments for search section */

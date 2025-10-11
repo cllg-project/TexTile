@@ -110,6 +110,7 @@ export default {
     comingSoon: 'Coming Soon',
     searchButton: 'Search',
     virtualKeyboard: 'Virtual Keyboard',
+    specialKeyboard: 'Special Keyboard',
     results: 'Results',
     noResults: 'No results.',
     showingResults: 'Showing {start}–{end} of {total}',
@@ -130,8 +131,7 @@ export default {
       exact: 'Exact Match',
       partial: 'Partial Match', 
       fuzzy: 'Fuzzy Match',
-      abbreviations: 'Enable abbreviation alternatives (e.g. p̄ = par/per)',
-      abbreviationsHelp: 'Automatically expands medieval abbreviations like p̄ → par/per, q̄ → que/qui',
+
       descriptions: {
         exact: 'Search for exact phrase matches only',
         partial: 'Allow partial word matches and substring search',
@@ -241,11 +241,9 @@ export default {
     subtitle: 'A unique worldwide corpus of medieval manuscripts automatically transcribed using artificial intelligence.',
     introduction: {
       corpus: 'We have created a unique worldwide corpus of medieval manuscripts, automatically transcribed using artificial intelligence (HTR – Handwritten Text Recognition). It is the logical continuation of our previous work around ',
-      catmusUrl: 'https://inria.hal.science/hal-04453952',
       catmusDescription: ', a massive dataset for training handwriting recognition models in medieval manuscripts.',
       paper: 'The corpus presented here is described in an article, in English, also presenting its limitations and the framework of its creation: ',
-      paperUrl: 'URL_PAPER',
-      paperLink: 'PAPER URL'
+      paperLink: 'Research Paper'
     },
     features: {
       title: 'Corpus Features',
@@ -272,7 +270,7 @@ export default {
         },
         {
           title: 'Prospects:',
-          description: 'the corpus will be progressively enriched with new collections and new medieval languages, starting with Spanish and other Latin traditions.'
+          description: 'the corpus will be progressively enriched with new collections and new medieval languages, including Italian and other traditions.'
         }
       ]
     },
@@ -284,23 +282,16 @@ export default {
     projects: {
       title: 'Projects and Funding',
       description: 'This corpus was produced as part of the ',
-      colafUrl: 'https://colaf.huma-num.fr/',
       and: ' and',
       biblissima: 'Produced with the help of the Biblissima+ equipment of excellence for source identification and metadata, and software such as Kraken or eScriptorium.'
     },
     technology: {
       title: 'Technologies Used',
       dtsUi: {
-        name: 'DTS-UI-NAME',
-        description: 'developed by Hassen Aguili, whose code is available at ',
-        url: 'ADDRESS',
-        linkText: 'ADDRESS'
+        description: 'developed by Hassen Aguili, whose code is available at '
       },
       mydapytains: {
-        name: 'MyDapytains',
-        description: 'developed by Thibault Clérice, funded by the PIQ CLLG project (ANR Mention), available at ',
-        url: 'ADDRESS',
-        linkText: 'ADDRESS'
+        description: 'developed by Thibault Clérice, funded by the PIQ CLLG project (ANR Mention), available at '
       }
     },
     stats: {
@@ -313,7 +304,7 @@ export default {
       title: 'Languages',
       latin: 'Medieval Latin',
       oldFrench: 'Old French',
-      upcoming: 'Spanish (upcoming)'
+      italian: 'Italian'
     },
     sources: {
       title: 'Main Sources',

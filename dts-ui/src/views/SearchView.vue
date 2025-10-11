@@ -86,27 +86,36 @@
       </v-card-text>
     </v-card> -->
 
-    <!-- Query bar + keyboard toggle -->
+    <!-- Query bar + search button + keyboard toggle -->
     <div class="d-flex align-center" style="gap:12px">
       <v-text-field
         ref="inputRef"
         v-model="q"
         :placeholder="searchPlaceholder"
-        clearable
-        hide-details
+        variant="outlined"
         density="comfortable"
-        class="flex-grow-1 junicode-input"
-        append-inner-icon="mdi-keyboard-outline"
-        @click:append-inner="showKeyboard = !showKeyboard"
+        hide-details
+        class="junicode-input search-input"
         @keydown.enter="run(1)"
       />
       <v-btn 
-        color="primary" 
+        color="primary"
         @click="run(1)"
         :loading="loading"
+        variant="elevated"
+        size="large"
       >
-        <v-icon start>{{ searchTypeIcon }}</v-icon>
-        {{ $t('search.searchButton') }}
+        <v-icon>mdi-magnify</v-icon>
+        <span class="ml-2 d-none d-sm-inline">{{ $t('search.searchButton') }}</span>
+      </v-btn>
+      <v-btn 
+        @click="showKeyboard = !showKeyboard"
+        :color="showKeyboard ? 'primary' : 'default'"
+        variant="outlined"
+        size="large"
+      >
+        <v-icon>mdi-keyboard-variant</v-icon>
+        <span class="ml-2 d-none d-sm-inline">{{ $t('search.specialKeyboard') }}</span>
       </v-btn>
     </div>
 
@@ -145,20 +154,6 @@
               {{ $t('search.mode.fuzzy') }}
             </v-btn>
           </v-btn-toggle>
-
-          <v-checkbox
-            v-model="enableAbbreviations"
-            :label="$t('search.mode.abbreviations')"
-            density="compact"
-            color="info"
-            hide-details
-            :disabled="searchMode !== 'fuzzy'"
-            class="flex-shrink-0"
-          />
-        </div>
-
-        <div class="text-caption text-grey">
-          {{ $t('search.mode.abbreviationsHelp') }}
         </div>
 
         <!-- Mode descriptions -->
@@ -412,7 +407,6 @@ const searchType = ref(route.query.type || 'traditional')
 
 // Search mode options for traditional search
 const searchMode = ref(route.query.mode || 'exact')
-const enableAbbreviations = ref(route.query.abbrev === 'true')
 
 const loading = ref(false)
 const loaded  = ref(false)
@@ -509,11 +503,7 @@ async function run(p = page.value){
       .replace(/j/g, "i")
       .normalize('NFD')
     
-    // Apply abbreviation alternatives if enabled (only for fuzzy mode)
-    if (enableAbbreviations.value && searchType.value === 'traditional' && searchMode.value === 'fuzzy') {
-      normalizedQuery = applyAbbreviationAlternatives(normalizedQuery)
-      console.log('Abbreviation expansion applied:', normalizedQuery) // Debug log
-    }
+
     
     let res
     if (searchType.value === 'hybrid') {
@@ -550,36 +540,7 @@ async function run(p = page.value){
   }
 }
 
-// Function to apply abbreviation alternatives for medieval texts
-function applyAbbreviationAlternatives(query) {
-  // Common medieval abbreviations and their alternatives
-  const abbreviations = {
-    // p with stroke = par/per
-    'ꝑ': '(par|per)',
-    'p̄': '(par|per)',
-    // q with stroke = que/qui
-    'q̄': '(que|qui)',
-    'ꝙ': '(que|qui)',
-    // Common Latin contractions
-    'dñs': '(dominus|dns)',
-    'dm̄': '(dominum|domino)',
-    'xp̄i': '(christi|xpi)',
-    'ih̄u': '(ihesu|jesu)',
-    // Add more abbreviations as needed
-    'p̄p': '(propter|prep)',
-    'q̄d': '(quod|qd)',
-    'ꝰ': '(us|vs)', // us abbreviation mark
-  }
-  
-  let expandedQuery = query
-  
-  // Replace each abbreviation with its alternatives in regex format
-  for (const [abbrev, alternatives] of Object.entries(abbreviations)) {
-    expandedQuery = expandedQuery.replace(new RegExp(abbrev, 'g'), alternatives)
-  }
-  
-  return expandedQuery
-}
+
 
 function pushState(){
   router.replace({ 
@@ -588,8 +549,7 @@ function pushState(){
       q: q.value || undefined, 
       page: page.value > 1 ? page.value : undefined,
       type: searchType.value !== 'traditional' ? searchType.value : undefined,
-      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined,
-      abbrev: enableAbbreviations.value ? 'true' : undefined
+      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined
     } 
   })
 }
@@ -621,16 +581,7 @@ watch(searchType, () => {
 })
 
 // Watch for search mode changes
-watch(searchMode, (newMode) => {
-  // Disable abbreviations when not in fuzzy mode
-  if (newMode !== 'fuzzy') {
-    enableAbbreviations.value = false
-  }
-  pushState()
-})
-
-// Watch for abbreviation changes
-watch(enableAbbreviations, () => {
+watch(searchMode, () => {
   pushState()
 })
 
@@ -639,7 +590,6 @@ watch(() => route.query, () => {
   page.value = Number(route.query.page || 1)
   searchType.value = route.query.type || 'traditional'
   searchMode.value = route.query.mode || 'exact'
-  enableAbbreviations.value = route.query.abbrev === 'true'
   run(page.value)
 })
 </script>
@@ -692,5 +642,37 @@ watch(() => route.query, () => {
   font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0 !important;
   font-size: 1.05rem;
   line-height: 1.2;
+}
+
+/* Fix placeholder text cutoff */
+:deep(.search-input) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:deep(.search-input .v-field) {
+  width: 100% !important;
+}
+
+:deep(.search-input .v-field__input) {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+:deep(.search-input .v-field__field) {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+:deep(.search-input input) {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+:deep(.search-input input::placeholder) {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
 }
 </style>

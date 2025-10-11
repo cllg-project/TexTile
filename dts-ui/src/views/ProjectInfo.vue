@@ -28,13 +28,13 @@
           <v-card-text class="pa-6">
             <div class="text-body-1 mb-4">
               {{ $t('projectInfo.introduction.corpus') }}
-              <a :href="$t('projectInfo.introduction.catmusUrl')" target="_blank" class="text-decoration-none">
+              <a :href="config.catmusUrl" target="_blank" class="text-decoration-none">
                 CATMuS
               </a>{{ $t('projectInfo.introduction.catmusDescription') }}
             </div>
             <div class="text-body-1">
               {{ $t('projectInfo.introduction.paper') }}
-              <a :href="$t('projectInfo.introduction.paperUrl')" target="_blank" class="text-decoration-none font-weight-medium">
+              <a :href="config.paperUrl" target="_blank" class="text-decoration-none font-weight-medium">
                 {{ $t('projectInfo.introduction.paperLink') }}
               </a>
             </div>
@@ -51,13 +51,13 @@
               <v-list-item
                 v-for="(feature, index) in features"
                 :key="index"
-                class="px-0"
+                class="px-0 mb-3"
               >
                 <template #prepend>
-                  <v-icon color="primary" class="mr-3">mdi-check-circle</v-icon>
+                  <v-icon color="primary" class="mr-3 mt-1">mdi-check-circle</v-icon>
                 </template>
-                <v-list-item-title class="text-body-1">
-                  <strong>{{ feature.title }}</strong> {{ feature.description }}
+                <v-list-item-title class="text-body-1" style="white-space: normal; line-height: 1.6;">
+                  <strong>{{ feature.title }}</strong><br>{{ feature.description }}
                 </v-list-item-title>
               </v-list-item>
             </v-list>
@@ -89,7 +89,7 @@
           <v-card-text class="pa-6">
             <div class="text-body-1 mb-4">
               {{ $t('projectInfo.projects.description') }}
-              <a :href="$t('projectInfo.projects.colafUrl')" target="_blank" class="text-decoration-none font-weight-medium">
+              <a :href="config.colafProjectUrl" target="_blank" class="text-decoration-none font-weight-medium">
                 COLaF
               </a>
               {{ $t('projectInfo.projects.and') }} ParamHTRs.
@@ -112,10 +112,10 @@
                   <v-icon color="primary" class="mr-3">mdi-code-tags</v-icon>
                 </template>
                 <v-list-item-title class="text-body-1">
-                  <strong>{{ $t('projectInfo.technology.dtsUi.name') }}</strong>, 
+                  <strong>{{ config.dtsUiName }}</strong>, 
                   {{ $t('projectInfo.technology.dtsUi.description') }}
-                  <a :href="$t('projectInfo.technology.dtsUi.url')" target="_blank" class="text-decoration-none">
-                    {{ $t('projectInfo.technology.dtsUi.linkText') }}
+                  <a :href="config.dtsUiRepository" target="_blank" class="text-decoration-none">
+                    {{ config.dtsUiRepository }}
                   </a>
                 </v-list-item-title>
               </v-list-item>
@@ -124,10 +124,10 @@
                   <v-icon color="primary" class="mr-3">mdi-server</v-icon>
                 </template>
                 <v-list-item-title class="text-body-1">
-                  <strong>{{ $t('projectInfo.technology.mydapytains.name') }}</strong>, 
+                  <strong>{{ config.mydapytainsName }}</strong>, 
                   {{ $t('projectInfo.technology.mydapytains.description') }}
-                  <a :href="$t('projectInfo.technology.mydapytains.url')" target="_blank" class="text-decoration-none">
-                    {{ $t('projectInfo.technology.mydapytains.linkText') }}
+                  <a :href="config.mydapytainsRepository" target="_blank" class="text-decoration-none">
+                    {{ config.mydapytainsRepository }}
                   </a>
                 </v-list-item-title>
               </v-list-item>
@@ -166,14 +166,14 @@
           </v-card-title>
           <v-card-text>
             <v-chip-group column>
-              <v-chip color="primary" variant="tonal">
+                            <v-chip variant="outlined" size="small" class="ma-1">
                 {{ $t('projectInfo.languages.latin') }}
               </v-chip>
-              <v-chip color="secondary" variant="tonal">
+              <v-chip variant="outlined" size="small" class="ma-1">
                 {{ $t('projectInfo.languages.oldFrench') }}
               </v-chip>
-              <v-chip color="accent" variant="outlined">
-                {{ $t('projectInfo.languages.upcoming') }}
+              <v-chip variant="outlined" size="small" class="ma-1">
+                {{ $t('projectInfo.languages.italian') }}
               </v-chip>
             </v-chip-group>
           </v-card-text>
@@ -227,7 +227,7 @@
               color="primary" 
               variant="outlined" 
               block 
-              href="mailto:corpus-team@example.org"
+              :href="`mailto:${config.contactEmail}`"
               prepend-icon="mdi-email"
             >
               {{ $t('projectInfo.contact.button') }}
@@ -242,6 +242,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 import { computed } from 'vue'
+import config from '@/config/urls.js'
 
 const { t } = useI18n()
 
@@ -285,7 +286,7 @@ const features = computed(() => {
       },
       {
         title: 'Perspectives :',
-        description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, à commencer par l\'espagnol et d\'autres traditions latines.'
+        description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, incluant l\'italien et d\'autres traditions.'
       }
     ]
   } else {
@@ -312,7 +313,7 @@ const features = computed(() => {
       },
       {
         title: 'Prospects:',
-        description: 'the corpus will be progressively enriched with new collections and new medieval languages, starting with Spanish and other Latin traditions.'
+        description: 'the corpus will be progressively enriched with new collections and new medieval languages, including Italian and other traditions.'
       }
     ]
   }
@@ -356,6 +357,17 @@ const features = computed(() => {
 .v-list-item {
   border-radius: 8px;
   margin-bottom: 4px;
+  align-items: flex-start !important;
+}
+
+:deep(.v-list-item__content) {
+  overflow: visible !important;
+}
+
+:deep(.v-list-item-title) {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 .v-card {

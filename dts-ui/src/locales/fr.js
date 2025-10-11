@@ -110,6 +110,7 @@ export default {
     comingSoon: 'Bientôt Disponible',
     searchButton: 'Rechercher',
     virtualKeyboard: 'Clavier Virtuel',
+    specialKeyboard: 'Clavier Spécial',
     results: 'Résultats',
     noResults: 'Aucun résultat.',
     showingResults: 'Affichage de {start}–{end} sur {total}',
@@ -130,8 +131,7 @@ export default {
       exact: 'Correspondance Exacte',
       partial: 'Correspondance Partielle',
       fuzzy: 'Correspondance Floue',
-      abbreviations: 'Activer les alternatives d\'abréviations (ex. p̄ = par/per)',
-      abbreviationsHelp: 'Développe automatiquement les abréviations médiévales comme p̄ → par/per, q̄ → que/qui',
+
       descriptions: {
         exact: 'Recherche uniquement les correspondances de phrases exactes',
         partial: 'Permet les correspondances de mots partiels et la recherche de sous-chaînes',
@@ -241,11 +241,9 @@ export default {
     subtitle: 'Un corpus unique au monde de manuscrits médiévaux transcrits automatiquement grâce à l\'intelligence artificielle.',
     introduction: {
       corpus: 'Nous avons constitué un corpus unique au monde de manuscrits médiévaux, transcrits automatiquement grâce à l\'intelligence artificielle (HTR – Handwritten Text Recognition). Il est la suite logique de nos travaux antérieurs autour de ',
-      catmusUrl: 'https://inria.hal.science/hal-04453952',
       catmusDescription: ', un jeu de données massif pour l\'entraînement de modèle de reconnaissance d\'écriture manuscrite dans les manuscrits médiévaux.',
       paper: 'Le corpus présenté ici est décrit dans un article, en anglais, présentant aussi ses limites et le cadre de sa création: ',
-      paperUrl: 'URL_PAPER',
-      paperLink: 'URL PAPER'
+      paperLink: 'Article de Recherche'
     },
     features: {
       title: 'Caractéristiques du Corpus',
@@ -272,7 +270,7 @@ export default {
         },
         {
           title: 'Perspectives :',
-          description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, à commencer par l\'espagnol et d\'autres traditions latines.'
+          description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, incluant l\'italien et d\'autres traditions.'
         }
       ]
     },
@@ -284,23 +282,16 @@ export default {
     projects: {
       title: 'Projets et Financements',
       description: 'Ce corpus a été produit dans le cadre des projets ',
-      colafUrl: 'https://colaf.huma-num.fr/',
       and: ' et',
       biblissima: 'Produit avec l\'aide de l\'équipex Biblissima+ pour l\'identification des sources et les métadonnées, et des logiciels tels que Kraken ou eScriptorium.'
     },
     technology: {
       title: 'Technologies Utilisées',
       dtsUi: {
-        name: 'DTS-UI-NAME',
-        description: 'développé par Hassen Aguili, dont le code est disponible à l\'adresse ',
-        url: 'ADRESSE',
-        linkText: 'ADRESSE'
+        description: 'développé par Hassen Aguili, dont le code est disponible à l\'adresse '
       },
       mydapytains: {
-        name: 'MyDapytains',
-        description: 'développé par Thibault Clérice, financé par le projet PIQ CLLG (Mention ANR), disponible à l\'adresse ',
-        url: 'ADRESSE',
-        linkText: 'ADRESSE'
+        description: 'développé par Thibault Clérice, financé par le projet PIQ CLLG (Mention ANR), disponible à l\'adresse '
       }
     },
     stats: {
@@ -313,7 +304,7 @@ export default {
       title: 'Langues',
       latin: 'Latin Médiéval',
       oldFrench: 'Ancien Français',
-      upcoming: 'Espagnol (à venir)'
+      italian: 'Italien'
     },
     sources: {
       title: 'Sources Principales',
