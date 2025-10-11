@@ -122,7 +122,7 @@ export default {
       page: 'Page {current} sur {total}'
     },
     placeholders: {
-      traditional: 'Recherchez avec les opérateurs booléens (+, -, |, *, "phrases")…',
+      traditional: 'Recherchez avec les opérateurs booléens (+, -, ｜, *, "phrases")…',
       vector: 'Recherche sémantique (ex. "homme pauvre", "cheval")…',
       hybrid: 'Recherche avec les méthodes traditionnelle et sémantique…'
     },

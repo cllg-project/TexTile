@@ -328,7 +328,7 @@
       </v-expand-transition>
 
       <!-- Contact -->
-      <v-card class="contact-card" elevation="2">
+      <!-- <v-card class="contact-card" elevation="2">
         <v-card-text class="pa-8 text-center">
           <v-avatar size="64" color="primary" class="mb-4">
             <v-icon size="32" color="white">mdi-email</v-icon>
@@ -360,7 +360,7 @@
             </v-btn>
           </div>
         </v-card-text>
-      </v-card>
+      </v-card> -->
 
       <v-snackbar v-model="snackbar" timeout="2200" location="bottom right">
         {{ snackbarMsg }}

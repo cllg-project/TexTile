@@ -122,7 +122,7 @@ export default {
       page: 'page {current} of {total}'
     },
     placeholders: {
-      traditional: 'Search with Boolean operators (+, -, |, *, "phrases")…',
+      traditional: 'Search with Boolean operators (+, -, ｜, *, "phrases")…',
       vector: 'Search semantically (e.g., "homme pauvre", "cheval")…',
       hybrid: 'Search with both traditional and semantic methods…'
     },

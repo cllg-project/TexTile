@@ -424,6 +424,7 @@ const { t } = useI18n()
 
 // Computed properties for dynamic UI
 const searchPlaceholder = computed(() => {
+  console.log('Search placeholder:', t(`search.placeholders.${searchType.value}`))
   return t(`search.placeholders.${searchType.value}`)
 })
 
