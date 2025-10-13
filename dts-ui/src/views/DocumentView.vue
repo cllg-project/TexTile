@@ -8,165 +8,106 @@
             <!-- DOCUMENT INFO PANEL -->
             <v-expansion-panel>
               <v-expansion-panel-title>
-                <div class="d-flex align-center justify-space-between w-100">
-                  <span>{{ $t('document.info.title') || 'Document Info' }}</span>
-                  <div v-if="displayLanguages.length">
-                    <v-chip-group>
-                      <v-chip 
-                        v-for="(lang, i) in displayLanguages" 
-                        :key="i" 
-                        size="x-small" 
-                        :color="getLanguageColor(lang)"
-                        variant="tonal"
-                        class="language-chip"
-                      >
-                        {{ lang }}
-                      </v-chip>
-                    </v-chip-group>
-                  </div>
-                  <v-chip v-else size="x-small" color="grey" variant="tonal">
-                    {{ $t('document.info.unknownLanguage') || 'Unknown' }}
-                  </v-chip>
+                <div class="d-flex align-center w-100">
+                  <h2 class="document-main-title">{{ documentTitle }}</h2>
                 </div>
               </v-expansion-panel-title>
               <v-expansion-panel-text class="custom-panel">
                 <div class="info-panel-wrapper">
-                  <!-- Title Section -->
-                  <div class="info-section title-section">
-                    <h3 class="doc-title" :title="documentTitle">{{ documentTitle }}</h3>
-                    <div v-if="documentMetadata.dates && documentMetadata.dates.length" class="dates-row">
-                      <v-chip 
-                        v-for="(date, i) in documentMetadata.dates" 
-                        :key="i" 
-                        size="small" 
-                        variant="flat"
-                        color="primary"
-                        class="date-chip"
-                      >
-                        <v-icon size="12" class="mr-1">mdi-calendar</v-icon>
-                        {{ date }}
-                      </v-chip>
-                    </div>
+                  <!-- Languages and Dates Section - Compact Inline -->
+                  <div v-if="uniqueDisplayLanguages.length || (documentMetadata.dates && documentMetadata.dates.length)" class="chips-section">
+                    <v-chip 
+                      v-for="(lang, i) in uniqueDisplayLanguages" 
+                      :key="`lang-${i}`" 
+                      size="small" 
+                      :color="getLanguageColor(lang)"
+                      variant="flat"
+                      class="info-chip language-chip"
+                    >
+                      <v-icon size="14" class="mr-1">mdi-translate</v-icon>
+                      {{ lang }}
+                    </v-chip>
+                    <v-chip 
+                      v-for="(date, i) in documentMetadata.dates" 
+                      :key="`date-${i}`" 
+                      size="small" 
+                      variant="flat"
+                      color="amber-darken-2"
+                      class="info-chip date-chip"
+                    >
+                      <v-icon size="14" class="mr-1">mdi-calendar</v-icon>
+                      {{ formatDateForDisplay(date) }}
+                    </v-chip>
                   </div>
                   
                   <!-- Description Section -->
                   <div v-if="documentMetadata.description" class="info-section description-section">
-                    <div class="section-content">
-                      <div class="section-icon">
-                        <v-icon size="18">mdi-text-box-outline</v-icon>
-                      </div>
-                      <div class="section-text">
-                        <div class="section-label">Description</div>
-                        <p class="description-text">{{ documentMetadata.description }}</p>
-                      </div>
+                    <div class="section-header">
+                      <v-icon size="18" class="section-icon">mdi-text-box-outline</v-icon>
                     </div>
+                    <p class="section-text">{{ documentMetadata.description }}</p>
                   </div>
                   
                   <!-- Metadata Details -->
                   <div v-if="hasMetadataDetails" class="info-section metadata-section">
                     <div v-if="documentMetadata.author" class="metadata-item">
-                      <div class="section-content">
-                        <div class="section-icon">
-                          <v-icon size="18">mdi-account-outline</v-icon>
-                        </div>
-                        <div class="section-text">
-                          <div class="section-label">{{ $t('document.info.author') }}</div>
-                          <div class="section-value">{{ documentMetadata.author }}</div>
-                        </div>
+                      <div class="section-header">
+                        <v-icon size="18" class="section-icon">mdi-account-outline</v-icon>
+                        <span class="section-label">{{ $t('document.info.author') }}</span>
                       </div>
+                      <div class="section-text">{{ documentMetadata.author }}</div>
                     </div>
                     
                     <div v-if="documentMetadata.origin" class="metadata-item">
-                      <div class="section-content">
-                        <div class="section-icon">
-                          <v-icon size="18">mdi-map-marker-outline</v-icon>
-                        </div>
-                        <div class="section-text">
-                          <div class="section-label">{{ $t('document.info.origin') }}</div>
-                          <div class="section-value">{{ documentMetadata.origin }}</div>
-                        </div>
+                      <div class="section-header">
+                        <v-icon size="18" class="section-icon">mdi-map-marker-outline</v-icon>
+                        <span class="section-label">{{ $t('document.info.origin') }}</span>
                       </div>
+                      <div class="section-text">{{ documentMetadata.origin }}</div>
                     </div>
                     
                     <div v-if="documentMetadata.type" class="metadata-item">
-                      <div class="section-content">
-                        <div class="section-icon">
-                          <v-icon size="18">mdi-file-document-outline</v-icon>
-                        </div>
-                        <div class="section-text">
-                          <div class="section-label">{{ $t('document.info.type') }}</div>
-                          <div class="section-value">{{ documentMetadata.type }}</div>
-                        </div>
+                      <div class="section-header">
+                        <v-icon size="18" class="section-icon">mdi-file-document-outline</v-icon>
+                        <span class="section-label">{{ $t('document.info.type') }}</span>
                       </div>
+                      <div class="section-text">{{ documentMetadata.type }}</div>
                     </div>
                   </div>
                   
                   <!-- Keywords -->
                   <div v-if="documentMetadata.keywords && documentMetadata.keywords.length" class="info-section keywords-section">
-                    <div class="section-content">
-                      <div class="section-icon">
-                        <v-icon size="18">mdi-tag-multiple-outline</v-icon>
-                      </div>
-                      <div class="section-text">
-                        <div class="section-label">{{ $t('document.info.keywords') }}</div>
-                        <div class="keywords-container">
-                          <v-chip 
-                            v-for="(keyword, i) in documentMetadata.keywords" 
-                            :key="i" 
-                            size="x-small" 
-                            variant="flat"
-                            :color="getKeywordColor(i)"
-                            class="keyword-chip"
-                          >
-                            {{ keyword }}
-                          </v-chip>
-                        </div>
-                      </div>
+                    <div class="section-header">
+                      <v-icon size="18" class="section-icon">mdi-tag-multiple-outline</v-icon>
+                      <span class="section-label">{{ $t('document.info.keywords') }}</span>
+                    </div>
+                    <div class="keywords-container">
+                      <v-chip 
+                        v-for="(keyword, i) in documentMetadata.keywords" 
+                        :key="i" 
+                        size="small" 
+                        variant="flat"
+                        :color="getKeywordColor(i)"
+                        class="info-chip keyword-chip"
+                      >
+                        {{ keyword }}
+                      </v-chip>
                     </div>
                   </div>
                   
-                  <!-- Sources -->
-                  <div v-if="documentMetadata.sources && documentMetadata.sources.length" class="info-section sources-section">
-                    <div class="section-content">
-                      <div class="section-icon">
-                        <v-icon size="18">mdi-link-variant</v-icon>
-                      </div>
-                      <div class="section-text">
-                        <div class="section-label">{{ $t('document.info.sources') }}</div>
-                        <div class="sources-list">
-                          <div v-for="(source, i) in documentMetadata.sources" :key="i" class="source-item">
-                            <a v-if="isUrl(source)" :href="source" target="_blank" rel="noopener noreferrer" class="source-link">
-                              <v-icon size="12" class="mr-1">mdi-open-in-new</v-icon>
-                              {{ formatSourceLink(source) }}
-                            </a>
-                            <span v-else class="source-text">{{ source }}</span>
-                          </div>
-                        </div>
-                      </div>
+                  <!-- Biblissima Link -->
+                  <div v-if="biblissimaUrl" class="info-section biblissima-section">
+                    <div class="section-header">
+                      <v-icon size="18" class="section-icon">mdi-open-in-new</v-icon>
                     </div>
-                  </div>
-                  
-                  <!-- Identifiers -->
-                  <div v-if="documentMetadata.identifiers && documentMetadata.identifiers.length" class="info-section identifiers-section">
-                    <div class="section-content">
-                      <div class="section-icon">
-                        <v-icon size="18">mdi-identifier</v-icon>
-                      </div>
-                      <div class="section-text">
-                        <div class="section-label">{{ $t('document.info.identifiers') }}</div>
-                        <div class="identifiers-list">
-                          <div
-                            v-for="(id, i) in documentMetadata.identifiers" 
-                            :key="i"
-                            class="identifier-item"
-                            :title="id"
-                          >
-                            <v-icon size="10" class="mr-1">mdi-barcode</v-icon>
-                            <code class="identifier-code">{{ id }}</code>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <a 
+                      :href="biblissimaUrl" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      class="biblissima-link"
+                    >
+                      {{ $t('document.info.biblissimaLink', 'Biblissima link') }}
+                    </a>
                   </div>
                 </div>
               </v-expansion-panel-text>
@@ -242,6 +183,36 @@
               </v-expansion-panel-text>
             </v-expansion-panel>
 
+            <!-- DISPLAY PANEL -->
+            <v-expansion-panel>
+              <v-expansion-panel-title>{{ $t('document.display.title') }}</v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <div class="text-subtitle-2 mb-2">{{ $t('document.display.textSize') }}</div>
+                <div class="d-flex align-center" style="gap:8px">
+                  <v-btn
+                    variant="tonal"
+                    class="size-btn"
+                    :disabled="textPx <= minPx"
+                    @click="decSize"
+                  >
+                    −
+                  </v-btn>
+                  <div class="size-readout">{{ textPx }} px</div>
+                  <v-btn
+                    variant="tonal"
+                    class="size-btn"
+                    :disabled="textPx >= maxPx"
+                    @click="incSize"
+                  >
+                    +
+                  </v-btn>
+                </div>
+                <div class="mt-2">
+                  <v-btn size="x-small" variant="text" @click="resetSize">{{ $t('document.reset') }}</v-btn>
+                </div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+
             <!-- CITE PANEL -->
             <v-expansion-panel>
               <v-expansion-panel-title>{{ $t('document.cite.title') }}</v-expansion-panel-title>
@@ -257,6 +228,25 @@
 
         <!-- MIDDLE: reader -->
         <v-col cols="12" md="6">
+          <!-- Transcription Quality Disclaimer -->
+          <v-alert
+            v-if="showDisclaimer"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-3"
+            closable
+            @click:close="showDisclaimer = false"
+          >
+            <template #prepend>
+              <v-icon>mdi-information-outline</v-icon>
+            </template>
+            <div class="text-body-2">
+              <strong>{{ $t('document.disclaimer.title') }}</strong>
+              {{ $t('document.disclaimer.text') }}
+            </div>
+          </v-alert>
+
           <!-- Top controls -->
           <div class="d-flex align-center justify-space-between mb-2" @keydown.enter="onGotoEnter">
             <div class="d-flex align-center suppress-page-arrows" style="gap:8px">
@@ -309,56 +299,32 @@
           </v-card>
         </v-col>
 
-        <!-- RIGHT: display controls -->
+        <!-- RIGHT: IIIF Viewer -->
         <v-col cols="12" md="3">
-          <!-- Transcription Quality Disclaimer -->
-          <v-alert
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mb-3"
-            closable
-            v-model="showDisclaimer"
-          >
-            <template #prepend>
-              <v-icon>mdi-information-outline</v-icon>
-            </template>
-            <div class="text-body-2">
-              <strong>{{ $t('document.disclaimer.title') }}</strong>
-              {{ $t('document.disclaimer.text') }}
+          <div v-if="iiifManifestUrl" class="iiif-viewer-container">
+            <div class="iiif-viewer-header">
+              <h3 class="iiif-viewer-title">{{ $t('document.iiif.title', 'Manuscript Viewer') }}</h3>
+              <v-tooltip location="bottom">
+                <template #activator="{ props }">
+                  <v-btn
+                    size="small"
+                    variant="text"
+                    icon="mdi-sync"
+                    class="sync-btn"
+                    @click="syncTifyWithPassage(currentRef)"
+                    v-bind="props"
+                  >
+                  </v-btn>
+                </template>
+                <span>{{ $t('document.iiif.sync', 'Sync with current passage') }}</span>
+              </v-tooltip>
             </div>
-          </v-alert>
-
-          <v-expansion-panels multiple>
-            <v-expansion-panel>
-              <v-expansion-panel-title>{{ $t('document.display.title') }}</v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <div class="text-subtitle-2 mb-2">{{ $t('document.display.textSize') }}</div>
-                <div class="d-flex align-center" style="gap:8px">
-                  <v-btn
-                    variant="tonal"
-                    class="size-btn"
-                    :disabled="textPx <= minPx"
-                    @click="decSize"
-                  >
-                    −
-                  </v-btn>
-                  <div class="size-readout">{{ textPx }} px</div>
-                  <v-btn
-                    variant="tonal"
-                    class="size-btn"
-                    :disabled="textPx >= maxPx"
-                    @click="incSize"
-                  >
-                    +
-                  </v-btn>
-                </div>
-                <div class="mt-2">
-                  <v-btn size="x-small" variant="text" @click="resetSize">{{ $t('document.reset') }}</v-btn>
-                </div>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
+            <div ref="tifyEl" class="tify-viewer"></div>
+          </div>
+          <div v-else class="no-iiif-message">
+            <v-icon size="48" color="grey-lighten-1">mdi-image-off-outline</v-icon>
+            <p class="text-body-2 text-grey mt-2">{{ $t('document.iiif.noManifest', 'No manuscript images available') }}</p>
+          </div>
         </v-col>
       </v-row>
     </v-container>
@@ -382,6 +348,8 @@ const currentRef = ref(route.params.ref || '')
 const refs = ref([])
 const html = ref('')
 const readerEl = ref(null)
+const tifyEl = ref(null)
+const tifyInstance = ref(null)
 const goto = ref('')
 const index = computed(() => Math.max(0, refs.value.findIndex(x => x === currentRef.value)))
 
@@ -410,6 +378,35 @@ const hasMetadataDetails = computed(() => (
 const displayLanguages = computed(() => {
   if (!documentMetadata.value.language) return []
   return parseLanguages(documentMetadata.value.language)
+})
+
+// Get unique languages (remove duplicates)
+const uniqueDisplayLanguages = computed(() => {
+  if (!displayLanguages.value.length) return []
+  return [...new Set(displayLanguages.value)]
+})
+
+// Biblissima URL from first identifier
+const biblissimaUrl = computed(() => {
+  if (!documentMetadata.value.identifiers || !documentMetadata.value.identifiers.length) return null
+  const firstIdentifier = documentMetadata.value.identifiers[0]
+  if (!firstIdentifier) return null
+  return `https://portail.biblissima.fr/${firstIdentifier}`
+})
+
+// IIIF Manifest URL from sources (Dublin Core)
+const iiifManifestUrl = computed(() => {
+  if (!documentMetadata.value.sources || !documentMetadata.value.sources.length) return null
+  // Find the first source that looks like an IIIF manifest URL
+  const manifestSource = documentMetadata.value.sources.find(source => 
+    typeof source === 'string' && (
+      source.includes('iiif') || 
+      source.includes('manifest') ||
+      source.endsWith('/manifest.json') ||
+      source.endsWith('/manifest')
+    )
+  )
+  return manifestSource || documentMetadata.value.sources[0]
 })
 
 // Get color for language chips
@@ -492,6 +489,71 @@ function parseLanguages(langStr) {
   
   // Convert each code to full name
   return langCodes.map(code => getLanguageDisplayName(code))
+}
+
+// Normalize date range input (same logic as CatalogTree)
+function normalizeDateRange(input) {
+  if (!input) return ''
+  input = input.toString().trim();
+
+  // If already a range like "1000–1100", keep as is
+  if (/^\d{3,4}–\d{3,4}$/.test(input)) {
+    return input;
+  }
+
+  // Match things like "1000–", "1050–", etc.
+  const match = input.match(/^(\d{3,4})–$/);
+  if (match) {
+    const start = parseInt(match[1], 10);
+
+    // Rule 1: centuries (like 1000–, 800–, 801–)
+    if (start % 100 === 0 || start % 100 === 1) {
+      const centuryStart = Math.floor(start / 100) * 100 + 1;
+      const centuryEnd = centuryStart + 99;
+      return `${centuryStart}–${centuryEnd}`;
+    }
+
+    // Rule 2: ends in 25 or 75 → add 25
+    if (start % 100 === 25) return `${start}–${start + 25}`;
+    if (start % 100 === 75) return `${start}–${start + 25}`;
+
+    // Rule 3: ends in 50 → add 50
+    if (start % 100 === 50) return `${start}–${start + 50}`;
+  }
+
+  // Rule 4: precise start only, remove trailing '–'
+  if (/^\d{3,4}–$/.test(input)) {
+    return input.replace(/–$/, '');
+  }
+
+  // Rule 5: keep both if already in range format
+  return input;
+}
+
+// Format date for display (same logic as CatalogTree)
+function formatDateForDisplay(dateStr) {
+  if (!dateStr) return ''
+  
+  const trimmed = dateStr.toString().trim()
+  
+  // Case 1: Already a complete range like "1000–1100" - return as-is
+  if (/^\d{3,4}–\d{3,4}$/.test(trimmed)) {
+    return trimmed
+  }
+  
+  // Case 2: Single year with trailing – like "1000–" - apply normalization
+  if (/^\d{3,4}–$/.test(trimmed)) {
+    return normalizeDateRange(trimmed)
+  }
+  
+  // Case 3: Just a plain year like "1000" - add – and normalize
+  if (/^\d{3,4}$/.test(trimmed)) {
+    const normalized = normalizeDateRange(`${trimmed}–`)
+    return normalized
+  }
+  
+  // Case 4: Anything else - return as-is
+  return trimmed
 }
 
 // Fetch document metadata from navigation endpoint which contains Dublin Core metadata
@@ -613,7 +675,7 @@ const navigateTo = (ref) => {
   })
 }
 /* Left panels */
-const openPanels = ref([0, 1]) // Panel 0 is Document Info, 1 is Search
+const openPanels = ref([0, 1]) // Panel 0 is Document Info, 1 is Search, 2 is Display, 3 is Cite
 const searchQ = ref('')
 const searchMode = ref('form')
 const matches = ref([])
@@ -624,7 +686,13 @@ const pageCtrl = ref(null)
 const searchCtrl = ref(null)
 
 /* Disclaimer state */
-const showDisclaimer = ref(true)
+const DISCLAIMER_KEY = 'hideDisclaimer'
+const showDisclaimer = ref(localStorage.getItem(DISCLAIMER_KEY) !== 'true')
+watch(showDisclaimer, v => {
+  if (!v) {
+    localStorage.setItem(DISCLAIMER_KEY, 'true')
+  }
+})
 /* Text size state */
 const LS_KEY = 'readerTextPx'
 const minPx = 14
@@ -940,6 +1008,102 @@ watch(() => route.query.highlight, (h) => {
     }
   }
 }, { immediate: true })
+
+// Initialize Tify viewer when manifest URL is available
+watch([iiifManifestUrl, tifyEl], ([manifestUrl, el]) => {
+  if (manifestUrl && el && window.Tify) {
+    // Clear any existing Tify instance
+    el.innerHTML = ''
+    tifyInstance.value = null
+    
+    // Initialize Tify with the manifest URL
+    try {
+      tifyInstance.value = new window.Tify({
+        container: el,
+        manifestUrl: manifestUrl,
+        language: 'en', // or get from i18n
+        stylesheet: false, // We're using the CDN stylesheet
+      })
+      
+      // Auto-sync Tify viewer with current text reader page upon initialization
+      if (tifyInstance.value) {
+        // Sync with current passage after a short delay to let Tify initialize
+        setTimeout(() => {
+          if (tifyInstance.value && currentRef.value) {
+            // Special case: if text reader is on page 1 (index 0), force Tify to page 1
+            if (index.value === 0) {
+              tifyInstance.value.setPage(1) // Force to page 1 (0-indexed)
+              console.log('Tify synced to page 1 for first passage')
+            } else {
+              // Otherwise, sync normally with the current passage
+              syncTifyWithPassage(currentRef.value)
+            }
+          }
+        }, 200) // Slightly longer delay to ensure Tify is fully loaded
+      }
+    } catch (error) {
+      console.error('Failed to initialize Tify viewer:', error)
+    }
+  }
+}, { immediate: true })
+
+// Sync Tify viewer with current passage
+function syncTifyWithPassage(passageRef) {
+  if (!tifyInstance.value || !passageRef) return
+  
+  try {
+    // Extract page number from passage reference
+    // This assumes passage refs are like "1.1", "1.2", "2.1", etc.
+    // or might contain page markers like "p1", "page1", "fol1", etc.
+    
+    // Try different patterns to extract page/canvas number
+    let pageNum = null
+    
+    // Pattern 1: Extract first number from ref like "1.1" -> 1
+    const match1 = passageRef.match(/^(\d+)/)
+    if (match1) {
+      pageNum = parseInt(match1[1], 10)
+    }
+    
+    // Pattern 2: Look for explicit page markers like "p12", "page12", "fol12"
+    const match2 = passageRef.match(/(?:p|page|fol|folio)\.?\s*(\d+)/i)
+    if (match2) {
+      pageNum = parseInt(match2[1], 10)
+    }
+    
+    // Pattern 3: Try to get index from refs array
+    if (!pageNum && refs.value.length > 0) {
+      const currentIndex = refs.value.findIndex(r => r === passageRef)
+      if (currentIndex >= 0) {
+        pageNum = currentIndex + 1 // IIIF pages are usually 1-indexed
+      }
+    }
+    
+    if (pageNum !== null && tifyInstance.value.setPage) {
+      // The first page in Tify counts as 2 pages (cover spread)
+      // After that, pages are 1:1 with our passages
+      // So: passage 1 -> tify page 0, passage 2 -> tify page 2, passage 3 -> tify page 3, etc.
+      let tifyPageIndex
+      if (pageNum === 1) {
+        tifyPageIndex = 1  // First passage shows the cover spread (pages 0-1)
+        console.log('Tify synced to page 1 for first passage')
+      } else {
+        tifyPageIndex = pageNum  // After the first, add 1 to account for the cover spread
+      }
+      tifyInstance.value.setPage(tifyPageIndex)
+    }
+  } catch (error) {
+    console.warn('Failed to sync Tify viewer with passage:', error)
+  }
+}
+
+// Watch for passage changes and sync with Tify
+watch(currentRef, (newRef) => {
+  if (newRef && tifyInstance.value) {
+    syncTifyWithPassage(newRef)
+  }
+})
+
 onMounted(async () => {
   if (!keyListenerBound) {
     window.addEventListener('keydown', onKey)
@@ -952,7 +1116,7 @@ onMounted(async () => {
     highlightTerm.value = highlightQuery
     searchQ.value = highlightQuery
     // Ensure the search panel is expanded if we have a highlight
-    if (!openPanels.value.includes(1)) {  // Index 1 is now the search panel
+    if (!openPanels.value.includes(1)) {  // Index 1 is the search panel
       openPanels.value.push(1)
     }
   }
@@ -999,122 +1163,206 @@ watch(
 .result-item a { text-decoration: none; }
 
 /* Document Info Panel Layout */
+.document-main-title {
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  color: var(--v-theme-on-surface);
+  margin: 0;
+  line-height: 1.3;
+}
+
 .info-panel-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.03); /* Light grey background for light mode */
-}
-
-.info-section {
+  gap: 8px;
   padding: 12px;
-  border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.06); /* Slightly darker grey for sections */
-  border: 1px solid rgba(0, 0, 0, 0.08); /* Subtle border */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); /* Light shadow */
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary-rgb), 0.04) 0%, rgba(var(--v-theme-secondary-rgb), 0.04) 100%);
+  border: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
 }
 
-.info-section .section-content {
+/* Chips Section - Compact inline layout with color */
+.chips-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+  border: 1px solid rgba(103, 80, 164, 0.12);
+}
+
+.info-chip {
+  font-weight: 500;
+  text-transform: capitalize;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* Info Section - Unified consistent design with subtle color */
+.info-section {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(248, 249, 250, 1) 0%, rgba(241, 243, 245, 1) 100%);
+  border: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.info-section:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: rgba(var(--v-theme-primary-rgb), 0.2);
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+}
+
+/* Unified header style for all sections */
+.section-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
-.info-section .section-text {
-  flex: 1;
+.section-icon {
+  color: var(--v-theme-primary);
+  flex-shrink: 0;
 }
 
-.info-section .section-icon {
-  color: var(--v-theme-primary); /* Use primary color for icons in light mode */
+.section-label {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--v-theme-primary);
+  opacity: 0.9;
 }
 
-.info-section .section-label {
-  font-weight: bold;
-  color: var(--v-theme-on-surface); /* Use Vuetify theme variable */
+.section-text {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--v-theme-on-surface);
+  margin: 0;
+  padding-left: 24px;
 }
 
-.doc-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: var(--v-theme-on-surface); /* Use Vuetify theme variable */
+/* Description specific - with subtle accent */
+.description-section {
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+  border-color: rgba(251, 140, 0, 0.15);
 }
 
-.description-text,
-.section-value {
-  color: var(--v-theme-on-surface-variant); /* Use Vuetify theme variable */
+.description-section .section-text {
+  font-style: italic;
+  color: var(--v-theme-on-surface-variant);
 }
 
-.date-chip {
-  margin-right: 4px;
-}
-
-.keywords-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.sources-list {
+/* Metadata section - with cool blue tint */
+.metadata-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(232, 245, 253, 0.6) 0%, rgba(225, 242, 252, 0.6) 100%);
+  border-color: rgba(3, 169, 244, 0.15);
 }
 
-.source-link {
-  text-decoration: none;
-  color: var(--v-theme-primary); /* Use Vuetify theme variable */
+.metadata-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.source-link:hover {
-  text-decoration: underline;
-  opacity: 0.8;
+/* Keywords section - with purple tint */
+.keywords-section {
+  background: linear-gradient(135deg, rgba(243, 237, 251, 0.6) 0%, rgba(237, 229, 248, 0.6) 100%);
+  border-color: rgba(103, 80, 164, 0.15);
 }
 
-.identifier-code {
-  word-break: break-all;
-  white-space: normal;
-  display: inline-block;
-  max-width: 100%;
-  color: var(--v-theme-on-surface-variant); /* Use Vuetify theme variable */
-}
-
-.identifiers-list {
+.keywords-section .keywords-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
+  padding-left: 24px;
 }
 
-.identifier-item {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: monospace;
-  background-color: rgba(0, 0, 0, 0.08); /* Light background for identifiers */
-  border: 1px solid rgba(0, 0, 0, 0.12); /* Subtle border */
-  color: var(--v-theme-on-surface-variant); /* Consistent text color */
+/* Biblissima section - with green tint */
+.biblissima-section {
+  text-align: left;
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+  border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
-/* Theming for document info panel - works with Vuetify theme system */
+.biblissima-link {
+  display: block;
+  text-decoration: none;
+  color: var(--v-theme-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding-left: 24px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.biblissima-link:hover {
+  color: var(--v-theme-primary-darken-1);
+  text-decoration: underline;
+  padding-left: 26px;
+}
+
+/* Dark theme overrides */
 :deep(.v-theme--dark) {
   .info-panel-wrapper {
-    background-color: rgba(255, 255, 255, 0.05);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+  .chips-section {
+    background: linear-gradient(135deg, rgba(103, 80, 164, 0.15) 0%, rgba(66, 165, 245, 0.15) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .info-section {
-    background-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   }
 
-  .info-section .section-icon {
-    color: var(--v-theme-primary-lighten-1, #90caf9);
+  .info-section:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
   }
 
-  .identifier-item {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+  .section-icon {
+    color: var(--v-theme-primary-lighten-1);
+  }
+
+  .description-section {
+    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .metadata-section {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(100, 181, 246, 0.08) 100%);
+    border-color: rgba(33, 150, 243, 0.2);
+  }
+
+  .keywords-section {
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.08) 0%, rgba(186, 104, 200, 0.08) 100%);
+    border-color: rgba(156, 39, 176, 0.2);
+  }
+
+  .biblissima-section {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.12) 0%, rgba(129, 199, 132, 0.12) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .biblissima-link:hover {
+    padding-left: 26px;
   }
 }
 /* ::v-deep(.v-expansion-panel-text__wrapper) {
@@ -1254,4 +1502,79 @@ watch(
 
 /* Emphasize highlights in results */
 .result-list :deep(mark.dts-hit) { font-weight: 600; }
+
+/* IIIF Viewer Styles */
+.iiif-viewer-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(var(--v-theme-surface-rgb), 1);
+  border: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.iiif-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 8px 16px;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary-rgb), 0.06) 0%, rgba(var(--v-theme-secondary-rgb), 0.06) 100%);
+  border-bottom: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
+}
+
+.iiif-viewer-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--v-theme-on-surface);
+  margin: 0;
+}
+
+.sync-btn {
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.sync-btn:hover {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+
+.tify-viewer {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.no-iiif-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  padding: 24px;
+  text-align: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(var(--v-theme-surface-rgb), 0.6) 0%, rgba(var(--v-theme-surface-variant-rgb), 0.4) 100%);
+  border: 1px dashed rgba(var(--v-theme-outline-rgb), 0.3);
+}
+
+:deep(.v-theme--dark) {
+  .iiif-viewer-container {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .iiif-viewer-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .no-iiif-message {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+  }
+}
 </style>

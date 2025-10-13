@@ -720,6 +720,8 @@ onMounted(() => {
   z-index: 1;
 }
 
+/* Commented out card hover animations - uncomment these sections to restore animations */
+/*
 .stat-card:hover::before {
   opacity: 1;
 }
@@ -754,6 +756,7 @@ onMounted(() => {
     0 20px 40px rgba(255, 152, 0, 0.3),
     0 10px 20px rgba(255, 152, 0, 0.1);
 }
+*/
 
 .stat-icon-wrapper {
   width: 60px;
@@ -767,9 +770,11 @@ onMounted(() => {
   z-index: 2;
 }
 
+/*
 .stat-card:hover .stat-icon-wrapper {
   transform: rotate(5deg) scale(1.1);
 }
+*/
 
 .primary-gradient {
   background: linear-gradient(135deg, #6750a4, #8e24aa);

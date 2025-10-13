@@ -70,7 +70,8 @@ export default {
       keywords: 'Keywords',
       sources: 'Sources',
       identifiers: 'Identifiers',
-      unknownLanguage: 'Unknown'
+      unknownLanguage: 'Unknown',
+      biblissimaLink: 'Biblissima link'
     },
     previousPage: 'Previous Page',
     nextPage: 'Next Page',
@@ -96,7 +97,12 @@ export default {
     },
     disclaimer: {
       title: 'Automatic Transcription Notice:',
-      text: 'This text is the result of automatic transcription. A sampled evaluation has shown an error rate varying between 0 and 100% on 600 random different manuscripts, with an average of below 10% CER overall.'
+      text: 'This text is the result of automatic transcription. A sample evaluation showed an error rate varying between 0 and 100% on 600 different randomly chosen manuscripts, with an average below 10% CER overall.'
+    },
+    iiif: {
+      title: 'Manuscript Viewer',
+      noManifest: 'No manuscript images available',
+      sync: 'Sync with current passage'
     }
   },
   search: {

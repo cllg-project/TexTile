@@ -70,7 +70,8 @@ export default {
       keywords: 'Mots-clés',
       sources: 'Sources',
       identifiers: 'Identifiants',
-      unknownLanguage: 'Inconnu'
+      unknownLanguage: 'Inconnu',
+      biblissimaLink: 'Lien Biblissima'
     },
     previousPage: 'Page Précédente',
     nextPage: 'Page Suivante',
@@ -97,6 +98,11 @@ export default {
     disclaimer: {
       title: 'Avis de Transcription Automatique :',
       text: 'Ce texte est le résultat d\'une transcription automatique. Une évaluation par échantillonnage a montré un taux d\'erreur variant entre 0 et 100% sur 600 manuscrits différents choisis au hasard, avec une moyenne inférieure à 10% CER globalement.'
+    },
+    iiif: {
+      title: 'Visualiseur de Manuscrit',
+      noManifest: 'Aucune image de manuscrit disponible',
+      sync: 'Synchroniser avec le passage actuel'
     }
   },
   search: {

@@ -128,7 +128,8 @@ async function toggle(n){
 async function loadCollectionPage(node, page = 1) {
   const k = nodeKey(node)
   
-  const resp = await fetchCollectionRaw(node.id, 'children', page)
+  // For nested collections (2nd level and beyond), always sort by nb_children desc
+  const resp = await fetchCollectionRaw(node.id, 'children', page, 'nb_children', 'desc')
   const { members, pagination: paginationInfo } = parseMembers(resp)
   
   if (page === 1) {
@@ -313,11 +314,50 @@ function formatLanguage(lang) {
   return uniqueFormattedLanguages[0]
 }
 
+function normalizeDateRange(input) {
+  input = input.trim();
+
+  // If already a range like "1000-1100", keep as is
+  if (/^\d{3,4}-\d{3,4}$/.test(input)) {
+    return input;
+  }
+
+  // Match things like "1000-", "1050-", etc.
+  const match = input.match(/^(\d{3,4})-$/);
+  if (match) {
+    const start = parseInt(match[1], 10);
+
+    // Rule 1: centuries (like 1000-, 800-, 801-)
+    if (start % 100 === 0 || start % 100 === 1) {
+      const centuryStart = Math.floor(start / 100) * 100 + 1;
+      const centuryEnd = centuryStart + 99;
+      return `${centuryStart}-${centuryEnd}`;
+    }
+
+    // Rule 2: ends in 25 or 75 → add 25
+    if (start % 100 === 25) return `${start}-${start + 25}`;
+    if (start % 100 === 75) return `${start}-${start + 25}`;
+
+    // Rule 3: ends in 50 → add 50
+    if (start % 100 === 50) return `${start}-${start + 50}`;
+  }
+
+  // Rule 4: precise start only, remove trailing '-'
+  if (/^\d{3,4}-$/.test(input)) {
+    return input.replace(/-$/, '');
+  }
+
+  // Rule 5: keep both if already in range format
+  return input;
+}
+
 function formatDateRange(startYear, stopYear) {
   if (startYear && stopYear) {
     return `${startYear}-${stopYear}`
   } else if (startYear) {
-    return `${startYear}-`
+    // Use the normalizeDateRange function for single start years with trailing dash
+    const normalized = normalizeDateRange(`${startYear}-`)
+    return normalized
   } else if (stopYear) {
     return `<${stopYear}`
   }
