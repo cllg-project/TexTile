@@ -3,15 +3,62 @@
     <template v-for="node in nodes" :key="nodeKey(node)">
       <v-list-item
         v-if="node.kind==='resource'"
-        :title="node.title"
         :subtitle="node.location || node.id"
         :to="{ name:'document', params:{ resource: encodeURIComponent(node.id) } }"
         prepend-icon="mdi-file-document-outline"
-      />
+      >
+        <template #title>
+          <div class="d-flex align-center" style="gap: 4px; flex-wrap: wrap;">
+            <span>{{ node.title }}</span>
+            <!-- Language chip -->
+            <v-chip
+              v-if="node.language"
+              size="small"
+              variant="outlined"
+              :color="getLanguageColor(node.language)"
+              class="text-caption manuscript-chip"
+              :title="node.language.includes(',') ? `Languages: ${getUniqueLanguagesForTooltip(node.language)}` : ''"
+            >
+              {{ formatLanguage(node.language) }}
+            </v-chip>
+            
+            <!-- Date range chip -->
+            <v-chip
+              v-if="node.start_year || node.stop_year"
+              size="small"
+              variant="outlined"
+              color="blue-grey"
+              class="text-caption manuscript-chip"
+            >
+              {{ formatDateRange(node.start_year, node.stop_year) }}
+            </v-chip>
+          </div>
+        </template>
+      </v-list-item>
       <div v-else>
-        <v-list-item @click="toggle(node)" :title="node.title" :subtitle="node.id" class="cursor-pointer">
+        <v-list-item @click="toggle(node)" class="cursor-pointer collection-item">
           <template #prepend><v-icon>{{ isOpen(node) ? 'mdi-folder-open' : 'mdi-folder' }}</v-icon></template>
-          <template #append><v-icon :class="{ 'rotate-90': isOpen(node) }">mdi-chevron-right</v-icon></template>
+          
+          <v-list-item-title class="d-flex align-center" style="gap: 8px;">
+            <span>{{ node.title }}</span>
+            <!-- Children count bubble - closer to title -->
+            <v-chip
+              v-if="node.nb_children > 0"
+              size="small"
+              :color="getChildrenCountColor(node.nb_children)"
+              variant="flat"
+              class="children-count-chip"
+            >
+              <v-icon start size="small">mdi-folder-multiple</v-icon>
+              {{ formatNumber(node.nb_children) }}
+            </v-chip>
+          </v-list-item-title>
+          
+          <v-list-item-subtitle>{{ node.id }}</v-list-item-subtitle>
+          
+          <template #append>
+            <v-icon :class="{ 'rotate-90': isOpen(node) }">mdi-chevron-right</v-icon>
+          </template>
         </v-list-item>
         <v-expand-transition>
           <div v-show="isOpen(node)" class="pl-6">
@@ -210,6 +257,109 @@ function collapseAll() {
   childTreeRefs.value.clear()
 }
 
+// Helper functions for metadata display
+function formatLanguage(lang) {
+  if (!lang) return ''
+  
+  // Handle common language codes and full names
+  const langMap = {
+    // Short codes
+    'lat': 'Latin',
+    'fro': 'Old French', 
+    'frm': 'Middle French',
+    'fre': 'French',
+    'fra': 'French',
+    'ita': 'Italian',
+    'eng': 'English',
+    'deu': 'German',
+    'spa': 'Spanish',
+    // Full names (case insensitive)
+    'latin': 'Latin',
+    'old french': 'Old French',
+    'middle french': 'Middle French', 
+    'french': 'French',
+    'italian': 'Italian',
+    'english': 'English',
+    'german': 'German',
+    'spanish': 'Spanish'
+  }
+  
+  // Process multiple languages separated by commas
+  const languages = lang.split(',').map(l => l.trim())
+  
+  // Remove duplicates by converting to Set
+  const uniqueLanguages = [...new Set(languages)]
+  
+  const formattedLanguages = uniqueLanguages.map(singleLang => {
+    const normalized = singleLang.toLowerCase()
+    
+    // Check if it's in our mapping (both short codes and full names)
+    if (langMap[normalized]) {
+      return langMap[normalized]
+    }
+    
+    // Otherwise return as-is, capitalized
+    return singleLang.charAt(0).toUpperCase() + singleLang.slice(1)
+  })
+  
+  // Remove duplicates again after formatting (in case different codes map to same language)
+  const uniqueFormattedLanguages = [...new Set(formattedLanguages)]
+  
+  // If multiple languages, show first one with count indicator
+  if (uniqueFormattedLanguages.length > 1) {
+    return `${uniqueFormattedLanguages[0]} +${uniqueFormattedLanguages.length - 1}`
+  }
+  
+  return uniqueFormattedLanguages[0]
+}
+
+function formatDateRange(startYear, stopYear) {
+  if (startYear && stopYear) {
+    return `${startYear}-${stopYear}`
+  } else if (startYear) {
+    return `${startYear}-`
+  } else if (stopYear) {
+    return `<${stopYear}`
+  }
+  return ''
+}
+
+function formatNumber(num) {
+  if (num < 1000) return num.toString()
+  if (num < 1000000) return `${Math.floor(num / 100) / 10}k`
+  return `${Math.floor(num / 100000) / 10}M`
+}
+
+function getLanguageColor(lang) {
+  const firstLang = lang?.split(',')[0]?.trim()?.toLowerCase()
+  switch (firstLang) {
+    case 'lat': case 'latin': return 'purple'
+    case 'fro': case 'frm': case 'fre': case 'fra': case 'french': case 'old french': case 'middle french': return 'blue'
+    case 'ita': case 'italian': return 'green'
+    case 'eng': case 'english': return 'orange'
+    case 'deu': case 'german': return 'red'
+    case 'spa': case 'spanish': return 'pink'
+    default: return 'grey'
+  }
+}
+
+function getChildrenCountColor(count) {
+  if (count > 10000) return 'red'
+  if (count > 1000) return 'orange'
+  if (count > 100) return 'amber'
+  if (count > 10) return 'green'
+  return 'blue-grey'
+}
+
+function getUniqueLanguagesForTooltip(lang) {
+  if (!lang) return ''
+  
+  // Remove duplicates from original language string for tooltip
+  const languages = lang.split(',').map(l => l.trim())
+  const uniqueLanguages = [...new Set(languages)]
+  return uniqueLanguages.join(', ')
+}
+
 // Expose methods to parent
 defineExpose({
   expandAll,
@@ -279,4 +429,35 @@ defineExpose({
   opacity: 0.6;
   transform: none !important;
 }
+
+/* Metadata chips styling */
+.children-count-chip {
+  font-weight: 500;
+  font-size: 0.7rem !important;
+  height: 20px !important;
+  min-height: 20px !important;
+}
+
+.children-count-chip :deep(.v-chip__content) {
+  padding: 0 4px !important;
+}
+
+/* Language and date chips for manuscripts */
+.manuscript-chip {
+  margin-left: 2px !important;
+  margin-right: 2px !important;
+  font-weight: 500 !important;
+  opacity: 0.9 !important;
+  font-size: 0.7rem !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  vertical-align: middle;
+}
+
+.manuscript-chip :deep(.v-chip__content) {
+  padding: 0 4px !important;
+  line-height: 1;
+}
+
+/* Ensure proper spacing for chips */
 </style>

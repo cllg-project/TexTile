@@ -143,7 +143,8 @@ export default {
         title: 'Conseils de Recherche',
         tips: {
           multiWord: 'pour rechercher plusieurs mots, ex. "deus,deum"',
-          phrase: 'pour phrase exacte, ex. "la bouche"'
+          phrase: 'pour phrase exacte, ex. "la bouche"',
+          wildcard: "utilisez '*' comme joker pour correspondre aux préfixes de mots (ex. 'reg*' correspond à 'regnum') — disponible uniquement en Correspondance Exacte"
         }
       },
       vector: {
@@ -205,6 +206,9 @@ export default {
     intro: {
       browsableCollection: 'Une collection navigable de {count}+ numérisations de manuscrits en latin médiéval et ancien français.',
       preservation: 'Les textes préservent les abréviations, orthographes et caractéristiques de mise en page originales — utiles pour la recherche, mais ne remplacent pas la transcription humaine.',
+      paperDescription: 'Ce travail est décrit en détail dans l\'article de recherche',
+      paperTitle: '"CoMMA, a Large-scale Corpus of Multilingual Medieval Archives"',
+      paperAuthors: 'par Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, et Benoît Sagot (2025).',
       readFull: 'Lire le Texte Complet',
       preprint: 'Prépublication (PDF)',
       copyCitation: 'Copier la Citation',
@@ -244,6 +248,15 @@ export default {
       catmusDescription: ', un jeu de données massif pour l\'entraînement de modèle de reconnaissance d\'écriture manuscrite dans les manuscrits médiévaux.',
       paper: 'Le corpus présenté ici est décrit dans un article, en anglais, présentant aussi ses limites et le cadre de sa création: ',
       paperLink: 'Article de Recherche'
+    },
+    paper: {
+      title: 'Article de Recherche et Crédits',
+      description: 'Ce corpus est décrit dans l\'article de recherche',
+      paperTitle: 'CoMMA, a Large-scale Corpus of Multilingual Medieval Archives',
+      authors: 'Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, Benoît Sagot',
+      year: '2025',
+      abstract: 'Nous présentons CoMMA, un corpus à grande échelle de manuscrits médiévaux produit par reconnaissance automatique de texte. Le corpus contient environ 2,5 milliards de tokens issus de plus de 23 000 manuscrits numérisés en latin et en ancien français, récoltés via IIIF.',
+      viewPaper: 'Voir l\'Article Complet'
     },
     features: {
       title: 'Caractéristiques du Corpus',

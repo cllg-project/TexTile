@@ -6,11 +6,12 @@
       
       <!-- Traditional Search Operators (shown only for traditional search) -->
       <div v-if="searchType === 'traditional'">
-        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.traditional.title') }}</div>
+        <!-- <div class="text-subtitle-2 mb-2">{{ $t('search.guides.traditional.title') }}</div> -->
         <v-row>
-          <v-col cols="12" md="6">
+          <v-col cols="12" md="9">
             <div class="rule"><v-chip size="x-small" label>,</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.multiWord') }}</div>
             <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.phrase') }}</div>
+            <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.wildcard') }}</div>
           </v-col>
         </v-row>
       </div>

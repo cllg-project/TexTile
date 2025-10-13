@@ -32,12 +32,56 @@
                 CATMuS
               </a>{{ $t('projectInfo.introduction.catmusDescription') }}
             </div>
-            <div class="text-body-1">
+            <!-- <div class="text-body-1">
               {{ $t('projectInfo.introduction.paper') }}
               <a :href="config.paperUrl" target="_blank" class="text-decoration-none font-weight-medium">
                 {{ $t('projectInfo.introduction.paperLink') }}
               </a>
+            </div> -->
+          </v-card-text>
+        </v-card>
+
+        <!-- Paper & Credits -->
+        <v-card class="mb-6" elevation="2">
+          <v-card-title class="text-h6 font-weight-bold text-center bg-secondary text-white">
+            {{ $t('projectInfo.paper.title') }}
+          </v-card-title>
+          <v-card-text class="pa-6">
+            <div class="text-body-1 mb-4">
+              {{ $t('projectInfo.paper.description') }}:
             </div>
+            
+            <!-- Paper citation box -->
+            <v-alert 
+              type="info" 
+              variant="tonal" 
+              class="mb-4"
+              border="start"
+              prominent
+            >
+              <div class="paper-citation">
+                <h4 class="text-h6 font-weight-bold mb-2">
+                  {{ $t('projectInfo.paper.paperTitle') }}
+                </h4>
+                <div class="text-body-2 mb-2 font-weight-medium">
+                  {{ $t('projectInfo.paper.authors') }} ({{ $t('projectInfo.paper.year') }})
+                </div>
+                <div class="text-body-2 text-medium-emphasis mb-3" style="font-style: italic;">
+                  {{ $t('projectInfo.paper.abstract') }}
+                </div>
+                <v-btn
+                  :href="config.paperUrl"
+                  target="_blank"
+                  rel="noopener"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  prepend-icon="mdi-open-in-new"
+                >
+                  {{ $t('projectInfo.paper.viewPaper') }}
+                </v-btn>
+              </div>
+            </v-alert>
           </v-card-text>
         </v-card>
 
@@ -145,7 +189,7 @@
           </v-card-title>
           <v-card-text class="pa-4">
             <div class="text-center mb-4">
-              <div class="display-2 font-weight-bold text-primary">23k+</div>
+              <div class="display-2 font-weight-bold text-primary">{{ manuscriptCountFormatted }}</div>
               <div class="text-body-2 text-medium-emphasis">{{ $t('projectInfo.stats.manuscripts') }}</div>
             </div>
             <div class="text-center mb-4">
@@ -153,7 +197,7 @@
               <div class="text-body-2 text-medium-emphasis">{{ $t('projectInfo.stats.words') }}</div>
             </div>
             <div class="text-center">
-              <div class="text-h4 font-weight-bold text-teal">9-16c</div>
+              <div class="text-h4 font-weight-bold text-teal">800–1600</div>
               <div class="text-body-2 text-medium-emphasis">{{ $t('projectInfo.stats.timespan') }}</div>
             </div>
           </v-card-text>
@@ -186,29 +230,50 @@
           </v-card-title>
           <v-card-text>
             <v-list density="compact">
-              <v-list-item>
+              <v-list-item href="https://portail.biblissima.fr/" target="_blank" rel="noopener">
+                <template #prepend>
+                  <v-icon size="small" color="primary">mdi-library</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">Biblissima</v-list-item-title>
+                <template #append>
+                  <v-icon size="small" color="grey">mdi-open-in-new</v-icon>
+                </template>
+              </v-list-item>
+              <v-list-item href="https://gallica.bnf.fr/accueil/fr/html/accueil-fr" target="_blank" rel="noopener">
                 <template #prepend>
                   <v-icon size="small" color="primary">mdi-library</v-icon>
                 </template>
                 <v-list-item-title class="text-body-2">BnF Gallica</v-list-item-title>
+                <template #append>
+                  <v-icon size="small" color="grey">mdi-open-in-new</v-icon>
+                </template>
               </v-list-item>
-              <v-list-item>
+              <v-list-item href="https://arca.irht.cnrs.fr/" target="_blank" rel="noopener">
+                <template #prepend>
+                  <v-icon size="small" color="primary">mdi-library</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">ARCA</v-list-item-title>
+                <template #append>
+                  <v-icon size="small" color="grey">mdi-open-in-new</v-icon>
+                </template>
+              </v-list-item>
+              <v-list-item href="https://www.e-codices.unifr.ch/en" target="_blank" rel="noopener">
+                <template #prepend>
+                  <v-icon size="small" color="primary">mdi-library</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">E-Codices</v-list-item-title>
+                <template #append>
+                  <v-icon size="small" color="grey">mdi-open-in-new</v-icon>
+                </template>
+              </v-list-item>
+              <v-list-item href="https://www.bodleian.ox.ac.uk/home" target="_blank" rel="noopener">
                 <template #prepend>
                   <v-icon size="small" color="primary">mdi-library</v-icon>
                 </template>
                 <v-list-item-title class="text-body-2">Bodleian Library</v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon size="small" color="primary">mdi-library</v-icon>
+                <template #append>
+                  <v-icon size="small" color="grey">mdi-open-in-new</v-icon>
                 </template>
-                <v-list-item-title class="text-body-2">e-codices</v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon size="small" color="primary">mdi-library</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">{{ $t('projectInfo.sources.others') }}</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -241,10 +306,39 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import config from '@/config/urls.js'
+import { fetchManuscriptCount } from '@/api/dts.js'
 
 const { t } = useI18n()
+
+// Reactive manuscript count
+const manuscriptCount = ref(23000) // Fallback value
+const manuscriptCountFormatted = ref('23k+') // Fallback formatted value
+
+// Function to format manuscript count with k+ suffix
+function formatManuscriptCount(count) {
+  if (count >= 1000000) {
+    return `${Math.floor(count / 100000) / 10}M+`
+  } else if (count >= 1000) {
+    return `${Math.floor(count / 1000)}k+`
+  }
+  return `${count}+`
+}
+
+// Function to load manuscript count
+async function loadManuscriptCount() {
+  try {
+    const response = await fetchManuscriptCount()
+    if (response && response.total_manuscripts) {
+      manuscriptCount.value = response.total_manuscripts
+      manuscriptCountFormatted.value = formatManuscriptCount(response.total_manuscripts)
+    }
+  } catch (error) {
+    console.warn('Failed to fetch manuscript count for ProjectInfo:', error)
+    // Keep the fallback values
+  }
+}
 
 // Use hardcoded features for now since i18n array handling is problematic
 const features = computed(() => {
@@ -318,6 +412,10 @@ const features = computed(() => {
     ]
   }
 })
+
+onMounted(() => {
+  loadManuscriptCount()
+})
 </script>
 
 <style scoped>
@@ -372,6 +470,18 @@ const features = computed(() => {
 
 .v-card {
   border-radius: 12px !important;
+}
+
+.paper-citation {
+  line-height: 1.6;
+}
+
+.paper-citation h4 {
+  color: #1976d2 !important;
+}
+
+.paper-citation .text-body-2 {
+  line-height: 1.5;
 }
 
 @media (max-width: 768px) {

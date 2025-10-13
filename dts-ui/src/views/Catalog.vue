@@ -22,7 +22,9 @@
             clearable 
             hide-details 
             density="comfortable"
-            :loading="isLoading"
+            :loading="isLoadingAutocomplete"
+            @update:model-value="handleCollectionSelection"
+            @click:clear="handleAutocompleteClear"
           />
           
           <!-- Metadata Search Mode -->
@@ -98,6 +100,50 @@
         </v-col>
         
         <v-spacer />
+        
+        <!-- Sorting Controls (only for legacy browse mode) -->
+        <v-col v-if="searchMode === 'legacy'" cols="auto">
+          <div class="d-flex align-center sorting-controls" style="gap: 12px;">
+            <!-- Alphabetical Sort Button -->
+            <v-btn
+              :variant="sortBy === 'title' ? 'elevated' : 'outlined'"
+              :color="sortBy === 'title' ? 'primary' : 'default'"
+              size="small"
+              class="sort-btn"
+              @click="toggleSort('title')"
+            >
+              <v-icon 
+                :start="true" 
+                size="18"
+                class="sort-icon"
+                :class="{ 'rotate-icon': sortBy === 'title' && sortOrder === 'desc' }"
+              >
+                {{ getSortIcon('title') }}
+              </v-icon>
+              Alphabetical
+            </v-btn>
+            
+            <!-- Count Sort Button -->
+            <v-btn
+              :variant="sortBy === 'nb_children' ? 'elevated' : 'outlined'"
+              :color="sortBy === 'nb_children' ? 'secondary' : 'default'"
+              size="small"
+              class="sort-btn"
+              @click="toggleSort('nb_children')"
+            >
+              <v-icon 
+                :start="true" 
+                size="18"
+                class="sort-icon"
+                :class="{ 'rotate-icon': sortBy === 'nb_children' && sortOrder === 'desc' }"
+              >
+                {{ getSortIcon('nb_children') }}
+              </v-icon>
+              Count
+            </v-btn>
+          </div>
+        </v-col>
+        
         <!-- expand/collapse buttons -->
         <!-- <v-btn class="mr-2" variant="tonal" @click="expandAll" :loading="isExpanding">{{ $t('catalog.expandAll') }}</v-btn>
         <v-btn variant="tonal" @click="collapseAll">{{ $t('catalog.collapseAll') }}</v-btn> -->
@@ -176,7 +222,12 @@
               >
                 <v-icon start>mdi-dots-horizontal</v-icon>
                 <span v-if="rootPagination?.hasNext">
-                  Load More Collections
+                  <span v-if="currentSelectedCollection">
+                    Load More from {{ currentSelectedCollection.title }}
+                  </span>
+                  <span v-else>
+                    Load More Collections
+                  </span>
                 </span>
                 <span v-else>
                   Show {{ Math.min(itemsPerPage, filtered.length - displayedItemsCount) }} More
@@ -188,18 +239,18 @@
         </v-card-text>
       </v-card>
 
-      <v-expansion-panels class="mt-4" variant="accordion">
+      <!-- <v-expansion-panels class="mt-4" variant="accordion">
         <v-expansion-panel>
           <v-expansion-panel-title>Raw (debug)</v-expansion-panel-title>
           <v-expansion-panel-text><pre>{{ raw }}</pre></v-expansion-panel-text>
         </v-expansion-panel>
-      </v-expansion-panels>
+      </v-expansion-panels> -->
     </v-container>
   </v-container>
 </template>
 <script setup>
 import { onMounted, ref, computed, watch, nextTick } from 'vue'
-import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts } from '../api/dts'
+import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts, fetchCollectionsList } from '../api/dts'
 import CatalogTree from '../components/CatalogTree.vue'
 
 const raw = ref('')
@@ -208,6 +259,14 @@ const q = ref('')
 const metadataQuery = ref('')
 const allResources = ref([]) // Store all resources for comprehensive search
 const isLoading = ref(false)
+
+// Autocomplete collections data
+const autocompleteCollections = ref([])
+const isLoadingAutocomplete = ref(false)
+
+// Sorting controls
+const sortBy = ref('nb_children') // 'default', 'title', 'nb_children'
+const sortOrder = ref('desc') // 'asc', 'desc' - default to high to low for count
 
 // Pagination
 const itemsPerPage = 25
@@ -221,15 +280,9 @@ const hasSearchBeenPerformed = ref(false) // Track if a search has been performe
 const searchError = ref('') // Store search error messages
 
 // Metadata search types configuration
-const selectedSearchType = ref('general')
+const selectedSearchType = ref('language')
 
 const searchTypes = [
-  {
-    value: 'general',
-    color: 'primary',
-    icon: 'mdi-database-search',
-    endpoint: '/manuscripts/'
-  },
   {
     value: 'language',
     color: 'success',
@@ -244,23 +297,45 @@ const searchTypes = [
   }
 ]
 
+// Language mapping - convert long forms to short forms
+const languageMap = {
+  // Long forms to short forms
+  'latin': 'lat',
+  'french': 'fre',
+  'old french': 'fro',
+  'middle french': 'frm',
+  'italian': 'ita',
+  'english': 'eng',
+  'german': 'deu',
+  'spanish': 'spa',
+  // Keep short forms as-is
+  'lat': 'lat',
+  'fre': 'fre',
+  'fro': 'fro',
+  'frm': 'frm',
+  'ita': 'ita',
+  'eng': 'eng',
+  'deu': 'deu',
+  'spa': 'spa'
+}
+
+function normalizeLanguageQuery(query) {
+  const normalized = query.trim().toLowerCase()
+  return languageMap[normalized] || query
+}
+
 const currentSearchType = computed(() => {
   return searchTypes.find(type => type.value === selectedSearchType.value) || searchTypes[0]
 })
 
-// Build suggestions for legacy browse mode
+// Build suggestions for legacy browse mode using the new collections endpoint
 const suggestions = computed(() => {
-  const items = [...nodes.value]
-  // Only include pre-loaded resources if available
-  allResources.value.forEach(resource => {
-    if (!items.find(item => item.id === resource.id)) {
-      items.push(resource)
-    }
-  })
-  return items.map(n => ({ 
-    id: n.id, 
-    title: `${n.title} ${n.kind === 'resource' ? '(manuscript)' : '(collection)'}`,
-    value: n.title
+  return autocompleteCollections.value.map(collection => ({
+    id: collection.identifier,
+    title: `${collection.title} `,
+    value: collection.title,
+    nb_children: collection.nb_children,
+    identifier: collection.identifier // Keep the identifier for selection
   }))
 })
 
@@ -269,6 +344,11 @@ const hasSearchQuery = computed(() => {
   if (searchMode.value === 'metadata') {
     // Only show search query state if search has been performed
     return metadataQuery.value?.trim() && hasSearchBeenPerformed.value
+  }
+  // For legacy mode, check if there's text AND we're not viewing a selected collection
+  // If a collection is selected, we're browsing, not searching
+  if (currentSelectedCollection.value && q.value === currentSelectedCollection.value.title) {
+    return false // Viewing a collection, not searching
   }
   return q.value?.trim()
 })
@@ -319,6 +399,17 @@ const filtered = computed(() => {
   const s = String(q.value || '').trim().toLowerCase()
   if (!s) return nodes.value
   
+  // Check if the search matches a collection title from autocomplete
+  const matchingCollection = autocompleteCollections.value.find(
+    collection => collection.title.toLowerCase() === s.toLowerCase()
+  )
+  
+  // If exact match found, show the loaded collection data
+  if (matchingCollection) {
+    return nodes.value
+  }
+  
+  // Otherwise, filter current nodes
   const topLevelMatches = nodes.value.filter(n => 
     n.title.toLowerCase().includes(s) || 
     String(n.id).toLowerCase().includes(s)
@@ -383,10 +474,14 @@ function resetPagination() {
 // Pagination state for root collection
 const rootPagination = ref(null)
 
+// Track current selected collection from autocomplete
+const currentSelectedCollection = ref(null)
+
 async function load(){
   isLoading.value = true
   try {
-    const resp = await fetchRootCollection(1)
+    // Only apply sorting to root level, nested levels use default (count desc)
+    const resp = await fetchRootCollection(1, sortBy.value, sortOrder.value)
     raw.value = typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2)
     
     const { members, pagination } = parseMembers(resp)
@@ -395,6 +490,75 @@ async function load(){
   } finally {
     isLoading.value = false
   }
+}
+
+// Load autocomplete collections data
+async function loadAutocompleteCollections(query = '') {
+  isLoadingAutocomplete.value = true
+  try {
+    const response = await fetchCollectionsList(query)
+    const collections = response.collections || []
+    
+    // Limit to 10 results for autocomplete performance
+    autocompleteCollections.value = collections
+  } catch (error) {
+    console.error('Failed to load autocomplete collections:', error)
+    autocompleteCollections.value = []
+  } finally {
+    isLoadingAutocomplete.value = false
+  }
+}
+
+// Handle collection selection and load collection data with pagination
+async function handleCollectionSelection(selectedTitle) {
+  if (!selectedTitle) {
+    // Clear the current collection when the input is cleared
+    currentSelectedCollection.value = null
+    return
+  }
+  
+  // Find the selected collection's identifier from autocomplete data
+  const selectedCollection = autocompleteCollections.value.find(
+    collection => collection.title === selectedTitle
+  )
+  
+  if (!selectedCollection) {
+    console.warn('Selected collection not found in autocomplete data')
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    // Load first page of the selected collection with current sorting
+    const resp = await fetchCollectionRaw(selectedCollection.identifier, 'children', 1, sortBy.value, sortOrder.value)
+    const { members, pagination } = parseMembers(resp)
+    
+    // Replace current nodes with first page of selected collection
+    nodes.value = members
+    rootPagination.value = pagination
+    
+    // Track the current selected collection
+    currentSelectedCollection.value = selectedCollection
+    
+    // Reset displayed items count to show proper pagination
+    displayedItemsCount.value = itemsPerPage
+    
+    console.log(`Loaded first ${members.length} items from collection: ${selectedCollection.title}`)
+    
+  } catch (error) {
+    console.error('Failed to load selected collection:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Handle autocomplete clear - restore initial page
+function handleAutocompleteClear() {
+  // The v-autocomplete already clears q.value, so we just need to:
+  currentSelectedCollection.value = null
+  resetPagination()
+  load() // Reload the initial root collection
+  // The watcher will handle reloading autocomplete suggestions
 }
 
 async function loadMoreRootItems() {
@@ -412,7 +576,14 @@ async function loadMoreRootItems() {
     
     console.log('Fetching page:', nextPage)
     
-    const resp = await fetchRootCollection(nextPage)
+    let resp
+    if (currentSelectedCollection.value) {
+      // Load more from the selected collection
+      resp = await fetchCollectionRaw(currentSelectedCollection.value.identifier, 'children', nextPage, sortBy.value, sortOrder.value)
+    } else {
+      // Only apply sorting to root level
+      resp = await fetchRootCollection(nextPage, sortBy.value, sortOrder.value)
+    }
     const { members, pagination } = parseMembers(resp)
     
     console.log('Got response:', {
@@ -505,6 +676,32 @@ async function loadAllResources() {
   }
 }
 
+// Sorting functionality
+function toggleSort(newSortBy) {
+  if (sortBy.value === newSortBy) {
+    // Same button clicked - toggle sort order
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // Different button clicked - change sort type and reset to ascending
+    sortBy.value = newSortBy
+    sortOrder.value = 'asc'
+  }
+}
+
+function getSortIcon(type) {
+  if (sortBy.value !== type) {
+    // Not active - show neutral icon
+    return type === 'title' ? 'mdi-sort-alphabetical-variant' : 'mdi-sort-numeric-variant'
+  }
+  
+  // Active button - show directional icon
+  if (type === 'title') {
+    return sortOrder.value === 'asc' ? 'mdi-sort-alphabetical-ascending' : 'mdi-sort-alphabetical-descending'
+  } else {
+    return sortOrder.value === 'asc' ? 'mdi-sort-numeric-ascending' : 'mdi-sort-numeric-descending'
+  }
+}
+
 // Expand/collapse functionality
 const treeRef = ref()
 const isExpanding = ref(false)
@@ -532,7 +729,6 @@ function filterTreeForMetadataResults(treeNodes, searchResults) {
   // This avoids creating fake collections that don't exist on the server
   return searchResults.map(result => {
     // Use the collection URL directly as ID for routing (like normal catalog)
-    // Don't extract - use the full collection URL as the ID
     const collectionId = result.collection
     
     // Create a proper manuscript title from the location
@@ -555,16 +751,10 @@ function filterTreeForMetadataResults(treeNodes, searchResults) {
       id: collectionId, // Use full collection URL for routing
       title: manuscriptTitle,
       location: result.location, // This will be shown as subtitle
-      metadata: {
-        location: result.location,
-        language: result.language,
-        start_year: result.start_year,
-        page_count: result.page_count,
-        tokens: result.tokens,
-        ark_portail: result.ark_portail,
-        filename: result.filename,
-        ...result.metadata
-      }
+      // Keep only language and date fields as requested
+      language: result.language,
+      start_year: result.start_year,
+      stop_year: result.stop_year
     }
   })
 }
@@ -615,12 +805,18 @@ async function performMetadataSearch(query, searchType) {
   searchError.value = ''
   
   try {
-    // Use pagination for general and language searches, but not for date searches
+    // Normalize language queries to use short forms
+    let searchQuery = query
+    if (searchType === 'language') {
+      searchQuery = normalizeLanguageQuery(query)
+    }
+    
+    // Use pagination for language and date searches
     let result
     if (searchType === 'date') {
-      result = await searchManuscripts(query, 1, 50, searchType)
+      result = await searchManuscripts(searchQuery, 1, 50, searchType)
     } else {
-      result = await searchManuscripts(query, 1, 50, searchType)
+      result = await searchManuscripts(searchQuery, 1, 50, searchType)
     }
     
     const items = result.items || result.manuscripts || []
@@ -674,6 +870,14 @@ watch(q, () => {
   resetPagination()
 })
 
+// Watch sorting parameters to reload data when changed
+watch([sortBy, sortOrder], () => {
+  if (searchMode.value === 'legacy') {
+    resetPagination()
+    load()
+  }
+})
+
 // Debug watcher for pagination changes
 watch(rootPagination, (newPagination, oldPagination) => {
   console.log('Pagination changed:', {
@@ -683,7 +887,32 @@ watch(rootPagination, (newPagination, oldPagination) => {
   })
 }, { deep: true })
 
-onMounted(load)
+// Watch for legacy search query changes to update autocomplete
+let autocompleteTimeout = null
+watch(q, (newQuery, oldQuery) => {
+  if (searchMode.value === 'legacy') {
+    // If query was cleared and we had a selected collection, restore to root
+    // But only if newQuery is empty/null (not just different)
+    if (!newQuery && currentSelectedCollection.value && oldQuery) {
+      // User cleared the autocomplete, restore initial state
+      currentSelectedCollection.value = null
+      resetPagination()
+      load() // Reload the initial root collection
+    }
+    
+    // Debounce the autocomplete search
+    clearTimeout(autocompleteTimeout)
+    autocompleteTimeout = setTimeout(() => {
+      // Always reload autocomplete, even for empty queries
+      loadAutocompleteCollections(newQuery || '')
+    }, 300) // 300ms delay
+  }
+})
+
+onMounted(() => {
+  load()
+  loadAutocompleteCollections() // Load initial autocomplete data
+})
 </script>
 
 <style scoped>
@@ -711,7 +940,118 @@ onMounted(load)
 }
 
 .main-load-more-btn.v-btn--loading {
-  opacity: 0.7;
+  opacity: 0.6;
   transform: none !important;
+}
+
+/* Sorting Controls Styling */
+.sorting-controls {
+  padding: 4px 8px;
+  background: rgba(var(--v-theme-surface), 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sort-btn {
+  text-transform: none !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.025em !important;
+  border-radius: 8px !important;
+  min-width: 110px !important;
+  height: 36px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.sort-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+  z-index: 1;
+}
+
+.sort-btn:hover::before {
+  left: 100%;
+}
+
+.sort-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.25) !important;
+}
+
+.sort-btn[variant="elevated"] {
+  box-shadow: 
+    0 3px 8px rgba(var(--v-theme-primary), 0.3),
+    0 1px 3px rgba(var(--v-theme-primary), 0.2) !important;
+}
+
+.sort-btn[variant="elevated"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 16px rgba(var(--v-theme-primary), 0.35),
+    0 2px 6px rgba(var(--v-theme-primary), 0.25) !important;
+}
+
+.sort-icon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rotate-icon {
+  transform: scaleY(-1);
+}
+
+/* Color variations for different sort buttons */
+.sort-btn[color="secondary"][variant="elevated"] {
+  box-shadow: 
+    0 3px 8px rgba(var(--v-theme-secondary), 0.3),
+    0 1px 3px rgba(var(--v-theme-secondary), 0.2) !important;
+}
+
+.sort-btn[color="secondary"][variant="elevated"]:hover {
+  box-shadow: 
+    0 6px 16px rgba(var(--v-theme-secondary), 0.35),
+    0 2px 6px rgba(var(--v-theme-secondary), 0.25) !important;
+}
+
+.sort-btn[color="secondary"]:hover {
+  box-shadow: 0 4px 12px rgba(var(--v-theme-secondary), 0.25) !important;
+}
+
+/* Dark theme support */
+.v-theme--dark .sorting-controls {
+  background: rgba(var(--v-theme-surface), 0.9);
+  border-color: rgba(var(--v-theme-outline), 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sorting-controls {
+    padding: 2px 4px;
+    gap: 8px !important;
+  }
+  
+  .sort-btn {
+    min-width: 90px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .sort-btn {
+    min-width: 80px !important;
+    padding: 0 8px !important;
+  }
+  
+  .sort-btn .v-icon {
+    font-size: 16px !important;
+  }
 }
 </style>

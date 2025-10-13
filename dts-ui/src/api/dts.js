@@ -55,13 +55,15 @@ export async function fetchEntryPoint() {
 }
 
 /**
- * Root catalog with pagination support
- * GET /collection/?nav=children&page=...
+ * Root catalog with pagination support and sorting
+ * GET /collection/?nav=children&page=...&sort_by=...&sort_order=...
  */
-export async function fetchRootCollection(page = 1) {
+export async function fetchRootCollection(page = 1, sortBy = 'default', sortOrder = 'asc') {
   const params = new URLSearchParams();
   params.append('nav', 'children');
   if (page > 1) params.append('page', page.toString());
+  if (sortBy !== 'default') params.append('sort_by', sortBy);
+  if (sortOrder !== 'asc') params.append('sort_order', sortOrder);
   
   const url = `${BASE}/collection/?${params.toString()}`;
   const text = await fetchText(url);
@@ -73,14 +75,16 @@ export async function fetchRootCollection(page = 1) {
 }
 
 /**
- * Collection by id with pagination support
- * GET /collection/?id=...&nav=...&page=...
+ * Collection by id with pagination support and sorting
+ * GET /collection/?id=...&nav=...&page=...&sort_by=...&sort_order=...
  */
-export async function fetchCollectionRaw(id, nav = 'children', page = 1) {
+export async function fetchCollectionRaw(id, nav = 'children', page = 1, sortBy = 'default', sortOrder = 'asc') {
   const params = new URLSearchParams();
   if (id) params.append('id', id);
   if (nav) params.append('nav', nav);
   if (page) params.append('page', page.toString());
+  if (sortBy !== 'default') params.append('sort_by', sortBy);
+  if (sortOrder !== 'asc') params.append('sort_order', sortOrder);
   
   const url = `${BASE}/collection/?${params.toString()}`;
   const text = await fetchText(url);
@@ -167,12 +171,65 @@ export function parseMembers(resp) {
     if (!id) continue;
 
     const title = it?.title || it?.label || id;
+    const nbChildren = it?.nb_children || 0;
+    
+    // Extract additional metadata for manuscripts/resources from dublinCore
+    const dublinCore = it?.dublinCore || {};
+    
+    // Extract language from dublinCore.language array
+    let language = null;
+    if (dublinCore.language && Array.isArray(dublinCore.language) && dublinCore.language.length > 0) {
+      // Join multiple languages with comma and space
+      language = dublinCore.language.join(', ');
+    }
+    
+    // Extract date information from dublinCore.coverage array
+    let startYear = null;
+    let stopYear = null;
+    if (dublinCore.coverage && Array.isArray(dublinCore.coverage) && dublinCore.coverage.length > 0) {
+      const coverage = dublinCore.coverage[0]; // Take first coverage entry
+      // Parse coverage like "801–" or "1101–" or "1300–1400"
+      if (coverage && typeof coverage === 'string') {
+        const yearMatch = coverage.match(/^(\d{3,4})(?:–(\d{3,4})?)?/);
+        if (yearMatch) {
+          startYear = parseInt(yearMatch[1], 10);
+          if (yearMatch[2]) {
+            stopYear = parseInt(yearMatch[2], 10);
+          }
+        }
+      }
+    }
+    
+    // Fallback to direct properties if dublinCore not available
+    if (!language) language = it?.language;
+    if (!startYear) startYear = it?.start_year;
+    if (!stopYear) stopYear = it?.stop_year;
+    
+    const location = it?.location;
 
     if (type.includes('collection')) {
-      members.push({ kind: 'collection', id, title });
+      members.push({ 
+        kind: 'collection', 
+        id, 
+        title, 
+        nb_children: nbChildren,
+        language,
+        start_year: startYear,
+        stop_year: stopYear,
+        location
+      });
     } else {
       // Treat anything else as a resource for browsing purposes
-      members.push({ kind: 'resource', id, title });
+      members.push({ 
+        kind: 'resource', 
+        id, 
+        title, 
+        nb_children: nbChildren,
+        language,
+        start_year: startYear,
+        stop_year: stopYear,
+        location
+      });
     }
   }
   return { members, pagination };
@@ -293,6 +350,37 @@ export async function searchAll(q, page = 1, size = 25, searchType = 'traditiona
 }
 
 
+
+/**
+ * Get total manuscript count from the database
+ * GET /manuscripts/count/
+ */
+export async function fetchManuscriptCount() {
+  const url = `${BASE}/manuscripts/count/`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch manuscript count (${res.status})`);
+  }
+  return await res.json();
+}
+
+/**
+ * Get list of all first-level collections for autocomplete
+ * GET /collections/list/?q=...
+ */
+export async function fetchCollectionsList(query = '') {
+  const params = new URLSearchParams();
+  if (query.trim()) {
+    params.append('q', query.trim());
+  }
+  
+  const url = `${BASE}/collections/list/?${params.toString()}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch collections list (${res.status})`);
+  }
+  return await res.json();
+}
 
 /**
  * Manuscript catalog search with pagination support

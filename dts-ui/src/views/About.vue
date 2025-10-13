@@ -135,7 +135,7 @@
                 <v-icon size="32" color="white">mdi-library</v-icon>
               </div>
               <div>
-                <div class="stat-number gradient-text-secondary">23,467</div>
+                <div class="stat-number gradient-text-secondary">{{ manuscriptCountFormatted }}</div>
                 <div class="stat-label">{{ $t('about.stats.manuscripts') }}</div>
               </div>
             </v-card-text>
@@ -174,10 +174,18 @@
       <v-card class="mb-6 intro-card" elevation="3">
         <v-card-text class="pa-8">
           <div class="intro-text text-h6 text-center mb-6">
-            {{ $t('about.intro.browsableCollection', { count: '23,467' }) }}
+            {{ $t('about.intro.browsableCollection', { count: manuscriptCountFormatted }) }}
             <br><br>
             <span class="text-body-1 text-medium-emphasis">
               {{ $t('about.intro.preservation') }}
+            </span>
+            <br><br>
+            <span class="text-body-2 text-medium-emphasis">
+              {{ $t('about.intro.paperDescription') }}
+              <a href="https://inria.hal.science/hal-05299220" target="_blank" rel="noopener" class="text-primary font-weight-medium text-decoration-none">
+                {{ $t('about.intro.paperTitle') }}
+              </a>
+              {{ $t('about.intro.paperAuthors') }}
             </span>
           </div>
 
@@ -220,7 +228,7 @@
               >
                 <div>
                   <div class="chip-label">Manuscripts</div>
-                  <div class="chip-value">23,467</div>
+                  <div class="chip-value">{{ manuscriptCountFormatted }}</div>
                 </div>
               </v-chip>
             </v-col>
@@ -312,16 +320,6 @@
               >
                 {{ $t('about.detailed.showShort') }}
               </v-btn>
-              <v-btn 
-                color="secondary"
-                variant="tonal" 
-                size="large"
-                class="ma-2"
-                prepend-icon="mdi-content-copy"
-                @click="copyCitation"
-              >
-                {{ $t('about.intro.copyCitation') }}
-              </v-btn>
             </div>
           </v-card-text>
         </v-card>
@@ -379,6 +377,7 @@ import Arrow2Animation from '@/assets/arrow3.json'
 import Arrow3Animation from '@/assets/arrow6.json'
 import Arrow5Animation from '@/assets/arrow11.json'
 import config from '@/config/urls.js'
+import { fetchManuscriptCount } from '@/api/dts.js'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -386,6 +385,8 @@ const router = useRouter()
 const showFullAbout = ref(false)
 const snackbar = ref(false)
 const snackbarMsg = ref('')
+const manuscriptCount = ref(23467) // Fallback value
+const manuscriptCountFormatted = ref('23,467') // Fallback formatted value
 
 
 // Arrow refs
@@ -464,6 +465,21 @@ function changeAnimationColor(animationData, newColor) {
   
   updateColors(modifiedData)
   return modifiedData
+}
+
+// Function to load manuscript count
+async function loadManuscriptCount() {
+  try {
+    const response = await fetchManuscriptCount()
+    if (response && response.total_manuscripts) {
+      manuscriptCount.value = response.total_manuscripts
+      // Format number with commas
+      manuscriptCountFormatted.value = response.total_manuscripts.toLocaleString()
+    }
+  } catch (error) {
+    console.warn('Failed to fetch manuscript count:', error)
+    // Keep the fallback values
+  }
 }
 
 onMounted(() => {
@@ -545,6 +561,9 @@ onMounted(() => {
     topArrow3Animation.goToAndPlay(0)
     setInterval(playTopArrow3, 4000) // Every 4 seconds
   }
+  
+  // Load manuscript count
+  loadManuscriptCount()
 })
 </script>
 
@@ -1371,7 +1390,7 @@ onMounted(() => {
 
 /* Expandable Download Button */
 .download-button-container {
-  width: 220px;
+  width: 250px;
   transition: width 0.3s ease;
 }
 .download-expandable-btn {

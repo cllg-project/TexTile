@@ -143,7 +143,8 @@ export default {
         title: 'Search Tips',
         tips: {
           multiWord: 'for multiple word search, e.g. "deus,deum"',
-          phrase: 'for exact phrase, e.g. "la bouche"'
+          phrase: 'for exact phrase, e.g. "la bouche"',
+          wildcard: "use '*' as a wildcard to match word prefixes (e.g., 'reg*' matches 'regnum') — only available in Exact Match"
         }
       },
       vector: {
@@ -205,6 +206,9 @@ export default {
     intro: {
       browsableCollection: 'A browsable collection of {count}+ manuscript digitizations in medieval Latin and Old French.',
       preservation: 'Texts preserve original abbreviations, spellings, and layout features — useful for research, but not a substitute for human transcription.',
+      paperDescription: 'This work is described in detail in the research paper',
+      paperTitle: '"CoMMA, a Large-scale Corpus of Multilingual Medieval Archives"',
+      paperAuthors: 'by Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, and Benoît Sagot (2025).',
       readFull: 'Read Full About',
       preprint: 'Preprint (PDF)',
       copyCitation: 'Copy Citation',
@@ -244,6 +248,15 @@ export default {
       catmusDescription: ', a massive dataset for training handwriting recognition models in medieval manuscripts.',
       paper: 'The corpus presented here is described in an article, in English, also presenting its limitations and the framework of its creation: ',
       paperLink: 'Research Paper'
+    },
+    paper: {
+      title: 'Research Paper & Credits',
+      description: 'This corpus is described in the research paper',
+      paperTitle: 'CoMMA, a Large-scale Corpus of Multilingual Medieval Archives',
+      authors: 'Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, Benoît Sagot',
+      year: '2025',
+      abstract: 'We present CoMMA, a large-scale corpus of medieval manuscripts produced through automatic text recognition. The corpus contains around 2.5b tokens drawn from more than 23,000 digitized manuscripts in Latin and Old French, harvested via IIIF.',
+      viewPaper: 'View Full Paper'
     },
     features: {
       title: 'Corpus Features',
