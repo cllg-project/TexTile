@@ -23,7 +23,9 @@ export default {
     collapseAll: 'Réduire Tout',
     searchMode: 'Mode de Recherche',
     legacyBrowse: 'Navigation Classique',
+    browse: 'Navigation',
     metadataSearch: 'Recherche de Métadonnées',
+    search: 'Recherche',
     noResults: 'Aucun résultat trouvé',
     loading: 'Chargement...',
     searchTypes: {

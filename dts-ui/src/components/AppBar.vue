@@ -1,42 +1,87 @@
 <template>
   <v-app-bar app color="secondary" density="comfortable">
-    <v-container class="d-flex align-center">
+    <v-container class="d-flex align-center" fluid>
       <RouterLink to="/" class="text-decoration-none">
-        <v-app-bar-title class="text-h6 font-weight-bold text-white">{{ $t('appTitle') }}</v-app-bar-title>
+        <v-app-bar-title class="text-h6 font-weight-bold text-white app-title">{{ $t('appTitle') }}</v-app-bar-title>
       </RouterLink>
       <v-spacer />
-      <v-btn variant="text" to="/catalog" class="text-white">{{ $t('navigation.browseLibrary') }}</v-btn>
-      <v-btn variant="text" to="/search" class="text-white">{{ $t('navigation.textSearch') }}</v-btn>
-      <v-btn variant="text" to="/about" class="text-white">{{ $t('navigation.about') }}</v-btn>
-      <v-divider vertical class="mx-2" />
       
-      <!-- Language Switcher -->
-      <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn variant="text" v-bind="props" :title="$t('language.switch')" class="text-white language-activator">
-            <span class="lang-flag" aria-hidden="true">{{ currentLanguageFlag }}</span>
-            <span class="lang-name">{{ currentLanguageName }}</span>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item 
-            v-for="lang in availableLanguages" 
-            :key="lang.code"
-            @click="switchLanguage(lang.code)"
-            :class="{ 'bg-primary': currentLocale === lang.code }"
-          >
-            <v-list-item-title>
-              <span class="mr-2">{{ lang.flag }}</span>
-              {{ lang.name }}
-            </v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+      <!-- Desktop Navigation -->
+      <div class="d-none d-md-flex align-center">
+        <v-btn variant="text" to="/catalog" class="text-white">{{ $t('navigation.browseLibrary') }}</v-btn>
+        <v-btn variant="text" to="/search" class="text-white">{{ $t('navigation.textSearch') }}</v-btn>
+        <v-btn variant="text" to="/about" class="text-white">{{ $t('navigation.about') }}</v-btn>
+        <v-divider vertical class="mx-2" />
+        
+        <!-- Language Switcher -->
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn variant="text" v-bind="props" :title="$t('language.switch')" class="text-white language-activator">
+              <span class="lang-flag" aria-hidden="true">{{ currentLanguageFlag }}</span>
+              <span class="lang-name">{{ currentLanguageName }}</span>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item 
+              v-for="lang in availableLanguages" 
+              :key="lang.code"
+              @click="switchLanguage(lang.code)"
+              :class="{ 'bg-primary': currentLocale === lang.code }"
+            >
+              <v-list-item-title>
+                <span class="mr-2">{{ lang.flag }}</span>
+                {{ lang.name }}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        
+        <!-- Theme Switcher -->
+        <v-btn icon @click="toggleTheme" :title="$t('theme.switchTo', { mode: $t(`theme.${nextTheme}`) })">
+          <v-icon class="text-white">{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
+        </v-btn>
+      </div>
       
-      <!-- Theme Switcher -->
-      <v-btn icon @click="toggleTheme" :title="$t('theme.switchTo', { mode: $t(`theme.${nextTheme}`) })">
-        <v-icon class="text-white">{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
-      </v-btn>
+      <!-- Mobile Navigation Menu - Only show on mobile/tablet screens -->
+      <div class="d-md-none">
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn icon v-bind="props" class="text-white">
+              <v-icon>mdi-menu</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item to="/catalog">
+              <v-list-item-title>{{ $t('navigation.browseLibrary') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item to="/search">
+              <v-list-item-title>{{ $t('navigation.textSearch') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item to="/about">
+              <v-list-item-title>{{ $t('navigation.about') }}</v-list-item-title>
+            </v-list-item>
+            <v-divider class="my-2" />
+            <v-list-item 
+              v-for="lang in availableLanguages" 
+              :key="lang.code"
+              @click="switchLanguage(lang.code)"
+              :class="{ 'bg-primary': currentLocale === lang.code }"
+            >
+              <v-list-item-title>
+                <span class="mr-2">{{ lang.flag }}</span>
+                {{ lang.name }}
+              </v-list-item-title>
+            </v-list-item>
+            <v-divider class="my-2" />
+            <v-list-item @click="toggleTheme">
+              <v-list-item-title>
+                <v-icon class="mr-2">{{ isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
+                {{ $t('theme.switchTo', { mode: $t(`theme.${nextTheme}`) }) }}
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
     </v-container>
   </v-app-bar>
 </template>
@@ -102,5 +147,22 @@ onMounted(() => {
 }
 .lang-name {
   display: inline-block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .app-title {
+    font-size: 1rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-title {
+    font-size: 0.9rem !important;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 </style>

@@ -9,7 +9,7 @@
 
     <v-container class="py-6">
       <v-row class="mb-4" align="center">
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="8" lg="6">
           <!-- Legacy Browse Mode -->
           <v-autocomplete
             v-if="searchMode === 'legacy'"
@@ -28,21 +28,21 @@
           />
           
           <!-- Metadata Search Mode -->
-          <div v-else class="d-flex align-center gap-2">
+          <div v-else class="metadata-search-container">
             <!-- Search Type Toggle -->
             <v-btn-toggle
               v-model="selectedSearchType"
               mandatory
               variant="outlined"
               density="compact"
-              class="flex-shrink-0"
+              class="search-type-toggle"
             >
               <v-btn 
                 v-for="type in searchTypes" 
                 :key="type.value"
                 :value="type.value" 
                 size="small"
-                class="px-2"
+                class="search-type-btn"
               >
                 <v-icon 
                   :color="selectedSearchType === type.value ? type.color : 'grey'" 
@@ -51,7 +51,7 @@
                 >
                   {{ type.icon }}
                 </v-icon>
-                {{ $t(`catalog.searchTypes.${type.value}`) }}
+                <span class="btn-text">{{ $t(`catalog.searchTypes.${type.value}`) }}</span>
               </v-btn>
             </v-btn-toggle>
 
@@ -65,7 +65,7 @@
               hide-details
               density="comfortable"
               :loading="isLoading"
-              class="flex-grow-1"
+              class="search-input"
               @keyup.enter="performMetadataSearch(metadataQuery, selectedSearchType)"
             >
               <template #append-inner>
@@ -81,20 +81,23 @@
           </div>
         </v-col>
         
-        <v-col cols="auto">
+        <v-col cols="12" md="4" lg="auto">
           <v-btn-toggle
             v-model="searchMode"
             mandatory
             variant="outlined"
             density="compact"
+            class="w-100"
           >
-            <v-btn value="legacy" size="small">
-              <v-icon start>mdi-format-list-bulleted</v-icon>
-              {{ $t('catalog.legacyBrowse') }}
+            <v-btn value="legacy" size="small" class="flex-grow-1">
+              <v-icon start size="small">mdi-format-list-bulleted</v-icon>
+              <span class="d-none d-sm-inline">{{ $t('catalog.legacyBrowse') }}</span>
+              <span class="d-sm-none">{{ $t('catalog.browse') }}</span>
             </v-btn>
-            <v-btn value="metadata" size="small">
-              <v-icon start>mdi-database-search</v-icon>
-              {{ $t('catalog.metadataSearch') }}
+            <v-btn value="metadata" size="small" class="flex-grow-1">
+              <v-icon start size="small">mdi-database-search</v-icon>
+              <span class="d-none d-sm-inline">{{ $t('catalog.metadataSearch') }}</span>
+              <span class="d-sm-none">{{ $t('catalog.search') }}</span>
             </v-btn>
           </v-btn-toggle>
         </v-col>
@@ -1054,4 +1057,55 @@ onMounted(() => {
     font-size: 16px !important;
   }
 }
+
+/* Metadata Search Responsive Styles */
+.metadata-search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.search-type-toggle {
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+  .metadata-search-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .search-type-toggle {
+    width: 100%;
+  }
+  
+  .search-type-toggle .v-btn-group {
+    width: 100%;
+  }
+  
+  .search-type-btn {
+    flex: 1;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .search-type-btn .btn-text {
+    display: none;
+  }
+  
+  .search-type-btn {
+    min-width: 48px !important;
+    padding: 0 8px !important;
+  }
+}
+
 </style>

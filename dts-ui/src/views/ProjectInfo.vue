@@ -493,5 +493,23 @@ onMounted(() => {
     width: 80px;
     height: 80px;
   }
+  
+  .hero-section h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  .hero-section .text-h4 {
+    font-size: 1.2rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-section .v-row {
+    flex-direction: column-reverse;
+  }
+  
+  .v-card {
+    margin-bottom: 1rem !important;
+  }
 }
 </style>

@@ -88,7 +88,7 @@
     </v-card> -->
 
     <!-- Query bar + search button + keyboard toggle -->
-    <div class="d-flex align-center" style="gap:12px">
+    <div class="search-controls">
       <v-text-field
         ref="inputRef"
         v-model="q"
@@ -676,5 +676,44 @@ watch(() => route.query, () => {
   white-space: nowrap;
   overflow: hidden;
   width: 100%;
+}
+
+/* Responsive Search Controls */
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .search-controls {
+    gap: 8px;
+  }
+  
+  .search-controls .v-btn {
+    flex: 1;
+    min-width: 48px;
+  }
+  
+  .search-input {
+    width: 100%;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .v-alert .v-row {
+    margin: 0 !important;
+  }
+  
+  .v-alert .v-col {
+    padding: 4px !important;
+  }
+  
+  .rule {
+    font-size: 0.875rem;
+    margin: 2px 0;
+  }
 }
 </style>

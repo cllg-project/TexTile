@@ -1,10 +1,7 @@
 <template>
   <v-app>
     <AppBar />
-      <v-main
-    class="h-100"
-    style="min-width: 1000px"
-  >
+      <v-main class="h-100">
       <RouterView />
     </v-main>
     <LanguageIndicator :show="true" />

@@ -248,8 +248,8 @@
           </v-alert>
 
           <!-- Top controls -->
-          <div class="d-flex align-center justify-space-between mb-2" @keydown.enter="onGotoEnter">
-            <div class="d-flex align-center suppress-page-arrows" style="gap:8px">
+          <div class="document-controls mb-2" @keydown.enter="onGotoEnter">
+            <div class="page-selector">
               <v-autocomplete
                 v-model="goto"
                 :items="refs"
@@ -257,24 +257,24 @@
                 clearable
                 hide-details
                 density="comfortable"
-                style="max-width:380px; min-width:300px"
+                class="page-autocomplete"
                 @update:modelValue="onGoto"
               />
             </div>
 
-            <div class="d-flex align-center">
+            <div class="page-navigation">
               <v-btn
                 variant="tonal"
-                class="square-btn mr-2"
+                class="square-btn"
                 :disabled="index <= 0"
                 @click="goPrev"
               >
                 <v-icon>mdi-chevron-left</v-icon>
               </v-btn>
-              <span class="text-caption text-no-wrap">{{ $t('document.pageCounter', { current: index + 1, total: refs.length }) }}</span>
+              <span class="text-caption text-no-wrap page-counter">{{ $t('document.pageCounter', { current: index + 1, total: refs.length }) }}</span>
               <v-btn
                 variant="tonal"
-                class="square-btn ml-2"
+                class="square-btn"
                 :disabled="index >= refs.length - 1"
                 @click="goNext"
               >
@@ -1577,4 +1577,91 @@ watch(
     border: 1px dashed rgba(255, 255, 255, 0.2);
   }
 }
+
+/* Responsive Document Controls */
+.document-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-selector {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-autocomplete {
+  max-width: 380px;
+  min-width: 200px;
+}
+
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 960px) {
+  .document-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .page-selector {
+    width: 100%;
+  }
+  
+  .page-autocomplete {
+    max-width: 100%;
+  }
+  
+  .page-navigation {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .page-counter {
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .reader-scroller {
+    height: calc(100vh - 220px);
+  }
+  
+  .iiif-viewer-container {
+    height: calc(100vh - 160px);
+  }
+  
+  :deep(.reader-html) {
+    font-size: calc(var(--reader-font-size, 18px) * 0.9);
+  }
+}
+
+@media (max-width: 600px) {
+  .square-btn {
+    min-width: 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .page-counter {
+    font-size: 0.75rem;
+  }
+  
+  .size-btn {
+    width: 38px !important;
+    height: 32px !important;
+    min-width: 38px !important;
+  }
+  
+  .size-readout {
+    min-width: 60px;
+    font-size: 0.875rem;
+  }
+}
 </style>
+
