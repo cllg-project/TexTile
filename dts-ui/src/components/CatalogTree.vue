@@ -1,6 +1,6 @@
 <template>
   <v-list density="compact" nav>
-    <template v-for="node in nodes" :key="nodeKey(node)">
+    <template v-for="node in sortedNodes" :key="nodeKey(node)">
       <v-list-item
         v-if="node.kind==='resource'"
         :subtitle="node.location || node.id"
@@ -31,6 +31,18 @@
               class="text-caption manuscript-chip"
             >
               {{ formatDateRange(node.start_year, node.stop_year) }}
+            </v-chip>
+            
+            <!-- Token count chip -->
+            <v-chip
+              v-if="node.token_count"
+              size="small"
+              variant="outlined"
+              color="indigo"
+              class="text-caption manuscript-chip"
+            >
+              <v-icon start size="small">mdi-file-word-box-outline</v-icon>
+              {{ formatTokenCount(node.token_count) }} tokens
             </v-chip>
           </div>
         </template>
@@ -104,7 +116,7 @@
   </v-list>
 </template>
 <script setup>
-import { reactive, ref, nextTick } from 'vue'
+import { reactive, ref, nextTick, computed } from 'vue'
 import { fetchCollectionRaw, parseMembers } from '../api/dts'
 
 const props = defineProps({ nodes: { type: Array, required: true } })
@@ -112,6 +124,20 @@ const open = ref(new Set())
 const children = ref({}) // Use ref instead of reactive for better tracking
 const pagination = ref({}) // Use ref instead of reactive
 const loadingMore = ref(new Set()) // Track which collections are loading more
+
+// Computed property to sort nodes: collections first, then resources alphabetically
+const sortedNodes = computed(() => {
+  const collections = props.nodes.filter(n => n.kind === 'collection')
+  const resources = props.nodes.filter(n => n.kind === 'resource')
+  
+  // Sort resources alphabetically by title
+  const sortedResources = [...resources].sort((a, b) => {
+    return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })
+  })
+  
+  // Return collections first (in their original order), then sorted resources
+  return [...collections, ...sortedResources]
+})
 
 function nodeKey(n){ return `${n.kind}:${n.id}` }
 function isOpen(n){ return open.value.has(nodeKey(n)) }
@@ -368,6 +394,13 @@ function formatNumber(num) {
   if (num < 1000) return num.toString()
   if (num < 1000000) return `${Math.floor(num / 100) / 10}k`
   return `${Math.floor(num / 100000) / 10}M`
+}
+
+function formatTokenCount(count) {
+  if (!count) return ''
+  if (count < 1000) return count.toString()
+  if (count < 1000000) return `${(count / 1000).toFixed(1)}k`
+  return `${(count / 1000000).toFixed(1)}M`
 }
 
 function getLanguageColor(lang) {

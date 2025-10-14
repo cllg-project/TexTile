@@ -1444,8 +1444,10 @@ onMounted(() => {
   }
   
   .arrow-left,
-  .arrow-right {
-    display: none; /* Hide arrows on mobile */
+  .arrow-right,
+  .arrow-top-1,
+  .arrow-top-3 {
+    display: none !important; /* Hide all arrows on mobile and tablets */
   }
   
   .main-search-area {
@@ -1472,6 +1474,13 @@ onMounted(() => {
 }
 
 @media (max-width: 1024px) {
+  .arrow-left,
+  .arrow-right,
+  .arrow-top-1,
+  .arrow-top-3 {
+    display: none !important; /* Hide all arrows on tablets and below */
+  }
+  
   .arrow-left {
     left: -100px; /* Closer to search bar on tablets */
   }

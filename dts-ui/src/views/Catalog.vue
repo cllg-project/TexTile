@@ -754,10 +754,11 @@ function filterTreeForMetadataResults(treeNodes, searchResults) {
       id: collectionId, // Use full collection URL for routing
       title: manuscriptTitle,
       location: result.location, // This will be shown as subtitle
-      // Keep only language and date fields as requested
+      // Keep language, date, and token count fields
       language: result.language,
       start_year: result.start_year,
-      stop_year: result.stop_year
+      stop_year: result.stop_year,
+      token_count: result.token_count
     }
   })
 }

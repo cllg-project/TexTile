@@ -187,23 +187,39 @@
     </v-expand-transition>
 
     <!-- Results header -->
-    <div v-if="loaded" class="d-flex align-center justify-space-between mt-4 mb-2">
-      <div class="text-body-2">
+    <div v-if="loaded" class="results-header mt-4 mb-2">
+      <div class="text-body-2 results-info mb-2 mb-sm-0">
         {{ $t('search.showingResults', { start, end, total }) }}
       </div>
-      <div class="d-flex align-center" style="gap:8px">
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)">
+      <div class="pagination-controls">
+        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)" class="d-none d-md-inline-flex">
           <v-icon start>mdi-page-first</v-icon> {{ $t('search.pagination.first') }}
         </v-btn>
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)">
+        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)" class="d-md-none" icon>
+          <v-icon>mdi-page-first</v-icon>
+        </v-btn>
+        
+        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)" class="d-none d-sm-inline-flex">
           <v-icon start>mdi-chevron-left</v-icon> {{ $t('search.pagination.prev') }}
         </v-btn>
-        <span class="text-caption">{{ $t('search.pagination.page', { current: page, total: pages }) }}</span>
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)">
+        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)" class="d-sm-none" icon>
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+        
+        <span class="text-caption px-2">{{ $t('search.pagination.page', { current: page, total: pages }) }}</span>
+        
+        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)" class="d-none d-sm-inline-flex">
           {{ $t('search.pagination.next') }} <v-icon end>mdi-chevron-right</v-icon>
         </v-btn>
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)">
+        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)" class="d-sm-none" icon>
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-btn>
+        
+        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)" class="d-none d-md-inline-flex">
           {{ $t('search.pagination.last') }} <v-icon end>mdi-page-last</v-icon>
+        </v-btn>
+        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)" class="d-md-none" icon>
+          <v-icon>mdi-page-last</v-icon>
         </v-btn>
       </div>
     </div>
@@ -714,6 +730,54 @@ watch(() => route.query, () => {
   .rule {
     font-size: 0.875rem;
     margin: 2px 0;
+  }
+}
+
+/* Responsive Results Header */
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.results-info {
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 960px) {
+  .results-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .results-info {
+    text-align: center;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 600px) {
+  .pagination-controls {
+    gap: 1px;
+  }
+  
+  .pagination-controls .text-caption {
+    font-size: 0.7rem;
+    padding: 0 4px !important;
   }
 }
 </style>

@@ -16,7 +16,7 @@ export default {
   projectPageUrl: 'https://github.com/yourusername/comma-project',
   
   // Contact information
-  contactEmail: 'comma-team@example.org',
+  contactEmail: 'thibault.clerice@inria.fr',
   
   // Citation text
   citationText: `@unpublished{clerice:hal-05299220,
@@ -33,6 +33,6 @@ export default {
 }`,
   
   // Technology names (for easier rebranding if needed)
-  dtsUiName: 'CoMMA Reader Interface',
+  dtsUiName: 'TexTile',
   mydapytainsName: 'MyDapytains'
 }

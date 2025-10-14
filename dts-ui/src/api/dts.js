@@ -200,10 +200,26 @@ export function parseMembers(resp) {
       }
     }
     
+    // Extract token count from dublinCore.description array
+    let tokenCount = null;
+    if (dublinCore.description && Array.isArray(dublinCore.description) && dublinCore.description.length > 0) {
+      // Look for "Token count: XXXX" pattern in description array
+      for (const desc of dublinCore.description) {
+        if (typeof desc === 'string') {
+          const tokenMatch = desc.match(/Token count:\s*(\d+)/i);
+          if (tokenMatch) {
+            tokenCount = parseInt(tokenMatch[1], 10);
+            break;
+          }
+        }
+      }
+    }
+    
     // Fallback to direct properties if dublinCore not available
     if (!language) language = it?.language;
     if (!startYear) startYear = it?.start_year;
     if (!stopYear) stopYear = it?.stop_year;
+    if (!tokenCount) tokenCount = it?.token_count;
     
     const location = it?.location;
 
@@ -216,7 +232,8 @@ export function parseMembers(resp) {
         language,
         start_year: startYear,
         stop_year: stopYear,
-        location
+        location,
+        token_count: tokenCount
       });
     } else {
       // Treat anything else as a resource for browsing purposes
@@ -228,7 +245,8 @@ export function parseMembers(resp) {
         language,
         start_year: startYear,
         stop_year: stopYear,
-        location
+        location,
+        token_count: tokenCount
       });
     }
   }
