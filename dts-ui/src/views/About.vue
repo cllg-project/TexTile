@@ -99,13 +99,13 @@
           <div class="d-flex justify-center flex-wrap mt-4">
             <v-chip
               v-for="suggestion in quickSearches"
-              :key="suggestion"
+              :key="suggestion.label"
               class="ma-1 suggestion-chip"
               variant="outlined"
               size="small"
-              @click="searchQuery = suggestion; performSearch()"
+              @click="performSearch(suggestion.query)"
             >
-              {{ suggestion }}
+              {{ suggestion.label }}
             </v-chip>
           </div>
         </div>
@@ -333,54 +333,86 @@
           <!-- First Row: Inria, Almanach, Colaf, Biblissima -->
           <v-row justify="center" align="center" class="sponsors-logos mb-4">
             <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  v-if="$vuetify.theme.current.dark" 
-                  src="@/assets/inria_logo_dark_mode.png" 
-                  alt="Inria" 
-                  class="sponsor-logo"
-                />
-                <img 
-                  v-else 
-                  src="@/assets/inria_logo_white_mode.png" 
-                  alt="Inria" 
-                  class="sponsor-logo"
-                />
-              </div>
+              <a 
+                href="https://inria.fr/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="sponsor-logo-link"
+                :title="$t('about.sponsors.visitInria', 'Inria')"
+              >
+                <div class="sponsor-logo-wrapper">
+                  <img 
+                    v-if="$vuetify.theme.current.dark" 
+                    src="@/assets/inria_logo_dark_mode.png" 
+                    alt="Inria" 
+                    class="sponsor-logo"
+                  />
+                  <img 
+                    v-else 
+                    src="@/assets/inria_logo_white_mode.png" 
+                    alt="Inria" 
+                    class="sponsor-logo"
+                  />
+                </div>
+              </a>
             </v-col>
             <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  src="@/assets/almanach_logo.png" 
-                  alt="Almanach" 
-                  class="sponsor-logo"
-                />
-              </div>
+              <a 
+                href="https://almanach.inria.fr/index-fr.html" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="sponsor-logo-link"
+                :title="$t('about.sponsors.visitAlmanach', 'Almanach')"
+              >
+                <div class="sponsor-logo-wrapper">
+                  <img 
+                    src="@/assets/almanach_logo.png" 
+                    alt="Almanach" 
+                    class="sponsor-logo"
+                  />
+                </div>
+              </a>
             </v-col>
             <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  src="@/assets/colaf_logo.png" 
-                  alt="CoLaF" 
-                  class="sponsor-logo"
-                />
-              </div>
+              <a 
+                href="https://colaf.huma-num.fr/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="sponsor-logo-link"
+                :title="$t('about.sponsors.visitColaf', 'DEFI-COLaF')"
+              >
+                <div class="sponsor-logo-wrapper">
+                  <img 
+                    src="@/assets/colaf_logo.png" 
+                    alt="DEFI-COLaF" 
+                    class="sponsor-logo"
+                  />
+                </div>
+              </a>
             </v-col>
             <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  v-if="$vuetify.theme.current.dark" 
-                  src="@/assets/biblissima_logo_dark_mode.png" 
-                  alt="Biblissima+" 
-                  class="sponsor-logo"
-                />
-                <img 
-                  v-else 
-                  src="@/assets/biblissima_logo_white_mode.png" 
-                  alt="Biblissima+" 
-                  class="sponsor-logo"
-                />
-              </div>
+              <a 
+                href="https://portail.biblissima.fr/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="sponsor-logo-link"
+                :title="$t('about.sponsors.visitBiblissima', 'Biblissima+')"
+              >
+                <div class="sponsor-logo-wrapper">
+                  <img 
+                    v-if="$vuetify.theme.current.dark" 
+                    src="@/assets/biblissima_logo_dark_mode.png" 
+                    alt="Biblissima+" 
+                    class="sponsor-logo"
+                  />
+                  <img 
+                    v-else 
+                    src="@/assets/biblissima_logo_white_mode.png" 
+                    alt="Biblissima+" 
+                    class="sponsor-logo"
+                  />
+                </div>
+              </a>
             </v-col>
           </v-row>
 
@@ -484,12 +516,12 @@ const topArrow3 = ref(null)
 // Search functionality
 const searchQuery = ref('')
 const quickSearches = ref([
-  'amor',
-  'deus',
-  'rex',
-  'ecclesia',
-  'sanctus',
-  'miraculum'
+  { label: 'amor', query: 'amor' },
+  { label: 'loi', query: 'loi,lois,loiz' },
+  { label: 'saint', query: 'sainct,sainz,seinct,seint,seints,sainz,saincte,sainte,sainctes,saintes' },
+  { label: 'lascivus', query: 'lasciu*' },
+  { label: 'scribo', query: 'sc̾bo,scribo,scͥbo' },
+  { label: 'signora', query: 'signora' }
 ])
 
 function showFull(){ showFullAbout.value = true }
@@ -514,15 +546,25 @@ function openPreprint(){
   window.open(config.preprintUrl, '_blank', 'noopener')
 }
 
-function performSearch() {
-  if (!searchQuery.value?.trim()) return
+function performSearch(customQuery = null) {
+  const queryToUse = customQuery || searchQuery.value
+  if (!queryToUse?.trim()) return
+  
+  // Determine search mode based on query characteristics
+  let searchMode = 'exact'
+  if (queryToUse.includes('*')) {
+    searchMode = 'partial'
+  } else if (queryToUse === 'signora') {
+    searchMode = 'fuzzy'
+  }
   
   // Navigate to search view with the query
   router.push({
     name: 'search',
     query: {
-      q: searchQuery.value.trim(),
-      type: 'traditional'
+      q: queryToUse.trim(),
+      type: 'traditional',
+      mode: searchMode
     }
   })
 }
@@ -1029,6 +1071,16 @@ onMounted(() => {
   margin: 2rem 0;
 }
 
+.sponsor-logo-link {
+  display: block;
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.sponsor-logo-link:hover {
+  transform: translateY(-4px);
+}
+
 .sponsor-logo-wrapper {
   width: 100%;
   max-width: 280px;
@@ -1037,6 +1089,11 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.sponsor-logo-link:hover .sponsor-logo-wrapper {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
 }
 
 .sponsor-logo-wrapper-inline {
@@ -1057,7 +1114,7 @@ onMounted(() => {
   transition: all 0.3s ease;
 }
 
-.sponsor-logo:hover {
+.sponsor-logo-link:hover .sponsor-logo {
   filter: grayscale(0%);
   opacity: 1;
   transform: scale(1.05);
