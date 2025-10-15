@@ -314,10 +314,21 @@ export default {
     technology: {
       title: 'Technologies Used',
       dtsUi: {
-        description: 'developed by Hassen Aguili, whose code is available at '
+        description: 'Web interface for browsing and searching the corpus, developed by Hassen Aguili.',
+        uiRepo: 'UI Repository',
+        backendRepo: 'Backend Repository'
       },
       mydapytains: {
-        description: 'developed by Thibault Clérice, funded by the PIQ CLLG project (ANR Mention), available at '
+        description: 'Backend API server developed by Thibault Clérice, funded by the PIQ CLLG project (ANR Mention).',
+        viewRepo: 'View Repository'
+      },
+      kraken: {
+        description: 'Developed by Benjamin Kiessling, Kraken was used for the automatic recognition of handwritten text in medieval manuscripts.',
+        viewRepo: 'View Repository'
+      },
+      catmus: {
+        description: 'A specialized model for transcribing medieval manuscripts in Latin scripts, used with Kraken for high-accuracy text recognition.',
+        viewPaper: 'View Paper'
       }
     },
     stats: {

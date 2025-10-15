@@ -314,10 +314,21 @@ export default {
     technology: {
       title: 'Technologies Utilisées',
       dtsUi: {
-        description: 'développé par Hassen Aguili, dont le code est disponible à l\'adresse '
+        description: 'Interface web pour parcourir et rechercher dans le corpus, développée par Hassen Aguili.',
+        uiRepo: 'Dépôt Interface',
+        backendRepo: 'Dépôt Backend'
       },
       mydapytains: {
-        description: 'développé par Thibault Clérice, financé par le projet PIQ CLLG (Mention ANR), disponible à l\'adresse '
+        description: 'Développé par Thibault Clérice, financé par le projet PIQ CLLG (Mention ANR).',
+        viewRepo: 'Voir le Dépôt'
+      },
+      kraken: {
+        description: 'Développé par Benjamin Kiessling, Kraken a été utilisé pour la reconnaissance automatique du texte manuscrit médiéval.',
+        viewRepo: 'Voir le Dépôt'
+      },
+      catmus: {
+        description: 'Un modèle spécialisé pour transcrire les manuscrits médiévaux en écriture latine, utilisé avec Kraken pour une reconnaissance de texte de haute précision.',
+        viewPaper: 'Voir l\'Article'
       }
     },
     stats: {

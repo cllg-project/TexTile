@@ -150,32 +150,111 @@
             {{ $t('projectInfo.technology.title') }}
           </v-card-title>
           <v-card-text class="pa-6">
-            <v-list density="comfortable">
-              <v-list-item class="px-0">
-                <template #prepend>
-                  <v-icon color="primary" class="mr-3">mdi-code-tags</v-icon>
-                </template>
-                <v-list-item-title class="text-body-1">
-                  <strong>{{ config.dtsUiName }}</strong>, 
-                  {{ $t('projectInfo.technology.dtsUi.description') }}
-                  <a :href="config.dtsUiRepository" target="_blank" class="text-decoration-none">
-                    {{ config.dtsUiRepository }}
-                  </a>
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item class="px-0">
-                <template #prepend>
-                  <v-icon color="primary" class="mr-3">mdi-server</v-icon>
-                </template>
-                <v-list-item-title class="text-body-1">
-                  <strong>{{ config.mydapytainsName }}</strong>, 
-                  {{ $t('projectInfo.technology.mydapytains.description') }}
-                  <a :href="config.mydapytainsRepository" target="_blank" class="text-decoration-none">
-                    {{ config.mydapytainsRepository }}
-                  </a>
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
+            <!-- TexTile (DTS UI) -->
+            <div class="tech-section mb-5">
+              <div class="d-flex align-center mb-2">
+                <v-icon color="primary" class="mr-2">mdi-code-tags</v-icon>
+                <div class="text-subtitle-1 font-weight-bold">{{ config.dtsUiName }}</div>
+              </div>
+              <div class="text-body-2 mb-2">
+                {{ $t('projectInfo.technology.dtsUi.description') }}
+              </div>
+              <div class="d-flex flex-wrap gap-2 align-center">
+                <v-chip
+                  :href="config.dtsUiRepository"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="secondary"
+                  variant="flat"
+                  prepend-icon="mdi-github"
+                  size="small"
+                  class="tech-chip-small"
+                >
+                  {{ $t('projectInfo.technology.dtsUi.uiRepo') }}
+                </v-chip>
+                <v-chip
+                  :href="config.dtsBackendRepository"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  color="secondary"
+                  variant="flat"
+                  prepend-icon="mdi-github"
+                  size="small"
+                  class="tech-chip-small"
+                >
+                  {{ $t('projectInfo.technology.dtsUi.backendRepo') }}
+                </v-chip>
+              </div>
+            </div>
+
+            <!-- MyDapytains -->
+            <div class="tech-section mb-5">
+              <div class="d-flex align-center mb-2">
+                <v-icon color="primary" class="mr-2">mdi-server</v-icon>
+                <div class="text-subtitle-1 font-weight-bold">{{ config.mydapytainsName }}</div>
+              </div>
+              <div class="text-body-2 mb-2">
+                {{ $t('projectInfo.technology.mydapytains.description') }}
+              </div>
+              <v-chip
+                :href="config.mydapytainsRepository"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="secondary"
+                variant="flat"
+                prepend-icon="mdi-github"
+                size="small"
+                class="tech-chip-small"
+              >
+                {{ $t('projectInfo.technology.mydapytains.viewRepo') }}
+              </v-chip>
+            </div>
+
+            <!-- Kraken -->
+            <div class="tech-section mb-5">
+              <div class="d-flex align-center mb-2">
+                <v-icon color="primary" class="mr-2">mdi-ocr</v-icon>
+                <div class="text-subtitle-1 font-weight-bold">Kraken</div>
+              </div>
+              <div class="text-body-2 mb-2">
+                {{ $t('projectInfo.technology.kraken.description') }}
+              </div>
+              <v-chip
+                href="https://github.com/mittagessen/kraken"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="secondary"
+                variant="flat"
+                prepend-icon="mdi-github"
+                size="small"
+                class="tech-chip-small"
+              >
+                {{ $t('projectInfo.technology.kraken.viewRepo') }}
+              </v-chip>
+            </div>
+
+            <!-- CATMuS Medieval -->
+            <div class="tech-section">
+              <div class="d-flex align-center mb-2">
+                <v-icon color="primary" class="mr-2">mdi-script-text-key</v-icon>
+                <div class="text-subtitle-1 font-weight-bold">CATMuS Medieval</div>
+              </div>
+              <div class="text-body-2 mb-2">
+                {{ $t('projectInfo.technology.catmus.description') }}
+              </div>
+              <v-chip
+                href="https://inria.hal.science/hal-04453952"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="secondary"
+                variant="flat"
+                prepend-icon="mdi-file-document"
+                size="small"
+                class="tech-chip-small"
+              >
+                {{ $t('projectInfo.technology.catmus.viewPaper') }}
+              </v-chip>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -482,6 +561,61 @@ onMounted(() => {
 
 .paper-citation .text-body-2 {
   line-height: 1.5;
+}
+
+/* Technology Section Styling */
+.tech-section {
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.03) 0%, rgba(14, 165, 164, 0.03) 100%);
+  border-left: 3px solid rgba(103, 80, 164, 0.3);
+  transition: all 0.3s ease;
+}
+
+.tech-section:hover {
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.05) 0%, rgba(14, 165, 164, 0.05) 100%);
+  border-left-color: rgba(103, 80, 164, 0.6);
+  transform: translateX(4px);
+}
+
+.tech-chip {
+  font-weight: 600;
+  padding: 20px 20px !important;
+  height: auto !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.tech-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.tech-chip :deep(.v-chip__prepend) {
+  margin-right: 8px;
+}
+
+.tech-chip-small {
+  font-weight: 500;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.tech-chip-small:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tech-chip-small :deep(.v-chip__prepend) {
+  margin-right: 6px;
+}
+
+.gap-2 {
+  gap: 8px;
 }
 
 @media (max-width: 768px) {

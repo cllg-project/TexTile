@@ -4,6 +4,7 @@
 export default {
   // Project URLs
   dtsUiRepository: 'https://github.com/cllg-project/TexTile',
+  dtsBackendRepository: 'https://github.com/cllg-project/TexTile-Backend',
   mydapytainsRepository: 'https://github.com/PonteIneptique/MyDapytains',
   
   // Papers and publications
