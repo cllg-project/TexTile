@@ -330,41 +330,9 @@
         <v-card-text class="pa-8 text-center">
           <!-- <h3 class="text-h5 font-weight-bold mb-4">{{ $t('about.sponsors.title') }}</h3> -->
           
-          <!-- Logos Row -->
-          <v-row justify="center" align="center" class="sponsors-logos mb-6">
-            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  v-if="$vuetify.theme.current.dark" 
-                  src="@/assets/biblissima_logo_dark_mode.png" 
-                  alt="Biblissima+" 
-                  class="sponsor-logo"
-                />
-                <img 
-                  v-else 
-                  src="@/assets/biblissima_logo_white_mode.png" 
-                  alt="Biblissima+" 
-                  class="sponsor-logo"
-                />
-              </div>
-            </v-col>
-            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
-              <div class="sponsor-logo-wrapper">
-                <img 
-                  v-if="$vuetify.theme.current.dark" 
-                  src="@/assets/france2030_logo_dark_mode.png" 
-                  alt="France 2030" 
-                  class="sponsor-logo"
-                />
-                <img 
-                  v-else 
-                  src="@/assets/france2030_logo_white_mode.jpg" 
-                  alt="France 2030" 
-                  class="sponsor-logo"
-                />
-              </div>
-            </v-col>
-            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
+          <!-- First Row: Inria, Almanach, Colaf, Biblissima -->
+          <v-row justify="center" align="center" class="sponsors-logos mb-4">
+            <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
               <div class="sponsor-logo-wrapper">
                 <img 
                   v-if="$vuetify.theme.current.dark" 
@@ -380,12 +348,66 @@
                 />
               </div>
             </v-col>
+            <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  src="@/assets/almanach_logo.png" 
+                  alt="Almanach" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  src="@/assets/colaf_logo.png" 
+                  alt="CoLaF" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
+            <v-col cols="12" sm="6" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  v-if="$vuetify.theme.current.dark" 
+                  src="@/assets/biblissima_logo_dark_mode.png" 
+                  alt="Biblissima+" 
+                  class="sponsor-logo"
+                />
+                <img 
+                  v-else 
+                  src="@/assets/biblissima_logo_white_mode.png" 
+                  alt="Biblissima+" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
           </v-row>
 
-          <!-- Funding Text -->
-          <div class="funding-text text-body-2 text-medium-emphasis mx-auto" style="max-width: 800px;">
-            {{ $t('about.sponsors.fundingText') }}
-          </div>
+          <!-- Second Row: France 2030 Logo with Funding Text -->
+          <v-row justify="center" align="center" class="mt-6">
+            <v-col cols="12" md="10" lg="8">
+              <div class="d-flex align-center justify-center flex-wrap">
+                <div class="sponsor-logo-wrapper-inline mr-6 mb-4 mb-md-0">
+                  <img 
+                    v-if="$vuetify.theme.current.dark" 
+                    src="@/assets/france2030_logo_dark_mode.png" 
+                    alt="France 2030" 
+                    class="sponsor-logo"
+                  />
+                  <img 
+                    v-else 
+                    src="@/assets/france2030_logo_white_mode.jpg" 
+                    alt="France 2030" 
+                    class="sponsor-logo"
+                  />
+                </div>
+                <div class="funding-text text-body-2 text-medium-emphasis" style="flex: 1; min-width: 300px;">
+                  {{ $t('about.sponsors.fundingText') }}
+                </div>
+              </div>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
 
@@ -1009,12 +1031,21 @@ onMounted(() => {
 
 .sponsor-logo-wrapper {
   width: 100%;
-  max-width: 200px;
-  height: 100px;
+  max-width: 280px;
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+}
+
+.sponsor-logo-wrapper-inline {
+  width: 200px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .sponsor-logo {

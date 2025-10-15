@@ -337,7 +337,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { fetchNavigation, extractRefsFromNavigation, fetchPage, fetchCollectionRaw } from '../api/dts'
+import { fetchNavigation, extractRefsFromNavigation, fetchPage, fetchCollectionRaw, fetchDocumentXml } from '../api/dts'
 
 const { t } = useI18n()
 
@@ -411,9 +411,9 @@ const iiifManifestUrl = computed(() => {
   return manifestSource || documentMetadata.value.sources[0]
 })
 
-// Download Document URL - DTS API document endpoint without ref parameter
+// Download Document URL - DTS API document endpoint with mediaType but no ref
 const downloadDocumentUrl = computed(() => {
-  return `${BASE}/document/?resource=${encodeURIComponent(resource)}&format=xml`
+  return `${BASE}/document/?resource=${encodeURIComponent(resource)}&mediaType=application/xml`
 })
 
 // Download filename - sanitized resource name
@@ -938,28 +938,24 @@ function openResult(m){
 function clearHits(){ matches.value = []; highlightTerm.value = ''; applyHighlight() }
 function copyCitation(){ navigator.clipboard?.writeText(citation.value).catch(()=>{}) }
 
-/* Download document as XML file */
+/* Download document - fetches data and triggers download */
 async function downloadDocument() {
   try {
-    const response = await fetch(downloadDocumentUrl.value)
-    if (!response.ok) throw new Error('Download failed')
+    // Use the dedicated API function which handles the request properly
+    const xmlContent = await fetchDocumentXml(resource)
     
-    const xmlContent = await response.text()
-    const blob = new Blob([xmlContent], { type: 'application/xml' })
+    // Create a blob and trigger download
+    const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8' })
     const url = window.URL.createObjectURL(blob)
-    
     const link = document.createElement('a')
     link.href = url
     link.download = downloadFilename.value
     document.body.appendChild(link)
     link.click()
-    
-    // Cleanup
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Failed to download document:', error)
-    // Optionally show a user-friendly error message
     alert('Failed to download the document. Please try again.')
   }
 }

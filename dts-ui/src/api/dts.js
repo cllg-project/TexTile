@@ -136,6 +136,19 @@ export async function fetchPage(resource, ref, media = 'html', signal, tree = ''
   return fetchText(url, { signal });
 }
 
+/**
+ * Fetch full document as XML for download
+ * GET /document/?resource=...&mediaType=application/xml
+ */
+export async function fetchDocumentXml(resource, signal) {
+  const params = new URLSearchParams();
+  params.append('resource', resource);
+  //params.append('mediaType', 'application/xml');
+  
+  const url = `${BASE}/document/?${params.toString()}`;
+  return fetchText(url, { signal });
+}
+
 /* --------------------------- parsing helpers ------------------------- */
 
 /**
