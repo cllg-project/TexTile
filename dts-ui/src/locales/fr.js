@@ -1,5 +1,5 @@
 export default {
-  appTitle: 'CoMMA Reader',
+  appTitle: 'CoMMA',
   navigation: {
     browseLibrary: 'Parcourir la Bibliothèque',
     textSearch: 'Recherche de Texte',
@@ -196,7 +196,7 @@ export default {
     }
   },
   about: {
-    title: 'CoMMA Reader',
+    title: 'CoMMA',
     subtitle: 'Transcrire le Moyen Âge',
     description: 'Manuscrits navigables vers 800–1600, préservant l\'orthographe et les abréviations originales.',
     projectTitle: 'À Propos du Projet',
