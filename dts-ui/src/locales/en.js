@@ -73,7 +73,8 @@ export default {
       sources: 'Sources',
       identifiers: 'Identifiers',
       unknownLanguage: 'Unknown',
-      biblissimaLink: 'Biblissima link'
+      biblissimaLink: 'Biblissima link',
+      downloadDocument: 'Download document'
     },
     previousPage: 'Previous Page',
     nextPage: 'Next Page',
@@ -99,7 +100,7 @@ export default {
     },
     disclaimer: {
       title: 'Automatic Transcription Notice:',
-      text: 'This text is the result of automatic transcription. A sample evaluation showed an error rate varying between 0 and 100% on 600 different randomly chosen manuscripts, with an average below 10% CER overall.'
+      text: 'This text was created by automatic transcription. Most transcriptions are over 90% accurate, but some manuscripts — especially those with difficult handwriting or poor image quality — may contain many errors or even fail completely. The first pages often include handwritten notes rather than the main text; we recommend scrolling to the first content page for a better impression.'
     },
     iiif: {
       title: 'Manuscript Viewer',
@@ -241,6 +242,10 @@ export default {
       description: 'If you find errors, missing pages, or suspect important OCR failures, please contact the corpus team with the manuscript identifier and a short description.',
       contactTeam: 'Contact the Team',
       projectPage: 'Project Page / Code'
+    },
+    sponsors: {
+      title: 'Funding & Support',
+      fundingText: 'This work received support from the French government managed by the Agence Nationale de la Recherche under France 2030 bearing the reference "ANR-24-RRII-0002" and operated by the Inria Quadran Program.'
     },
     citation: {
       copied: 'Citation copied',

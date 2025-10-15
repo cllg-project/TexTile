@@ -14,7 +14,7 @@
               </v-expansion-panel-title>
               <v-expansion-panel-text class="custom-panel">
                 <div class="info-panel-wrapper">
-                  <!-- Languages and Dates Section - Compact Inline -->
+                  <!-- Chips Section: Languages and Dates -->
                   <div v-if="uniqueDisplayLanguages.length || (documentMetadata.dates && documentMetadata.dates.length)" class="chips-section">
                     <v-chip 
                       v-for="(lang, i) in uniqueDisplayLanguages" 
@@ -32,7 +32,7 @@
                       :key="`date-${i}`" 
                       size="small" 
                       variant="flat"
-                      color="amber-darken-2"
+                      color="indigo-darken-1"
                       class="info-chip date-chip"
                     >
                       <v-icon size="14" class="mr-1">mdi-calendar</v-icon>
@@ -40,46 +40,37 @@
                     </v-chip>
                   </div>
                   
-                  <!-- Description Section -->
-                  <div v-if="documentMetadata.description" class="info-section description-section">
-                    <div class="section-header">
-                      <v-icon size="18" class="section-icon">mdi-text-box-outline</v-icon>
-                    </div>
-                    <p class="section-text">{{ documentMetadata.description }}</p>
+                  <!-- Description - No label, just content -->
+                  <div v-if="documentMetadata.description" class="description-section">
+                    <p class="description-text">{{ documentMetadata.description }}</p>
                   </div>
                   
-                  <!-- Metadata Details -->
-                  <div v-if="hasMetadataDetails" class="info-section metadata-section">
+                  <!-- Compact Metadata Grid -->
+                  <div v-if="hasMetadataDetails" class="metadata-grid">
                     <div v-if="documentMetadata.author" class="metadata-item">
-                      <div class="section-header">
-                        <v-icon size="18" class="section-icon">mdi-account-outline</v-icon>
-                        <span class="section-label">{{ $t('document.info.author') }}</span>
-                      </div>
-                      <div class="section-text">{{ documentMetadata.author }}</div>
+                      <v-icon size="16" class="item-icon">mdi-account-outline</v-icon>
+                      <span class="item-label">{{ $t('document.info.author') }}:</span>
+                      <span class="item-value">{{ documentMetadata.author }}</span>
                     </div>
                     
                     <div v-if="documentMetadata.origin" class="metadata-item">
-                      <div class="section-header">
-                        <v-icon size="18" class="section-icon">mdi-map-marker-outline</v-icon>
-                        <span class="section-label">{{ $t('document.info.origin') }}</span>
-                      </div>
-                      <div class="section-text">{{ documentMetadata.origin }}</div>
+                      <v-icon size="16" class="item-icon">mdi-map-marker-outline</v-icon>
+                      <span class="item-label">{{ $t('document.info.origin') }}:</span>
+                      <span class="item-value">{{ documentMetadata.origin }}</span>
                     </div>
                     
                     <div v-if="documentMetadata.type" class="metadata-item">
-                      <div class="section-header">
-                        <v-icon size="18" class="section-icon">mdi-file-document-outline</v-icon>
-                        <span class="section-label">{{ $t('document.info.type') }}</span>
-                      </div>
-                      <div class="section-text">{{ documentMetadata.type }}</div>
+                      <v-icon size="16" class="item-icon">mdi-file-document-outline</v-icon>
+                      <span class="item-label">{{ $t('document.info.type') }}:</span>
+                      <span class="item-value">{{ documentMetadata.type }}</span>
                     </div>
                   </div>
                   
-                  <!-- Keywords -->
-                  <div v-if="documentMetadata.keywords && documentMetadata.keywords.length" class="info-section keywords-section">
-                    <div class="section-header">
-                      <v-icon size="18" class="section-icon">mdi-tag-multiple-outline</v-icon>
-                      <span class="section-label">{{ $t('document.info.keywords') }}</span>
+                  <!-- Keywords as chips -->
+                  <div v-if="documentMetadata.keywords && documentMetadata.keywords.length" class="keywords-section">
+                    <div class="keywords-header">
+                      <v-icon size="16" class="mr-1">mdi-tag-multiple-outline</v-icon>
+                      <span class="keywords-label">{{ $t('document.info.keywords') }}</span>
                     </div>
                     <div class="keywords-container">
                       <v-chip 
@@ -88,27 +79,38 @@
                         size="small" 
                         variant="flat"
                         :color="getKeywordColor(i)"
-                        class="info-chip keyword-chip"
+                        class="keyword-chip"
                       >
                         {{ keyword }}
                       </v-chip>
                     </div>
                   </div>
                   
-                  <!-- Biblissima Link -->
-                  <div v-if="biblissimaUrl" class="info-section biblissima-section">
-                    <div class="section-header">
-                      <v-icon size="18" class="section-icon">mdi-open-in-new</v-icon>
-                    </div>
-                    <a 
-                      :href="biblissimaUrl" 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      class="biblissima-link"
-                    >
+                  <!-- Biblissima Link - Compact -->
+                  <a 
+                    v-if="biblissimaUrl"
+                    :href="biblissimaUrl" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="biblissima-section"
+                  >
+                    <v-icon size="16" class="link-icon">mdi-open-in-new</v-icon>
+                    <span class="biblissima-link">
                       {{ $t('document.info.biblissimaLink', 'Biblissima link') }}
-                    </a>
-                  </div>
+                    </span>
+                  </a>
+                  
+                  <!-- Download Document Link -->
+                  <a 
+                    href="#"
+                    @click.prevent="downloadDocument"
+                    class="download-section"
+                  >
+                    <v-icon size="16" class="download-icon">mdi-download</v-icon>
+                    <span class="download-link">
+                      {{ $t('document.info.downloadDocument', 'Download document (TEI-XML)') }}
+                    </span>
+                  </a>
                 </div>
               </v-expansion-panel-text>
             </v-expansion-panel>
@@ -409,27 +411,39 @@ const iiifManifestUrl = computed(() => {
   return manifestSource || documentMetadata.value.sources[0]
 })
 
-// Get color for language chips
+// Download Document URL - DTS API document endpoint without ref parameter
+const downloadDocumentUrl = computed(() => {
+  return `${BASE}/document/?resource=${encodeURIComponent(resource)}&format=xml`
+})
+
+// Download filename - sanitized resource name
+const downloadFilename = computed(() => {
+  // Create a clean filename from the resource identifier
+  const cleanName = resource.replace(/[^a-zA-Z0-9-_]/g, '_')
+  return `${cleanName}.xml`
+})
+
+// Get color for language chips - cohesive blue/purple/teal theme
 function getLanguageColor(lang) {
   const colorMap = {
-    'Latin': 'indigo',
-    'French': 'blue',
-    'English': 'red',
-    'Italian': 'green',
-    'Spanish': 'amber',
-    'German': 'brown',
-    'Greek': 'teal',
-    'Ancient Greek': 'teal',
-    'Hebrew': 'deep-purple',
-    'Arabic': 'orange',
-    'Sanskrit': 'deep-orange'
+    'Latin': 'indigo-darken-1',
+    'French': 'blue-darken-1',
+    'English': 'blue-grey-darken-1',
+    'Italian': 'cyan-darken-1',
+    'Spanish': 'light-blue-darken-1',
+    'German': 'blue-grey-darken-2',
+    'Greek': 'teal-darken-1',
+    'Ancient Greek': 'teal-darken-1',
+    'Hebrew': 'deep-purple-darken-1',
+    'Arabic': 'purple-darken-1',
+    'Sanskrit': 'indigo-darken-2'
   }
-  return colorMap[lang] || 'primary'
+  return colorMap[lang] || 'indigo-darken-1'
 }
 
-// Get color for keyword chips
+// Get color for keyword chips - cohesive theme
 function getKeywordColor(index) {
-  const colors = ['primary', 'secondary', 'info', 'success', 'warning']
+  const colors = ['indigo-darken-1', 'blue-darken-1', 'cyan-darken-1', 'teal-darken-1', 'purple-darken-1']
   return colors[index % colors.length]
 }
 
@@ -924,6 +938,32 @@ function openResult(m){
 function clearHits(){ matches.value = []; highlightTerm.value = ''; applyHighlight() }
 function copyCitation(){ navigator.clipboard?.writeText(citation.value).catch(()=>{}) }
 
+/* Download document as XML file */
+async function downloadDocument() {
+  try {
+    const response = await fetch(downloadDocumentUrl.value)
+    if (!response.ok) throw new Error('Download failed')
+    
+    const xmlContent = await response.text()
+    const blob = new Blob([xmlContent], { type: 'application/xml' })
+    const url = window.URL.createObjectURL(blob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = downloadFilename.value
+    document.body.appendChild(link)
+    link.click()
+    
+    // Cleanup
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Failed to download document:', error)
+    // Optionally show a user-friendly error message
+    alert('Failed to download the document. Please try again.')
+  }
+}
+
 /* Highlighting */
 function applyHighlight(){
   const root = readerEl.value
@@ -1174,195 +1214,251 @@ watch(
 .info-panel-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary-rgb), 0.04) 0%, rgba(var(--v-theme-secondary-rgb), 0.04) 100%);
-  border: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
+  gap: 10px;
+  padding: 8px;
 }
 
-/* Chips Section - Compact inline layout with color */
+/* Chips Section - Languages and Dates */
 .chips-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  padding: 6px 8px;
+  gap: 6px;
+  padding: 8px 10px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-  border: 1px solid rgba(103, 80, 164, 0.12);
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.08) 0%, rgba(66, 165, 245, 0.08) 100%);
+  border-left: 3px solid rgba(103, 80, 164, 0.5);
 }
 
 .info-chip {
   font-weight: 500;
+  font-size: 0.8rem;
   text-transform: capitalize;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-chip:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-/* Info Section - Unified consistent design with subtle color */
-.info-section {
+/* Description Section - No label, just text */
+.description-section {
   padding: 10px 12px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(248, 249, 250, 1) 0%, rgba(241, 243, 245, 1) 100%);
-  border: 1px solid rgba(var(--v-theme-outline-rgb), 0.12);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, rgba(251, 140, 0, 0.06) 0%, rgba(255, 183, 77, 0.06) 100%);
+  border-left: 3px solid rgba(251, 140, 0, 0.5);
+  transition: all 0.2s ease;
 }
 
-.info-section:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-color: rgba(var(--v-theme-primary-rgb), 0.2);
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
+.description-section:hover {
+  background: linear-gradient(135deg, rgba(251, 140, 0, 0.1) 0%, rgba(255, 183, 77, 0.1) 100%);
+  transform: translateX(2px);
 }
 
-/* Unified header style for all sections */
-.section-header {
+.description-text {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--v-theme-on-surface-variant);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Compact Metadata Grid - Single line items with icon */
+.metadata-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.06) 0%, rgba(100, 181, 246, 0.06) 100%);
+  border-left: 3px solid rgba(33, 150, 243, 0.5);
+}
+
+.metadata-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
-.section-icon {
+.item-icon {
   color: var(--v-theme-primary);
   flex-shrink: 0;
 }
 
-.section-label {
+.item-label {
+  font-weight: 600;
+  color: var(--v-theme-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.item-value {
+  color: var(--v-theme-on-surface);
+}
+
+/* Keywords Section */
+.keywords-section {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.06) 0%, rgba(186, 104, 200, 0.06) 100%);
+  border-left: 3px solid rgba(156, 39, 176, 0.5);
+}
+
+.keywords-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.keywords-label {
   font-weight: 600;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--v-theme-primary);
-  opacity: 0.9;
 }
 
-.section-text {
-  font-size: 0.9rem;
-  line-height: 1.45;
-  color: var(--v-theme-on-surface);
-  margin: 0;
-  padding-left: 24px;
-}
-
-/* Description specific - with subtle accent */
-.description-section {
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-  border-color: rgba(251, 140, 0, 0.15);
-}
-
-.description-section .section-text {
-  font-style: italic;
-  color: var(--v-theme-on-surface-variant);
-}
-
-/* Metadata section - with cool blue tint */
-.metadata-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: linear-gradient(135deg, rgba(232, 245, 253, 0.6) 0%, rgba(225, 242, 252, 0.6) 100%);
-  border-color: rgba(3, 169, 244, 0.15);
-}
-
-.metadata-item {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-/* Keywords section - with purple tint */
-.keywords-section {
-  background: linear-gradient(135deg, rgba(243, 237, 251, 0.6) 0%, rgba(237, 229, 248, 0.6) 100%);
-  border-color: rgba(103, 80, 164, 0.15);
-}
-
-.keywords-section .keywords-container {
+.keywords-container {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding-left: 24px;
 }
 
-/* Biblissima section - with green tint */
+.keyword-chip {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Biblissima Link - Compact inline with icon - entire section clickable */
 .biblissima-section {
-  text-align: left;
-  background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-  border: 1px solid rgba(76, 175, 80, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.06) 0%, rgba(129, 199, 132, 0.06) 100%);
+  border-left: 3px solid rgba(76, 175, 80, 0.5);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.biblissima-section:hover {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(129, 199, 132, 0.1) 100%);
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.link-icon {
+  color: var(--v-theme-primary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.biblissima-section:hover .link-icon {
+  transform: translateX(2px);
 }
 
 .biblissima-link {
-  display: block;
-  text-decoration: none;
   color: var(--v-theme-primary);
   font-weight: 600;
-  font-size: 0.9rem;
-  padding-left: 24px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
 }
 
-.biblissima-link:hover {
+.biblissima-section:hover .biblissima-link {
   color: var(--v-theme-primary-darken-1);
-  text-decoration: underline;
-  padding-left: 26px;
+}
+
+/* Download Link - Similar to Biblissima but with blue gradient */
+.download-section {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.06) 0%, rgba(100, 181, 246, 0.06) 100%);
+  border-left: 3px solid rgba(33, 150, 243, 0.5);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.download-section:hover {
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(100, 181, 246, 0.1) 100%);
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.download-icon {
+  color: var(--v-theme-primary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.download-section:hover .download-icon {
+  transform: translateY(2px);
+}
+
+.download-link {
+  color: var(--v-theme-primary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.download-section:hover .download-link {
+  color: var(--v-theme-primary-darken-1);
 }
 
 /* Dark theme overrides */
 :deep(.v-theme--dark) {
-  .info-panel-wrapper {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-  }
-
   .chips-section {
     background: linear-gradient(135deg, rgba(103, 80, 164, 0.15) 0%, rgba(66, 165, 245, 0.15) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-  }
-
-  .info-section {
-    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  }
-
-  .info-section:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.2);
-    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-  }
-
-  .section-icon {
-    color: var(--v-theme-primary-lighten-1);
+    border-left-color: rgba(103, 80, 164, 0.7);
   }
 
   .description-section {
-    background: linear-gradient(135deg, rgba(103, 80, 164, 0.06) 0%, rgba(66, 165, 245, 0.06) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, rgba(251, 140, 0, 0.12) 0%, rgba(255, 183, 77, 0.12) 100%);
+    border-left-color: rgba(251, 140, 0, 0.7);
   }
 
-  .metadata-section {
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08) 0%, rgba(100, 181, 246, 0.08) 100%);
-    border-color: rgba(33, 150, 243, 0.2);
+  .description-section:hover {
+    background: linear-gradient(135deg, rgba(251, 140, 0, 0.18) 0%, rgba(255, 183, 77, 0.18) 100%);
+  }
+
+  .metadata-grid {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.12) 0%, rgba(100, 181, 246, 0.12) 100%);
+    border-left-color: rgba(33, 150, 243, 0.7);
   }
 
   .keywords-section {
-    background: linear-gradient(135deg, rgba(156, 39, 176, 0.08) 0%, rgba(186, 104, 200, 0.08) 100%);
-    border-color: rgba(156, 39, 176, 0.2);
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.12) 0%, rgba(186, 104, 200, 0.12) 100%);
+    border-left-color: rgba(156, 39, 176, 0.7);
   }
 
   .biblissima-section {
     background: linear-gradient(135deg, rgba(76, 175, 80, 0.12) 0%, rgba(129, 199, 132, 0.12) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left-color: rgba(76, 175, 80, 0.7);
   }
 
-  .biblissima-link:hover {
-    padding-left: 26px;
+  .biblissima-section:hover {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.18) 0%, rgba(129, 199, 132, 0.18) 100%);
+  }
+
+  .download-section {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.12) 0%, rgba(100, 181, 246, 0.12) 100%);
+    border-left-color: rgba(33, 150, 243, 0.7);
+  }
+
+  .download-section:hover {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.18) 0%, rgba(100, 181, 246, 0.18) 100%);
+  }
+
+  .item-icon, .link-icon, .download-icon {
+    color: var(--v-theme-primary-lighten-1);
   }
 }
 /* ::v-deep(.v-expansion-panel-text__wrapper) {

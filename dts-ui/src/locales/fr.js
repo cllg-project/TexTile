@@ -73,7 +73,8 @@ export default {
       sources: 'Sources',
       identifiers: 'Identifiants',
       unknownLanguage: 'Inconnu',
-      biblissimaLink: 'Lien Biblissima'
+      biblissimaLink: 'Lien Biblissima',
+      downloadDocument: 'Télécharger le document'
     },
     previousPage: 'Page Précédente',
     nextPage: 'Page Suivante',
@@ -98,8 +99,8 @@ export default {
       textSize: 'Taille du texte'
     },
     disclaimer: {
-      title: 'Avis de Transcription Automatique :',
-      text: 'Ce texte est le résultat d\'une transcription automatique. Une évaluation par échantillonnage a montré un taux d\'erreur variant entre 0 et 100% sur 600 manuscrits différents choisis au hasard, avec une moyenne inférieure à 10% CER globalement.'
+      title: 'Avertissement — Transcription automatique :',
+      text: 'Ce texte a été généré automatiquement. La plupart des transcriptions atteignent plus de 90 % de précision, mais certains manuscrits — notamment ceux à l’écriture difficile ou de mauvaise qualité d’image — peuvent comporter de nombreuses erreurs, voire être totalement erronés. Les premières pages contiennent souvent des notes manuscrites plutôt que le texte principal ; nous vous recommandons de faire défiler jusqu’à la première page de contenu pour une meilleure impression.'
     },
     iiif: {
       title: 'Visualiseur de Manuscrit',
@@ -241,6 +242,10 @@ export default {
       description: 'Si vous trouvez des erreurs, des pages manquantes, ou soupçonnez des échecs OCR importants, veuillez contacter l\'équipe du corpus avec l\'identifiant du manuscrit et une brève description.',
       contactTeam: 'Contacter l\'Équipe',
       projectPage: 'Page du Projet / Code'
+    },
+    sponsors: {
+      title: 'Financement et Soutien',
+      fundingText: 'Ce travail a bénéficié d\'une aide de l\'État gérée par l\'Agence Nationale de la Recherche au titre de France 2030 portant la référence « ANR-24-RRII-0002 » et opéré par le Programme Inria Quadran.'
     },
     citation: {
       copied: 'Citation copiée',

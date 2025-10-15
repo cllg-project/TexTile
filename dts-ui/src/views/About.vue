@@ -325,6 +325,70 @@
         </v-card>
       </v-expand-transition>
 
+      <!-- Sponsors Section -->
+      <v-card class="sponsors-card mb-6" elevation="4">
+        <v-card-text class="pa-8 text-center">
+          <!-- <h3 class="text-h5 font-weight-bold mb-4">{{ $t('about.sponsors.title') }}</h3> -->
+          
+          <!-- Logos Row -->
+          <v-row justify="center" align="center" class="sponsors-logos mb-6">
+            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  v-if="$vuetify.theme.current.dark" 
+                  src="@/assets/biblissima_logo_dark_mode.png" 
+                  alt="Biblissima+" 
+                  class="sponsor-logo"
+                />
+                <img 
+                  v-else 
+                  src="@/assets/biblissima_logo_white_mode.png" 
+                  alt="Biblissima+" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
+            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  v-if="$vuetify.theme.current.dark" 
+                  src="@/assets/france2030_logo_dark_mode.png" 
+                  alt="France 2030" 
+                  class="sponsor-logo"
+                />
+                <img 
+                  v-else 
+                  src="@/assets/france2030_logo_white_mode.jpg" 
+                  alt="France 2030" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
+            <v-col cols="12" sm="4" md="3" class="d-flex justify-center">
+              <div class="sponsor-logo-wrapper">
+                <img 
+                  v-if="$vuetify.theme.current.dark" 
+                  src="@/assets/inria_logo_dark_mode.png" 
+                  alt="Inria" 
+                  class="sponsor-logo"
+                />
+                <img 
+                  v-else 
+                  src="@/assets/inria_logo_white_mode.png" 
+                  alt="Inria" 
+                  class="sponsor-logo"
+                />
+              </div>
+            </v-col>
+          </v-row>
+
+          <!-- Funding Text -->
+          <div class="funding-text text-body-2 text-medium-emphasis mx-auto" style="max-width: 800px;">
+            {{ $t('about.sponsors.fundingText') }}
+          </div>
+        </v-card-text>
+      </v-card>
+
       <!-- Contact -->
       <!-- <v-card class="contact-card" elevation="2">
         <v-card-text class="pa-8 text-center">
@@ -931,6 +995,48 @@ onMounted(() => {
 .contact-card {
   background: linear-gradient(135deg, rgba(103, 80, 164, 0.02) 0%, rgba(14, 165, 164, 0.02) 100%);
   border: 1px solid rgba(103, 80, 164, 0.1);
+}
+
+/* Sponsors Card */
+.sponsors-card {
+  background: linear-gradient(135deg, rgba(103, 80, 164, 0.03) 0%, rgba(14, 165, 164, 0.03) 100%);
+  border: 1px solid rgba(103, 80, 164, 0.12);
+}
+
+.sponsors-logos {
+  margin: 2rem 0;
+}
+
+.sponsor-logo-wrapper {
+  width: 100%;
+  max-width: 200px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.sponsor-logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: grayscale(0%);
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.sponsor-logo:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.funding-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--v-theme-on-surface-variant);
 }
 
 /* Responsive Design */
