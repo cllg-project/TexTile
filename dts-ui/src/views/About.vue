@@ -83,7 +83,7 @@
                       size="small"
                       class="search-btn"
                       @click="performSearch"
-                      :disabled="!searchQuery?.trim()"
+                      :disabled="!String(searchQuery || '').trim()"
                     >
                       Search
                     </v-btn>
@@ -547,8 +547,17 @@ function openPreprint(){
 }
 
 function performSearch(customQuery = null) {
-  const queryToUse = customQuery || searchQuery.value
-  if (!queryToUse?.trim()) return
+  // enter key passes an event not the query
+  let queryToSearch
+  if (customQuery && typeof customQuery === 'object' && customQuery.type) {
+    queryToSearch = searchQuery.value
+  } else {
+    queryToSearch = customQuery || searchQuery.value
+  }
+  
+  const queryToUse = String(queryToSearch || '').trim()
+  
+  if (!queryToUse) return
   
   // Determine search mode based on query characteristics
   let searchMode = 'exact'
@@ -562,7 +571,7 @@ function performSearch(customQuery = null) {
   router.push({
     name: 'search',
     query: {
-      q: queryToUse.trim(),
+      q: queryToUse,
       type: 'traditional',
       mode: searchMode
     }
