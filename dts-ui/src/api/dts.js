@@ -192,49 +192,50 @@ export function parseMembers(resp) {
     // Extract language from dublinCore.language array
     let language = null;
     if (dublinCore.language && Array.isArray(dublinCore.language) && dublinCore.language.length > 0) {
-      // Join multiple languages with comma and space
       language = dublinCore.language.join(', ');
+    } else if (it?.language) {
+      language = Array.isArray(it.language) ? it.language.join(', ') : it.language;
     }
     
-    // Extract date information from dublinCore.coverage array
     let startYear = null;
     let stopYear = null;
-    if (dublinCore.coverage && Array.isArray(dublinCore.coverage) && dublinCore.coverage.length > 0) {
-      const coverage = dublinCore.coverage[0]; // Take first coverage entry
-      // Parse coverage like "801–" or "1101–" or "1300–1400"
-      if (coverage && typeof coverage === 'string') {
-        const yearMatch = coverage.match(/^(\d{3,4})(?:–(\d{3,4})?)?/);
-        if (yearMatch) {
-          startYear = parseInt(yearMatch[1], 10);
-          if (yearMatch[2]) {
-            stopYear = parseInt(yearMatch[2], 10);
-          }
+    const created = dublinCore.created || it?.created;
+    if (created) {
+      const createdStr = Array.isArray(created) ? created[0] : created;
+      if (createdStr && typeof createdStr === 'string') {
+        if (createdStr.includes('/')) {
+          const [start, end] = createdStr.split('/');
+          startYear = parseInt(start, 10);
+          stopYear = parseInt(end, 10);
+        } else {
+          startYear = parseInt(createdStr, 10);
+          stopYear = startYear;
         }
       }
     }
     
-    // Extract token count from dublinCore.description array
     let tokenCount = null;
-    if (dublinCore.description && Array.isArray(dublinCore.description) && dublinCore.description.length > 0) {
-      // Look for "Token count: XXXX" pattern in description array
-      for (const desc of dublinCore.description) {
-        if (typeof desc === 'string') {
-          const tokenMatch = desc.match(/Token count:\s*(\d+)/i);
+    let ocrQuality = null;
+    if (dublinCore.extent && Array.isArray(dublinCore.extent)) {
+      for (const extentItem of dublinCore.extent) {
+        if (typeof extentItem === 'string') {
+          const tokenMatch = extentItem.match(/Tokens:\s*(\d+)/i);
           if (tokenMatch) {
             tokenCount = parseInt(tokenMatch[1], 10);
-            break;
+          }
+          if (extentItem.includes('OCRed lines')) {
+            ocrQuality = extentItem;
           }
         }
       }
     }
+    if (!tokenCount) tokenCount = it?.tokens || it?.token_count || null;
+    if (!ocrQuality) ocrQuality = it?.ocr_quality || null;
     
-    // Fallback to direct properties if dublinCore not available
-    if (!language) language = it?.language;
-    if (!startYear) startYear = it?.start_year;
-    if (!stopYear) stopYear = it?.stop_year;
-    if (!tokenCount) tokenCount = it?.token_count;
-    
-    const location = it?.location;
+    const identifier = it?.identifier || dublinCore.identifier || null;
+    const publisher = it?.publisher || dublinCore.publisher || null;
+    const issued = it?.issued || dublinCore.issued || null;
+    const relation = it?.relation || dublinCore.relation || null;
 
     if (type.includes('collection')) {
       members.push({ 
@@ -245,8 +246,12 @@ export function parseMembers(resp) {
         language,
         start_year: startYear,
         stop_year: stopYear,
-        location,
-        token_count: tokenCount
+        token_count: tokenCount,
+        ocr_quality: ocrQuality,
+        identifier,
+        publisher,
+        issued,
+        relation
       });
     } else {
       // Treat anything else as a resource for browsing purposes
@@ -258,8 +263,12 @@ export function parseMembers(resp) {
         language,
         start_year: startYear,
         stop_year: stopYear,
-        location,
-        token_count: tokenCount
+        token_count: tokenCount,
+        ocr_quality: ocrQuality,
+        identifier,
+        publisher,
+        issued,
+        relation
       });
     }
   }
@@ -342,13 +351,14 @@ export async function searchInResource(q, resource, size = 50, mode = 'exact', p
  * Global text search across all resources
  * Supports both traditional and hybrid search modes
  */
-export async function searchAll(q, page = 1, size = 25, searchType = 'traditional', mode = 'exact', resource = null) {
+export async function searchAll(q, page = 1, size = 25, searchType = 'traditional', mode = 'exact', resource = null, language = null) {
   const params = new URLSearchParams();
   params.append('q', q);
   params.append('page', page.toString());
   params.append('size', size.toString());
   
   if (resource) params.append('resource', resource);
+  if (language) params.append('language', language);
   
   let endpoint;
   if (searchType === 'hybrid') {

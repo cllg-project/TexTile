@@ -64,6 +64,18 @@
                       <span class="item-label">{{ $t('document.info.type') }}:</span>
                       <span class="item-value">{{ documentMetadata.type }}</span>
                     </div>
+                    
+                    <div v-if="documentMetadata.tokens" class="metadata-item">
+                      <v-icon size="16" class="item-icon">mdi-file-word-box-outline</v-icon>
+                      <span class="item-label">{{ $t('document.info.tokens') }}:</span>
+                      <span class="item-value">{{ formatTokenCount(documentMetadata.tokens) }}</span>
+                    </div>
+                    
+                    <div v-if="documentMetadata.ocrQuality" class="metadata-item">
+                      <v-icon size="16" class="item-icon">mdi-text-recognition</v-icon>
+                      <span class="item-label">{{ $t('document.info.ocrQuality') }}:</span>
+                      <span class="item-value">{{ formatOCRQuality(documentMetadata.ocrQuality) }}</span>
+                    </div>
                   </div>
                   
                   <!-- Keywords as chips -->
@@ -313,7 +325,7 @@
                     variant="text"
                     icon="mdi-sync"
                     class="sync-btn"
-                    @click="syncTifyWithPassage(currentRef)"
+                    @click="queueTifySync(currentRef)"
                     v-bind="props"
                   >
                   </v-btn>
@@ -338,6 +350,7 @@ import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { fetchNavigation, extractRefsFromNavigation, fetchPage, fetchCollectionRaw, fetchDocumentXml } from '../api/dts'
+import { formatLanguage, getLanguageColor } from '../lib/language-utils'
 
 const { t } = useI18n()
 
@@ -367,19 +380,24 @@ const documentMetadata = ref({
   description: '',
   keywords: [],
   sources: [],
-  identifiers: []
+  identifiers: [],
+  tokens: null,
+  ocrQuality: null
 })
 const documentTitle = computed(() => documentMetadata.value.title || resource)
 const hasMetadataDetails = computed(() => (
   documentMetadata.value.author || 
   documentMetadata.value.origin || 
-  documentMetadata.value.type
+  documentMetadata.value.type ||
+  documentMetadata.value.tokens ||
+  documentMetadata.value.ocrQuality
 ))
 
 // Parse languages for display
 const displayLanguages = computed(() => {
   if (!documentMetadata.value.language) return []
-  return parseLanguages(documentMetadata.value.language)
+  const langs = parseLanguages(documentMetadata.value.language)
+  return langs.map(lang => formatLanguage(lang, t))
 })
 
 // Get unique languages (remove duplicates)
@@ -393,7 +411,7 @@ const biblissimaUrl = computed(() => {
   if (!documentMetadata.value.identifiers || !documentMetadata.value.identifiers.length) return null
   const firstIdentifier = documentMetadata.value.identifiers[0]
   if (!firstIdentifier) return null
-  return `https://portail.biblissima.fr/${firstIdentifier}`
+  return `${firstIdentifier}`
 })
 
 // IIIF Manifest URL from sources (Dublin Core)
@@ -423,28 +441,24 @@ const downloadFilename = computed(() => {
   return `${cleanName}.xml`
 })
 
-// Get color for language chips - cohesive blue/purple/teal theme
-function getLanguageColor(lang) {
-  const colorMap = {
-    'Latin': 'indigo-darken-1',
-    'French': 'blue-darken-1',
-    'English': 'blue-grey-darken-1',
-    'Italian': 'cyan-darken-1',
-    'Spanish': 'light-blue-darken-1',
-    'German': 'blue-grey-darken-2',
-    'Greek': 'teal-darken-1',
-    'Ancient Greek': 'teal-darken-1',
-    'Hebrew': 'deep-purple-darken-1',
-    'Arabic': 'purple-darken-1',
-    'Sanskrit': 'indigo-darken-2'
-  }
-  return colorMap[lang] || 'indigo-darken-1'
-}
-
 // Get color for keyword chips - cohesive theme
 function getKeywordColor(index) {
   const colors = ['indigo-darken-1', 'blue-darken-1', 'cyan-darken-1', 'teal-darken-1', 'purple-darken-1']
   return colors[index % colors.length]
+}
+
+function formatTokenCount(tokens) {
+  if (!tokens) return ''
+  return tokens.toLocaleString()
+}
+
+function formatOCRQuality(ocrQuality) {
+  if (!ocrQuality) return ''
+  const match = ocrQuality.match(/\((\d+\.?\d*)%\)/)
+  if (match) {
+    return `${match[1]}%`
+  }
+  return ocrQuality
 }
 
 // Helper functions for metadata display
@@ -589,10 +603,35 @@ async function fetchDocumentMetadata() {
       
       // Handle dates/coverage - could be array or string
       let dates = [];
-      if (dublinCore.coverage) {
+      if (dublinCore.created) {
+        const createdArr = Array.isArray(dublinCore.created) ? dublinCore.created : [dublinCore.created];
+        dates = createdArr.map(dateStr => {
+          if (typeof dateStr === 'string' && dateStr.includes('/')) {
+            return dateStr.replace('/', '–');
+          }
+          return dateStr;
+        });
+      } else if (dublinCore.coverage) {
         dates = Array.isArray(dublinCore.coverage) ? dublinCore.coverage : [dublinCore.coverage];
       } else if (dublinCore.date) {
         dates = Array.isArray(dublinCore.date) ? dublinCore.date : [dublinCore.date];
+      }
+      
+      // tokens and ocr quality
+      let tokens = null;
+      let ocrQuality = null;
+      if (dublinCore.extent && Array.isArray(dublinCore.extent)) {
+        for (const extentItem of dublinCore.extent) {
+          if (typeof extentItem === 'string') {
+            const tokenMatch = extentItem.match(/Tokens:\s*(\d+)/i);
+            if (tokenMatch) {
+              tokens = parseInt(tokenMatch[1], 10);
+            }
+            if (extentItem.includes('OCRed lines')) {
+              ocrQuality = extentItem;
+            }
+          }
+        }
       }
       
       // Handle descriptions
@@ -604,9 +643,9 @@ async function fetchDocumentMetadata() {
       // Handle contributors, creators, authors
       let authors = [];
       if (dublinCore.creator) {
-        authors = Array.isArray(dublinCore.creator) ? dublinCore.creator : [dublinCore.creator];
+        authors = Array.isArray(dublinCore.creator) ? dublinCore.creator.filter(Boolean) : [dublinCore.creator].filter(Boolean);
       } else if (dublinCore.contributor) {
-        authors = Array.isArray(dublinCore.contributor) ? dublinCore.contributor : [dublinCore.contributor];
+        authors = Array.isArray(dublinCore.contributor) ? dublinCore.contributor.filter(Boolean) : [dublinCore.contributor].filter(Boolean);
       }
       
       // Handle subjects or keywords
@@ -638,8 +677,12 @@ async function fetchDocumentMetadata() {
         type: resourceData.type || resourceData['@type'] || '',
         keywords: keywords,
         sources: sources,
-        identifiers: identifiers
+        identifiers: identifiers,
+        tokens: tokens,
+        ocrQuality: ocrQuality
       };
+      
+      console.log('Extracted document metadata:', documentMetadata.value);
       
       // If no metadata found in navigation, try the collection endpoint as fallback
       if (!documentMetadata.value.title || documentMetadata.value.title === resource) {
@@ -698,6 +741,24 @@ const highlightTerm = ref('')
 let keyListenerBound = false
 const pageCtrl = ref(null)
 const searchCtrl = ref(null)
+const TIFY_INITIAL_SYNC_DELAY = 250
+const TIFY_SYNC_RETRY_DELAY = 300
+const TIFY_SYNC_MAX_ATTEMPTS = 8
+const tifySyncTimers = new Set()
+
+function scheduleTifySync(callback, delay = TIFY_SYNC_RETRY_DELAY) {
+  const timerId = window.setTimeout(() => {
+    tifySyncTimers.delete(timerId)
+    callback()
+  }, delay)
+  tifySyncTimers.add(timerId)
+  return timerId
+}
+
+function clearPendingTifySyncs() {
+  tifySyncTimers.forEach(timeoutId => window.clearTimeout(timeoutId))
+  tifySyncTimers.clear()
+}
 
 /* Disclaimer state */
 const DISCLAIMER_KEY = 'hideDisclaimer'
@@ -743,10 +804,12 @@ function onGotoEnter(){ if (goto.value) navigateTo(goto.value) }
 
 async function loadNav(){
   const nav = await fetchNavigation(resource)
+  console.log('Navigation response:', nav)
   refs.value = extractRefsFromNavigation(nav)
   
   // Extract metadata directly from the navigation response if possible
   if (nav && nav.resource && nav.resource.dublinCore) {
+    console.log('Processing navigation metadata:', nav.resource.dublinCore)
     processNavigationMetadata(nav);
   }
   
@@ -771,10 +834,33 @@ function processNavigationMetadata(nav) {
     }
     
     // Handle dates/coverage
-    if (dublinCore.coverage) {
+    if (dublinCore.created) {
+      const createdArr = Array.isArray(dublinCore.created) ? dublinCore.created : [dublinCore.created];
+      documentMetadata.value.dates = createdArr.map(dateStr => {
+        if (typeof dateStr === 'string' && dateStr.includes('/')) {
+          return dateStr.replace('/', '–');
+        }
+        return dateStr;
+      });
+    } else if (dublinCore.coverage) {
       documentMetadata.value.dates = Array.isArray(dublinCore.coverage) ? dublinCore.coverage : [dublinCore.coverage];
     } else if (dublinCore.date) {
       documentMetadata.value.dates = Array.isArray(dublinCore.date) ? dublinCore.date : [dublinCore.date];
+    }
+    
+    // tokens and ocr quality
+    if (dublinCore.extent && Array.isArray(dublinCore.extent)) {
+      for (const extentItem of dublinCore.extent) {
+        if (typeof extentItem === 'string') {
+          const tokenMatch = extentItem.match(/Tokens:\s*(\d+)/i);
+          if (tokenMatch) {
+            documentMetadata.value.tokens = parseInt(tokenMatch[1], 10);
+          }
+          if (extentItem.includes('OCRed lines')) {
+            documentMetadata.value.ocrQuality = extentItem;
+          }
+        }
+      }
     }
     
     // Handle identifiers as extra source info
@@ -1047,96 +1133,150 @@ watch(() => route.query.highlight, (h) => {
 
 // Initialize Tify viewer when manifest URL is available
 watch([iiifManifestUrl, tifyEl], ([manifestUrl, el]) => {
-  if (manifestUrl && el && window.Tify) {
+  clearPendingTifySyncs()
+
+  if (!manifestUrl || !el) {
+    tifyInstance.value = null
+    return
+  }
+
+  const initializeTify = (attempt = 1) => {
+    if (!manifestUrl || !el) return
+
+    if (!window.Tify) {
+      if (attempt < TIFY_SYNC_MAX_ATTEMPTS) {
+        scheduleTifySync(() => initializeTify(attempt + 1), TIFY_INITIAL_SYNC_DELAY)
+      }
+      return
+    }
+
     // Clear any existing Tify instance
     el.innerHTML = ''
     tifyInstance.value = null
-    
-    // Initialize Tify with the manifest URL
+
     try {
       tifyInstance.value = new window.Tify({
         container: el,
-        manifestUrl: manifestUrl,
+        manifestUrl,
         language: 'en', // or get from i18n
         stylesheet: false, // We're using the CDN stylesheet
       })
-      
-      // Auto-sync Tify viewer with current text reader page upon initialization
+
       if (tifyInstance.value) {
-        // Sync with current passage after a short delay to let Tify initialize
-        setTimeout(() => {
-          if (tifyInstance.value && currentRef.value) {
-            // Special case: if text reader is on page 1 (index 0), force Tify to page 1
-            if (index.value === 0) {
-              tifyInstance.value.setPage(1) // Force to page 1 (0-indexed)
-              console.log('Tify synced to page 1 for first passage')
-            } else {
-              // Otherwise, sync normally with the current passage
-              syncTifyWithPassage(currentRef.value)
-            }
+        const attemptInitialSync = () => {
+          if (currentRef.value) {
+            queueTifySync(currentRef.value)
           }
-        }, 200) // Slightly longer delay to ensure Tify is fully loaded
+        }
+
+        const readyEvents = ['viewerReady', 'manifestLoaded', 'tifyReady']
+        if (typeof tifyInstance.value.on === 'function') {
+          readyEvents.forEach(eventName => {
+            try {
+              tifyInstance.value.on(eventName, attemptInitialSync)
+            } catch (eventError) {
+              // ignore unknown events
+            }
+          })
+        }
+
+        scheduleTifySync(attemptInitialSync, TIFY_INITIAL_SYNC_DELAY)
       }
     } catch (error) {
       console.error('Failed to initialize Tify viewer:', error)
     }
   }
+
+  initializeTify()
 }, { immediate: true })
 
+function queueTifySync(passageRef) {
+  if (!passageRef) return
+  clearPendingTifySyncs()
+  syncTifyWithPassage(passageRef, 1)
+}
+
 // Sync Tify viewer with current passage
-function syncTifyWithPassage(passageRef) {
-  if (!tifyInstance.value || !passageRef) return
-  
+function syncTifyWithPassage(passageRef, attempt = 1) {
+  if (!passageRef) return
+
+  const tify = tifyInstance.value
+
+  const scheduleRetry = () => {
+    if (attempt < TIFY_SYNC_MAX_ATTEMPTS) {
+      scheduleTifySync(() => syncTifyWithPassage(passageRef, attempt + 1), TIFY_SYNC_RETRY_DELAY)
+    }
+  }
+
+  if (!tify) {
+    scheduleRetry()
+    return
+  }
+
+  if (typeof tify.setPage !== 'function') {
+    scheduleRetry()
+    return
+  }
+
   try {
     // Extract page number from passage reference
-    // This assumes passage refs are like "1.1", "1.2", "2.1", etc.
-    // or might contain page markers like "p1", "page1", "fol1", etc.
-    
-    // Try different patterns to extract page/canvas number
     let pageNum = null
-    
+
     // Pattern 1: Extract first number from ref like "1.1" -> 1
-    const match1 = passageRef.match(/^(\d+)/)
-    if (match1) {
-      pageNum = parseInt(match1[1], 10)
+    const matchPrimary = passageRef.match(/^(\d+)/)
+    if (matchPrimary) {
+      pageNum = parseInt(matchPrimary[1], 10)
     }
-    
+
     // Pattern 2: Look for explicit page markers like "p12", "page12", "fol12"
-    const match2 = passageRef.match(/(?:p|page|fol|folio)\.?\s*(\d+)/i)
-    if (match2) {
-      pageNum = parseInt(match2[1], 10)
+    if (pageNum === null) {
+      const matchSecondary = passageRef.match(/(?:p|page|fol|folio)\.?\s*(\d+)/i)
+      if (matchSecondary) {
+        pageNum = parseInt(matchSecondary[1], 10)
+      }
     }
-    
+
     // Pattern 3: Try to get index from refs array
-    if (!pageNum && refs.value.length > 0) {
+    if (pageNum === null && refs.value.length > 0) {
       const currentIndex = refs.value.findIndex(r => r === passageRef)
       if (currentIndex >= 0) {
         pageNum = currentIndex + 1 // IIIF pages are usually 1-indexed
       }
     }
-    
-    if (pageNum !== null && tifyInstance.value.setPage) {
-      // The first page in Tify counts as 2 pages (cover spread)
-      // After that, pages are 1:1 with our passages
-      // So: passage 1 -> tify page 0, passage 2 -> tify page 2, passage 3 -> tify page 3, etc.
-      let tifyPageIndex
-      if (pageNum === 1) {
-        tifyPageIndex = 1  // First passage shows the cover spread (pages 0-1)
+
+    if (pageNum === null) {
+      return
+    }
+
+    let tifyPageIndex
+    if (pageNum === 1) {
+      tifyPageIndex = 1
+      if (attempt === 1) {
         console.log('Tify synced to page 1 for first passage')
-      } else {
-        tifyPageIndex = pageNum  // After the first, add 1 to account for the cover spread
       }
-      tifyInstance.value.setPage(tifyPageIndex)
+    } else {
+      tifyPageIndex = pageNum
+    }
+
+    tify.setPage(tifyPageIndex)
+
+    // try again in case the canvas is not ready
+    if (attempt === 1) {
+      scheduleRetry()
     }
   } catch (error) {
-    console.warn('Failed to sync Tify viewer with passage:', error)
+    if (attempt >= TIFY_SYNC_MAX_ATTEMPTS) {
+      console.warn('Failed to sync Tify viewer with passage:', error)
+    } else {
+      scheduleRetry()
+    }
   }
 }
 
 // Watch for passage changes and sync with Tify
 watch(currentRef, (newRef) => {
-  if (newRef && tifyInstance.value) {
-    syncTifyWithPassage(newRef)
+  if (newRef) {
+    queueTifySync(newRef)
   }
 })
 
@@ -1172,6 +1312,7 @@ onBeforeUnmount(() => {
     window.removeEventListener('keydown', onKey)
     keyListenerBound = false
   }
+  clearPendingTifySyncs()
 })
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
@@ -1179,6 +1320,7 @@ if (import.meta.hot) {
       window.removeEventListener('keydown', onKey)
       keyListenerBound = false
     }
+    clearPendingTifySyncs()
   })
 }
 watch(

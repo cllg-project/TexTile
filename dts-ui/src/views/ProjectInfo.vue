@@ -272,7 +272,7 @@
               <div class="text-body-2 text-medium-emphasis">{{ $t('projectInfo.stats.manuscripts') }}</div>
             </div>
             <div class="text-center mb-4">
-              <div class="display-2 font-weight-bold text-secondary">2.5B</div>
+              <div class="display-2 font-weight-bold text-secondary">3.3B</div>
               <div class="text-body-2 text-medium-emphasis">{{ $t('projectInfo.stats.words') }}</div>
             </div>
             <div class="text-center">
@@ -439,7 +439,7 @@ const features = computed(() => {
     return [
       {
         title: 'Un corpus massif :',
-        description: 'plus de 23 000 manuscrits, environ 2,5 milliards de mots en latin et en ancien français.'
+        description: 'plus de 33 000 manuscrits, environ 3,3 milliards de mots en latin et en ancien français.'
       },
       {
         title: 'Un empan chronologique important :',
@@ -466,7 +466,7 @@ const features = computed(() => {
     return [
       {
         title: 'A massive corpus:',
-        description: 'more than 23,000 manuscripts, approximately 2.5 billion words in Latin and Old French.'
+        description: 'more than 33,000 manuscripts, approximately 3.3 billion words in Latin and Old French.'
       },
       {
         title: 'Significant chronological span:',

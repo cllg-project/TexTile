@@ -99,6 +99,24 @@
         class="junicode-input search-input"
         @keydown.enter="run(1)"
       />
+      <v-select
+        v-model="selectedLanguage"
+        :items="languageOptions"
+        item-title="name"
+        item-value="code"
+        variant="outlined"
+        density="comfortable"
+        hide-details
+        class="language-select"
+        :prepend-inner-icon="selectedLanguage === 'all' ? 'mdi-earth' : 'mdi-web'"
+      >
+        <template #selection="{ item }">
+          <div class="d-flex align-center language-selection-text">
+            <span class="text-caption text-grey mr-1">{{ item.raw.code }}</span>
+            <span class="language-name">{{ item.raw.name }}</span>
+          </div>
+        </template>
+      </v-select>
       <v-btn 
         color="primary"
         @click="run(1)"
@@ -413,6 +431,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { searchAll } from '../api/dts'
 import CatmusKeyboard from '../components/CatmusKeyboard.vue'
+import { getLanguageOptions } from '../lib/language-utils'
 
 const router = useRouter()
 const route = useRoute()
@@ -424,6 +443,9 @@ const searchType = ref(route.query.type || 'traditional')
 
 // Search mode options for traditional search
 const searchMode = ref(route.query.mode || 'exact')
+
+// language filter
+const selectedLanguage = ref(route.query.language || 'all')
 
 const loading = ref(false)
 const loaded  = ref(false)
@@ -438,6 +460,8 @@ const inputRef = ref()
 
 // Import for translations
 const { t } = useI18n()
+
+const languageOptions = computed(() => getLanguageOptions(t))
 
 // Computed properties for dynamic UI
 const searchPlaceholder = computed(() => {
@@ -495,6 +519,29 @@ async function backspaceAtCaret(){
   }
 }
 
+// v to u and j to i outside quoted phrases
+function normalizeQueryForBackend(query) {
+  if (!query) return ''
+  
+  let normalized = query.normalize('NFD')
+  
+  const parts = normalized.split(',').map(part => part.trim())
+  
+  const processedParts = parts.map(part => {
+    if (part.startsWith('"') && part.endsWith('"')) {
+      return part
+    }
+    
+    return part
+      .replace(/V/g, 'U')
+      .replace(/v/g, 'u')
+      .replace(/J/g, 'I')
+      .replace(/j/g, 'i')
+  })
+  
+  return processedParts.join(',')
+}
+
 async function run(p = page.value){
   if (!q.value.trim()) { 
     total.value = 0
@@ -512,25 +559,18 @@ async function run(p = page.value){
   pushState()
   
   try {
-    // Normalize medieval text: v->u, j->i for better search results
-    // Also apply NFD (Unicode Normalization Form Decomposed) for proper handling of combining characters
-    let normalizedQuery = q.value
-      .replace(/V/g, "U")
-      .replace(/v/g, "u")
-      .replace(/J/g, "I")
-      .replace(/j/g, "i")
-      .normalize('NFD')
+    let normalizedQuery = normalizeQueryForBackend(q.value)
     
-
+    const languageParam = selectedLanguage.value === 'all' ? null : selectedLanguage.value
     
     let res
     if (searchType.value === 'hybrid') {
-      res = await searchAll(normalizedQuery, page.value, size.value, 'hybrid', 'exact')
+      res = await searchAll(normalizedQuery, page.value, size.value, 'hybrid', 'exact', null, languageParam)
     } else if (searchType.value === 'traditional') {
-      res = await searchAll(normalizedQuery, page.value, size.value, 'traditional', searchMode.value)
+      res = await searchAll(normalizedQuery, page.value, size.value, 'traditional', searchMode.value, null, languageParam)
     } else {
       // Vector search doesn't use mode
-      res = await searchAll(normalizedQuery, page.value, size.value, searchType.value, 'exact')
+      res = await searchAll(normalizedQuery, page.value, size.value, searchType.value, 'exact', null, languageParam)
     }
     
     if (searchType.value === 'hybrid') {
@@ -567,19 +607,15 @@ function pushState(){
       q: q.value || undefined, 
       page: page.value > 1 ? page.value : undefined,
       type: searchType.value !== 'traditional' ? searchType.value : undefined,
-      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined
+      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined,
+      language: selectedLanguage.value !== 'all' ? selectedLanguage.value : undefined
     } 
   })
 }
 
 function toDoc(hit){
   // Use the same normalization for highlighting as we use for search
-  const normalizedQuery = q.value
-    .replace(/V/g, "U")
-    .replace(/v/g, "u")
-    .replace(/J/g, "I")
-    .replace(/j/g, "i")
-    .normalize('NFD')
+  const normalizedQuery = normalizeQueryForBackend(q.value)
     
   return {
     name: 'documentRef',
@@ -603,11 +639,20 @@ watch(searchMode, () => {
   pushState()
 })
 
+watch(selectedLanguage, () => {
+  if (q.value.trim()) {
+    run(1)
+  } else {
+    pushState()
+  }
+})
+
 watch(() => route.query, () => {
   q.value = route.query.q?.toString() || ''
   page.value = Number(route.query.page || 1)
   searchType.value = route.query.type || 'traditional'
   searchMode.value = route.query.mode || 'exact'
+  selectedLanguage.value = route.query.language || 'all'
   run(page.value)
 })
 </script>
@@ -702,6 +747,27 @@ watch(() => route.query, () => {
   flex-wrap: wrap;
 }
 
+.language-select {
+  min-width: 180px;
+  max-width: 250px;
+  flex-shrink: 0;
+}
+
+:deep(.language-select .v-field__input) {
+  white-space: nowrap;
+}
+
+.language-selection-text {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.language-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 768px) {
   .search-controls {
     gap: 8px;
@@ -715,6 +781,14 @@ watch(() => route.query, () => {
   .search-input {
     width: 100%;
     flex-basis: 100%;
+  }
+  
+  .language-select {
+    min-width: 140px;
+  }
+  
+  .language-name {
+    display: none;
   }
 }
 

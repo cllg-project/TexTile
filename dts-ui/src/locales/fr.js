@@ -60,7 +60,7 @@ export default {
     settings: 'Paramètres',
     citation: 'Citation',
     info: {
-      title: 'Infos du Document',
+      title: 'Informations du document',
       metadata: 'Métadonnées',
       author: 'Auteur',
       origin: 'Origine',
@@ -72,7 +72,9 @@ export default {
       keywords: 'Mots-clés',
       sources: 'Sources',
       identifiers: 'Identifiants',
-      unknownLanguage: 'Inconnu',
+      tokens: 'Mots',
+      ocrQuality: 'Lignes bien reconnues',
+      unknownLanguage: 'Inconnue',
       biblissimaLink: 'Lien Biblissima',
       downloadDocument: 'Télécharger le document'
     },
@@ -120,6 +122,8 @@ export default {
     searchButton: 'Rechercher',
     virtualKeyboard: 'Clavier Virtuel',
     specialKeyboard: 'Clavier Spécial',
+    languageFilter: 'Langue',
+    allLanguages: 'Toutes les Langues',
     results: 'Résultats',
     noResults: 'Aucun résultat.',
     showingResults: 'Affichage de {start}–{end} sur {total}',
@@ -222,7 +226,7 @@ export default {
       preprint: 'Prépublication (PDF)',
       copyCitation: 'Copier la Citation',
       tryItNow: 'Essayez maintenant',
-      searchPlaceholder: 'Rechercher dans 2,5 milliards de tokens de texte médiéval...',
+      searchPlaceholder: 'Rechercher dans 3,3 milliards de tokens de texte médiéval...',
       downloadCorpus: 'Télécharger le Corpus'
     },
     detailed: {
@@ -268,7 +272,7 @@ export default {
       paperTitle: 'CoMMA, a Large-scale Corpus of Multilingual Medieval Archives',
       authors: 'Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, Benoît Sagot',
       year: '2025',
-      abstract: 'Nous présentons CoMMA, un corpus à grande échelle de manuscrits médiévaux produit par reconnaissance automatique de texte. Le corpus contient environ 2,5 milliards de tokens issus de plus de 23 000 manuscrits numérisés en latin et en ancien français, récoltés via IIIF.',
+      abstract: 'Nous présentons CoMMA, un corpus à grande échelle de manuscrits médiévaux produit par reconnaissance automatique de texte. Le corpus contient environ 3,3 milliards de tokens issus de plus de 33 000 manuscrits numérisés en latin et en ancien français, récoltés via IIIF.',
       viewPaper: 'Voir l\'Article Complet'
     },
     features: {
@@ -276,7 +280,7 @@ export default {
       items: [
         {
           title: 'Un corpus massif :',
-          description: 'plus de 23 000 manuscrits, environ 2,5 milliards de mots en latin et en ancien français.'
+          description: 'plus de 33 000 manuscrits, environ 3,3 milliards de mots en latin et en ancien français.'
         },
         {
           title: 'Un empan chronologique important :',
@@ -364,5 +368,29 @@ export default {
     confirm: 'Confirmer',
     yes: 'Oui',
     no: 'Non'
+  },
+  languages: {
+    latin: 'Latin',
+    french: 'Français',
+    oldFrench: 'Ancien français',
+    middleFrench: 'Moyen français',
+    italian: 'Italien',
+    english: 'Anglais',
+    german: 'Allemand',
+    spanish: 'Espagnol',
+    occitan: 'Occitan',
+    hebrew: 'Hébreu',
+    ancientGreek: 'Grec ancien',
+    dutch: 'Néerlandais',
+    oldEnglish: 'Vieil anglais',
+    irish: 'Irlandais',
+    catalan: 'Catalan',
+    arabic: 'Arabe',
+    czech: 'Tchèque',
+    turkish: 'Turc',
+    welsh: 'Gallois',
+    cornish: 'Cornique',
+    undetermined: 'Indéterminé',
+    hebrewItalian: 'Hébreu/Italien'
   }
 }

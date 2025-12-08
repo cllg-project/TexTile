@@ -255,6 +255,7 @@
 import { onMounted, ref, computed, watch, nextTick } from 'vue'
 import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts, fetchCollectionsList } from '../api/dts'
 import CatalogTree from '../components/CatalogTree.vue'
+import { normalizeLanguageQuery } from '../lib/language-utils'
 
 const raw = ref('')
 const nodes = ref([])
@@ -299,33 +300,6 @@ const searchTypes = [
     endpoint: '/manuscripts/range/' // Now uses range endpoint for simple ranges
   }
 ]
-
-// Language mapping - convert long forms to short forms
-const languageMap = {
-  // Long forms to short forms
-  'latin': 'lat',
-  'french': 'fre',
-  'old french': 'fro',
-  'middle french': 'frm',
-  'italian': 'ita',
-  'english': 'eng',
-  'german': 'deu',
-  'spanish': 'spa',
-  // Keep short forms as-is
-  'lat': 'lat',
-  'fre': 'fre',
-  'fro': 'fro',
-  'frm': 'frm',
-  'ita': 'ita',
-  'eng': 'eng',
-  'deu': 'deu',
-  'spa': 'spa'
-}
-
-function normalizeLanguageQuery(query) {
-  const normalized = query.trim().toLowerCase()
-  return languageMap[normalized] || query
-}
 
 const currentSearchType = computed(() => {
   return searchTypes.find(type => type.value === selectedSearchType.value) || searchTypes[0]
@@ -734,31 +708,40 @@ function filterTreeForMetadataResults(treeNodes, searchResults) {
     // Use the collection URL directly as ID for routing (like normal catalog)
     const collectionId = result.collection
     
-    // Create a proper manuscript title from the location
-    // Extract manuscript identifier from location like "Grenoble. Bibliothèque municipale, Ms.1005 Rés."
-    let manuscriptTitle = result.title
-    if (result.location && result.location.includes('Ms.')) {
-      // Extract just the manuscript number/identifier
-      const msMatch = result.location.match(/Ms\.\s*([^,.\s]+(?:\s+[^,.\s]+)*)/i)
-      if (msMatch) {
-        manuscriptTitle = `Ms. ${msMatch[1]}`
+    let startYear = null
+    let stopYear = null
+    if (result.created && result.created.length > 0) {
+      const createdStr = result.created[0]
+      if (createdStr.includes('/')) {
+        const [start, end] = createdStr.split('/')
+        startYear = parseInt(start, 10)
+        stopYear = parseInt(end, 10)
+      } else {
+        startYear = parseInt(createdStr, 10)
+        stopYear = startYear
       }
-    } else if (result.location) {
-      // Fallback: use the last part of the location
-      const parts = result.location.split(',')
-      manuscriptTitle = parts[parts.length - 1]?.trim() || result.title
     }
+    
+    const tokenCount = result.tokens || result.token_count || null
+    
+    let manuscriptTitle = result.title ? result.title.replace(/<\/?mark[^>]*>/g, '') : collectionId
     
     return {
       kind: 'resource',
       id: collectionId, // Use full collection URL for routing
       title: manuscriptTitle,
-      location: result.location, // This will be shown as subtitle
       // Keep language, date, and token count fields
       language: result.language,
-      start_year: result.start_year,
-      stop_year: result.stop_year,
-      token_count: result.token_count
+      start_year: startYear,
+      stop_year: stopYear,
+      token_count: tokenCount,
+      ocr_quality: result.ocr_quality,
+      identifier: result.identifier,
+      publisher: result.publisher,
+      issued: result.issued,
+      relation: result.relation,
+      page_count: result.page_count,
+      manifest_url: result.manifest_url
     }
   })
 }

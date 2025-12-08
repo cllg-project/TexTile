@@ -122,7 +122,7 @@
                 <v-icon size="32" color="white">mdi-script-text-outline</v-icon>
               </div>
               <div>
-                <div class="stat-number gradient-text-primary">2.4B+</div>
+                <div class="stat-number gradient-text-primary">3.3B+</div>
                 <div class="stat-label">{{ $t('about.stats.tokens') }}</div>
               </div>
             </v-card-text>

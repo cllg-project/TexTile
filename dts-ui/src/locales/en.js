@@ -72,6 +72,8 @@ export default {
       keywords: 'Keywords',
       sources: 'Sources',
       identifiers: 'Identifiers',
+      tokens: 'Tokens',
+      ocrQuality: 'High quality lines',
       unknownLanguage: 'Unknown',
       biblissimaLink: 'Biblissima link',
       downloadDocument: 'Download document'
@@ -120,6 +122,8 @@ export default {
     searchButton: 'Search',
     virtualKeyboard: 'Virtual Keyboard',
     specialKeyboard: 'Special Keyboard',
+    languageFilter: 'Language',
+    allLanguages: 'All Languages',
     results: 'Results',
     noResults: 'No results.',
     showingResults: 'Showing {start}–{end} of {total}',
@@ -222,7 +226,7 @@ export default {
       preprint: 'Preprint (PDF)',
       copyCitation: 'Copy Citation',
       tryItNow: 'Try it Now',
-      searchPlaceholder: 'Search through 2.5B tokens of medieval text...',
+      searchPlaceholder: 'Search through 3.3B tokens of medieval text...',
       downloadCorpus: 'Download Corpus'
     },
     detailed: {
@@ -276,7 +280,7 @@ export default {
       items: [
         {
           title: 'A massive corpus:',
-          description: 'more than 23,000 manuscripts, approximately 2.5 billion words in Latin and Old French.'
+          description: 'more than 33,000 manuscripts, approximately 3.3 billion words in Latin and Old French.'
         },
         {
           title: 'Significant chronological span:',
@@ -364,5 +368,29 @@ export default {
     confirm: 'Confirm',
     yes: 'Yes',
     no: 'No'
+  },
+  languages: {
+    latin: 'Latin',
+    french: 'French',
+    oldFrench: 'Old French',
+    middleFrench: 'Middle French',
+    italian: 'Italian',
+    english: 'English',
+    german: 'German',
+    spanish: 'Spanish',
+    occitan: 'Occitan',
+    hebrew: 'Hebrew',
+    ancientGreek: 'Ancient Greek',
+    dutch: 'Dutch',
+    oldEnglish: 'Old English',
+    irish: 'Irish',
+    catalan: 'Catalan',
+    arabic: 'Arabic',
+    czech: 'Czech',
+    turkish: 'Turkish',
+    welsh: 'Welsh',
+    cornish: 'Cornish',
+    undetermined: 'Undetermined',
+    hebrewItalian: 'Hebrew/Italian'
   }
 }

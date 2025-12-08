@@ -3,7 +3,7 @@
     <template v-for="node in sortedNodes" :key="nodeKey(node)">
       <v-list-item
         v-if="node.kind==='resource'"
-        :subtitle="node.location || node.id"
+        :subtitle="formatSubtitle(node)"
         :to="{ name:'document', params:{ resource: encodeURIComponent(node.id) } }"
         prepend-icon="mdi-file-document-outline"
       >
@@ -15,11 +15,11 @@
               v-if="node.language"
               size="small"
               variant="outlined"
-              :color="getLanguageColor(node.language)"
+              :color="getLanguageColor(formatLanguage(node.language, t))"
               class="text-caption manuscript-chip"
-              :title="node.language.includes(',') ? `Languages: ${getUniqueLanguagesForTooltip(node.language)}` : ''"
+              :title="node.language.includes(',') ? `Languages: ${getUniqueLanguagesForTooltip(node.language, t)}` : ''"
             >
-              {{ formatLanguage(node.language) }}
+              {{ formatLanguage(node.language, t) }}
             </v-chip>
             
             <!-- Date range chip -->
@@ -31,6 +31,18 @@
               class="text-caption manuscript-chip"
             >
               {{ formatDateRange(node.start_year, node.stop_year) }}
+            </v-chip>
+            
+            <!-- ocr quality chip -->
+            <v-chip
+              v-if="node.ocr_quality && getOCRPercentage(node.ocr_quality)"
+              size="small"
+              variant="outlined"
+              :color="getOCRColor(getOCRPercentage(node.ocr_quality))"
+              class="text-caption manuscript-chip"
+            >
+              <v-icon start size="small">mdi-text-recognition</v-icon>
+              {{ getOCRPercentage(node.ocr_quality) }}% OCR
             </v-chip>
             
             <!-- Token count chip -->
@@ -117,8 +129,11 @@
 </template>
 <script setup>
 import { reactive, ref, nextTick, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { fetchCollectionRaw, parseMembers } from '../api/dts'
+import { formatLanguage, getUniqueLanguagesForTooltip, getLanguageColor } from '../lib/language-utils'
 
+const { t } = useI18n()
 const props = defineProps({ nodes: { type: Array, required: true } })
 const open = ref(new Set())
 const children = ref({}) // Use ref instead of reactive for better tracking
@@ -285,59 +300,24 @@ function collapseAll() {
 }
 
 // Helper functions for metadata display
-function formatLanguage(lang) {
-  if (!lang) return ''
+function formatSubtitle(node) {
+  const parts = []
   
-  // Handle common language codes and full names
-  const langMap = {
-    // Short codes
-    'lat': 'Latin',
-    'fro': 'Old French', 
-    'frm': 'Middle French',
-    'fre': 'French',
-    'fra': 'French',
-    'ita': 'Italian',
-    'eng': 'English',
-    'deu': 'German',
-    'spa': 'Spanish',
-    // Full names (case insensitive)
-    'latin': 'Latin',
-    'old french': 'Old French',
-    'middle french': 'Middle French', 
-    'french': 'French',
-    'italian': 'Italian',
-    'english': 'English',
-    'german': 'German',
-    'spanish': 'Spanish'
+  if (node.identifier && Array.isArray(node.identifier) && node.identifier.length > 0) {
+    const id = node.identifier[0]
+    const idParts = id.split('/')
+    parts.push(idParts[idParts.length - 1])
   }
   
-  // Process multiple languages separated by commas
-  const languages = lang.split(',').map(l => l.trim())
-  
-  // Remove duplicates by converting to Set
-  const uniqueLanguages = [...new Set(languages)]
-  
-  const formattedLanguages = uniqueLanguages.map(singleLang => {
-    const normalized = singleLang.toLowerCase()
-    
-    // Check if it's in our mapping (both short codes and full names)
-    if (langMap[normalized]) {
-      return langMap[normalized]
-    }
-    
-    // Otherwise return as-is, capitalized
-    return singleLang.charAt(0).toUpperCase() + singleLang.slice(1)
-  })
-  
-  // Remove duplicates again after formatting (in case different codes map to same language)
-  const uniqueFormattedLanguages = [...new Set(formattedLanguages)]
-  
-  // If multiple languages, show first one with count indicator
-  if (uniqueFormattedLanguages.length > 1) {
-    return `${uniqueFormattedLanguages[0]} +${uniqueFormattedLanguages.length - 1}`
+  if (node.publisher && Array.isArray(node.publisher) && node.publisher.length > 0) {
+    parts.push(node.publisher[0])
   }
   
-  return uniqueFormattedLanguages[0]
+  if (node.page_count) {
+    parts.push(`${node.page_count} pages`)
+  }
+  
+  return parts.length > 0 ? parts.join(' • ') : node.id
 }
 
 function normalizeDateRange(input) {
@@ -403,16 +383,31 @@ function formatTokenCount(count) {
   return `${(count / 1000000).toFixed(1)}M`
 }
 
-function getLanguageColor(lang) {
-  const firstLang = lang?.split(',')[0]?.trim()?.toLowerCase()
-  switch (firstLang) {
-    case 'lat': case 'latin': return 'purple'
-    case 'fro': case 'frm': case 'fre': case 'fra': case 'french': case 'old french': case 'middle french': return 'blue'
-    case 'ita': case 'italian': return 'green'
-    case 'eng': case 'english': return 'orange'
-    case 'deu': case 'german': return 'red'
-    case 'spa': case 'spanish': return 'pink'
-    default: return 'grey'
+function getOCRPercentage(ocrQuality) {
+  if (!ocrQuality) return null
+  const match = ocrQuality.match(/\((\d+\.?\d*)%\)/)
+  return match ? parseFloat(match[1]) : null
+}
+
+function parseCreatedDate(created) {
+  if (!created || !Array.isArray(created) || created.length === 0) return null
+  
+  const dateStr = created[0]
+  
+  if (dateStr.includes('/')) {
+    const [start, end] = dateStr.split('/')
+    return {
+      startYear: parseInt(start),
+      endYear: parseInt(end),
+      display: `${start}-${end}`
+    }
+  } else {
+    const year = parseInt(dateStr)
+    return {
+      startYear: year,
+      endYear: year,
+      display: dateStr
+    }
   }
 }
 
@@ -424,13 +419,12 @@ function getChildrenCountColor(count) {
   return 'blue-grey'
 }
 
-function getUniqueLanguagesForTooltip(lang) {
-  if (!lang) return ''
-  
-  // Remove duplicates from original language string for tooltip
-  const languages = lang.split(',').map(l => l.trim())
-  const uniqueLanguages = [...new Set(languages)]
-  return uniqueLanguages.join(', ')
+function getOCRColor(percentage) {
+  if (percentage >= 95) return 'green'
+  if (percentage >= 90) return 'light-green'
+  if (percentage >= 80) return 'amber'
+  if (percentage >= 70) return 'orange'
+  return 'red'
 }
 
 // Expose methods to parent
