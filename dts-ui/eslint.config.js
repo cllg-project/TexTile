@@ -23,4 +23,11 @@ export default defineConfig([
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
   skipFormatting,
+
+  {
+    // Routed views are named after their page (Catalog, Collection, About, ...)
+    name: 'app/views',
+    files: ['src/views/**/*.vue'],
+    rules: { 'vue/multi-word-component-names': 'off' },
+  },
 ])

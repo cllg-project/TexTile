@@ -55,7 +55,7 @@ const orderedRows = computed(() => {
   }
   return Array.from(byRow.entries())
     .sort((a, b) => a[0] - b[0])
-    .map(([_, arr]) => arr.sort((a, b) => (a.column ?? 0) - (b.column ?? 0)))
+    .map(([, arr]) => arr.sort((a, b) => (a.column ?? 0) - (b.column ?? 0)))
 })
 
 // Show dotted-circle for combining marks so they’re visible

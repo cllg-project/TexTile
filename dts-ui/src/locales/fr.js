@@ -112,39 +112,62 @@ export default {
   },
   search: {
     title: 'Recherche de Texte',
-    searchGuide: 'GUIDE DE RECHERCHE',
-    searchMethod: 'Méthode de Recherche',
-    searchType: 'Type de Recherche',
-    traditional: 'Traditionnelle',
-    vector: 'Sémantique',
-    hybrid: 'Hybride',
-    comingSoon: 'Bientôt Disponible',
+    subtitle: 'Rechercher dans le texte transcrit de tous les manuscrits',
+    exportConcordance: 'Exporter la concordance (CSV)',
+    exportConcordanceHint: 'Télécharger chaque occurrence avec son contexte gauche et droit, dans l\'ordre de lecture',
+    tabResults: 'Passages',
+    tabConcordance: 'Concordance',
+    tabStats: 'Statistiques',
+    concWidth: 'Contexte (caractères)',
+    concSort: 'Trier cette page par',
+    concSortOrder: 'Ordre de lecture',
+    concSortLeft: 'Contexte gauche',
+    concSortRight: 'Contexte droit',
+    concSummary: '{pages} pages correspondantes · {rows} occurrences sur cette page',
+    statsOccurrences: 'Occurrences',
+    statsPer10k: 'Pour 10 000 tokens',
+    statsPer10kHint: 'Occurrences pour 10 000 tokens des manuscrits du périmètre recherché',
+    statsManuscripts: 'Manuscrits concernés',
+    statsDistinctForms: 'Formes distinctes',
+    statsMetric: 'Mesure',
+    statsForms: 'Formes trouvées',
+    statsByCentury: 'Par siècle',
+    statsByLanguage: 'Par langue',
+    statsByManuscript: 'Par manuscrit',
+    statsUndated: '{count} occurrences dans des manuscrits non datés ne sont pas affichées ci-dessus',
+    statsMore: 'Afficher {count} de plus',
+    statsLess: 'Afficher moins',
+    statsDownload: 'Télécharger les statistiques (CSV)',
+    statsComputing: 'Comptage des occurrences…',
+    statsProgress: '{pages} pages sur {total} · {occurrences} occurrences pour le moment',
+    statsPreliminary: 'Chiffres provisoires, le comptage continue',
+    statsStop: 'Arrêter',
+    statsStopped: 'Le comptage a été arrêté : ces chiffres sont partiels.',
+    statsCached: 'Résultat enregistré le {when}',
+    statsRecompute: 'Recalculer',
+    statsBusy: 'Le serveur calcule déjà d\'autres statistiques. Réessayez dans quelques secondes.',
+    statsRetry: 'Réessayer',
+    statsTruncatedOccurrences: 'Le comptage s\'est arrêté au maximum de {count} occurrences : ces chiffres ne portent que sur la première partie du corpus.',
+    statsTruncatedTime: 'Le comptage s\'est arrêté après {seconds} secondes : ces chiffres ne portent que sur la première partie du corpus.',
+    tipsButton: 'Aide à la recherche',
+    tryExamples: 'Essayez',
+    resultsCount: '{count} résultat | {count} résultats',
+    modeLabel: 'Correspondance',
     searchButton: 'Rechercher',
-    virtualKeyboard: 'Clavier Virtuel',
     specialKeyboard: 'Clavier Spécial',
     languageFilter: 'Langue',
     allLanguages: 'Toutes les Langues',
-    results: 'Résultats',
     noResults: 'Aucun résultat.',
-    showingResults: 'Affichage de {start}–{end} sur {total}',
     pagination: {
-      first: 'Première',
-      prev: 'Préc.',
-      next: 'Suiv.',
-      last: 'Dernière',
       page: 'Page {current} sur {total}'
     },
     placeholders: {
-      traditional: 'Recherchez avec les opérateurs booléens (+, -, ｜, *, "phrases")…',
-      vector: 'Recherche sémantique (ex. "homme pauvre", "cheval")…',
-      hybrid: 'Recherche avec les méthodes traditionnelle et sémantique…'
+      traditional: 'Recherchez avec les opérateurs booléens (+, -, ｜, *, "phrases")…'
     },
     mode: {
-      title: 'Mode de Recherche',
       exact: 'Correspondance Exacte',
       partial: 'Correspondance Partielle',
       fuzzy: 'Correspondance Floue',
-
       descriptions: {
         exact: 'Recherche uniquement les correspondances de phrases exactes',
         partial: 'Permet les correspondances de mots partiels et la recherche de sous-chaînes',
@@ -153,51 +176,12 @@ export default {
     },
     guides: {
       traditional: {
-        title: 'Conseils de Recherche',
         tips: {
           multiWord: 'pour rechercher plusieurs mots, ex. "deus,deum"',
           phrase: 'pour phrase exacte, ex. "la bouche"',
-          wildcard: "utilisez '*' comme joker pour correspondre aux préfixes de mots (ex. 'reg*' correspond à 'regnum') — disponible uniquement en Correspondance Exacte"
+          wildcard: 'utilisez \'*\' comme joker pour correspondre aux préfixes de mots (ex. \'reg*\' correspond à \'regnum\') — disponible uniquement en Correspondance Exacte'
         }
-      },
-      vector: {
-        title: 'Conseils de Recherche Sémantique',
-        tips: {
-          natural: 'Utilisez des requêtes en langage naturel',
-          conceptual: 'Recherche par similarité conceptuelle',
-          variations: 'Trouve automatiquement les variations d\'orthographe',
-          abbreviations: 'Fonctionne avec les abréviations médiévales',
-          try1: 'Essayez :',
-          try2: 'Essayez :',
-          try3: 'Essayez :',
-          ranking: 'Résultats classés par similarité'
-        },
-        examples: {
-          poor: 'homme pauvre',
-          horse: 'cheval',
-          love: 'amour courtois'
-        }
-      },
-      hybrid: {
-        title: 'Recherche Hybride',
-        description: 'Combine la correspondance exacte traditionnelle avec la similarité sémantique pour des résultats complets.',
-        usage: 'Utilisez n\'importe quel type de requête - le système trouvera les correspondances exactes et le contenu conceptuellement similaire.'
       }
-    },
-    sections: {
-      traditional: 'Résultats de Recherche Traditionnelle',
-      semantic: 'Résultats de Recherche Sémantique'
-    },
-    results: {
-      textMatch: 'correspondance textuelle',
-      semantic: 'sémantique',
-      semanticMatches: 'Correspondances sémantiques :',
-      language: 'Langue :'
-    },
-    descriptions: {
-      traditional: 'Correspondance exacte rapide avec opérateurs booléens et jokers',
-      vector: 'Recherche par similarité sémantique - trouve du contenu conceptuellement similaire et des variantes d\'orthographe',
-      hybrid: 'Combine la recherche traditionnelle et sémantique pour des résultats complets'
     }
   },
   about: {
@@ -223,7 +207,7 @@ export default {
       paperTitle: '"CoMMA, a Large-scale Corpus of Multilingual Medieval Archives"',
       paperAuthors: 'par Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, et Benoît Sagot (2025).',
       readFull: 'Lire le Texte Complet',
-      preprint: 'Prépublication (PDF)',
+      lrecPaper: 'Article LREC (PDF)',
       copyCitation: 'Copier la Citation',
       tryItNow: 'Essayez maintenant',
       searchPlaceholder: 'Rechercher dans 3,3 milliards de tokens de texte médiéval...',
@@ -360,6 +344,42 @@ export default {
       description: 'Pour toute question ou suggestion concernant le corpus.',
       button: 'Contacter l\'Équipe'
     }
+  },
+  browse: {
+    title: 'Bibliothèque',
+    subtitle: 'Rechercher et parcourir les collections et les manuscrits',
+    searchLabel: 'Rechercher dans la bibliothèque',
+    searchPlaceholder: 'Titre, cote, éditeur, année… ex. Smith 19',
+    searchIn: 'Rechercher dans {title}',
+    searchingIn: 'Recherche dans {title}',
+    searchWholeLibrary: 'Rechercher dans toute la bibliothèque',
+    searchButton: 'Rechercher',
+    language: 'Langue',
+    yearFrom: 'De l\'année',
+    yearTo: 'À l\'année',
+    reset: 'Réinitialiser',
+    tabManuscripts: 'Manuscrits',
+    tabCollections: 'Collections',
+    resultsCount: '{count} résultat | {count} résultats',
+    noResults: 'Aucun résultat. Essayez moins de mots ou retirez un filtre.',
+    topLevel: 'Collections',
+    emptyLibrary: 'La bibliothèque est vide.',
+    emptyCollection: 'Cette collection est vide.',
+    sortDefault: 'Ordre par défaut',
+    sortTitle: 'Titre (A–Z)',
+    sortSize: 'Plus volumineuses d\'abord',
+    collection: 'Collection',
+    manuscript: 'Manuscrit',
+    manuscripts: 'Manuscrits',
+    subCollections: 'Sous-collections',
+    contents: 'Contenu',
+    items: '{count} élément | {count} éléments',
+    pages: '{count} page | {count} pages',
+    tokens: '{count} tokens',
+    identifier: 'Identifiant',
+    read: 'Lire',
+    backToLibrary: 'Retour à la bibliothèque',
+    notFound: 'Cette collection est introuvable.'
   },
   common: {
     loading: 'Chargement...',

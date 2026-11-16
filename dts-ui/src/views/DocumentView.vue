@@ -1,9 +1,8 @@
 <template>
-  <v-container fluid>
-    <v-container class="py-4">
-      <v-row>
+  <v-container fluid class="reader-layout">
+    <v-row dense>
         <!-- LEFT: tools -->
-        <v-col cols="12" md="3">
+        <v-col cols="12" md="3" xl="2">
           <v-expansion-panels v-model="openPanels" multiple>
             <!-- DOCUMENT INFO PANEL -->
             <v-expansion-panel>
@@ -241,7 +240,7 @@
         </v-col>
 
         <!-- MIDDLE: reader -->
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="6" xl="6">
           <!-- Transcription Quality Disclaimer -->
           <v-alert
             v-if="showDisclaimer"
@@ -298,7 +297,7 @@
           </div>
 
           <!-- Reader card -->
-          <v-card class="pa-1">
+          <v-card class="reader-card">
             <v-card-text class="reader-scroller">
               <!-- bind CSS var for font size -->
               <div
@@ -314,7 +313,7 @@
         </v-col>
 
         <!-- RIGHT: IIIF Viewer -->
-        <v-col cols="12" md="3">
+        <v-col cols="12" md="3" xl="4">
           <div v-if="iiifManifestUrl" class="iiif-viewer-container">
             <div class="iiif-viewer-header">
               <h3 class="iiif-viewer-title">{{ $t('document.iiif.title', 'Manuscript Viewer') }}</h3>
@@ -340,8 +339,7 @@
             <p class="text-body-2 text-grey mt-2">{{ $t('document.iiif.noManifest', 'No manuscript images available') }}</p>
           </div>
         </v-col>
-      </v-row>
-    </v-container>
+    </v-row>
   </v-container>
 </template>
 
@@ -354,7 +352,7 @@ import { formatLanguage, getLanguageColor } from '../lib/language-utils'
 
 const { t } = useI18n()
 
-const BASE = import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000'
+const BASE = (import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000').replace(/\/+$/, '')
 
 const route = useRoute()
 const router = useRouter()
@@ -429,10 +427,6 @@ const iiifManifestUrl = computed(() => {
   return manifestSource || documentMetadata.value.sources[0]
 })
 
-// Download Document URL - DTS API document endpoint with mediaType but no ref
-const downloadDocumentUrl = computed(() => {
-  return `${BASE}/document/?resource=${encodeURIComponent(resource)}&mediaType=application/xml`
-})
 
 // Download filename - sanitized resource name
 const downloadFilename = computed(() => {
@@ -462,18 +456,6 @@ function formatOCRQuality(ocrQuality) {
 }
 
 // Helper functions for metadata display
-function isUrl(str) {
-  return /^https?:\/\//.test(str)
-}
-
-function formatSourceLink(url) {
-  // Shorten the URL for display
-  if (url.length > 60) {
-    return url.substring(0, 57) + '...'
-  }
-  return url
-}
-
 // Map ISO language codes to full language names
 function getLanguageDisplayName(code) {
   const languageMap = {
@@ -682,7 +664,6 @@ async function fetchDocumentMetadata() {
         ocrQuality: ocrQuality
       };
       
-      console.log('Extracted document metadata:', documentMetadata.value);
       
       // If no metadata found in navigation, try the collection endpoint as fallback
       if (!documentMetadata.value.title || documentMetadata.value.title === resource) {
@@ -734,7 +715,6 @@ const navigateTo = (ref) => {
 /* Left panels */
 const openPanels = ref([0, 1]) // Panel 0 is Document Info, 1 is Search, 2 is Display, 3 is Cite
 const searchQ = ref('')
-const searchMode = ref('form')
 const matches = ref([])
 const searching = ref(false)
 const highlightTerm = ref('')
@@ -804,12 +784,10 @@ function onGotoEnter(){ if (goto.value) navigateTo(goto.value) }
 
 async function loadNav(){
   const nav = await fetchNavigation(resource)
-  console.log('Navigation response:', nav)
   refs.value = extractRefsFromNavigation(nav)
   
   // Extract metadata directly from the navigation response if possible
   if (nav && nav.resource && nav.resource.dublinCore) {
-    console.log('Processing navigation metadata:', nav.resource.dublinCore)
     processNavigationMetadata(nav);
   }
   
@@ -1174,7 +1152,7 @@ watch([iiifManifestUrl, tifyEl], ([manifestUrl, el]) => {
           readyEvents.forEach(eventName => {
             try {
               tifyInstance.value.on(eventName, attemptInitialSync)
-            } catch (eventError) {
+            } catch {
               // ignore unknown events
             }
           })
@@ -1251,9 +1229,6 @@ function syncTifyWithPassage(passageRef, attempt = 1) {
     let tifyPageIndex
     if (pageNum === 1) {
       tifyPageIndex = 1
-      if (attempt === 1) {
-        console.log('Tify synced to page 1 for first passage')
-      }
     } else {
       tifyPageIndex = pageNum
     }
@@ -1608,10 +1583,12 @@ watch(
   padding-right: 0 !important;
 }
 /* ---------- READER AREA SCROLL ---------- */
+.reader-layout { padding: 8px 8px 0; }
+.reader-card { padding: 0; }
 .reader-scroller {
-  height: calc(100vh - 180px);
+  height: calc(100vh - 136px);
   overflow: auto;
-  padding-right: 8px;
+  padding: 4px 8px 4px 12px;
   scrollbar-gutter: stable;
 }
 
@@ -1741,7 +1718,7 @@ watch(
 .iiif-viewer-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 80px);
   border-radius: 12px;
   overflow: hidden;
   background: rgba(var(--v-theme-surface-rgb), 1);

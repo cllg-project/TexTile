@@ -182,7 +182,7 @@
             <br><br>
             <span class="text-body-2 text-medium-emphasis">
               {{ $t('about.intro.paperDescription') }}
-              <a href="https://inria.hal.science/hal-05299220" target="_blank" rel="noopener" class="text-primary font-weight-medium text-decoration-none">
+              <a :href="config.paperUrl" target="_blank" rel="noopener" class="text-primary font-weight-medium text-decoration-none">
                 {{ $t('about.intro.paperTitle') }}
               </a>
               {{ $t('about.intro.paperAuthors') }}
@@ -251,11 +251,11 @@
               size="large"
               class="ma-2 action-btn" 
               prepend-icon="mdi-file-pdf-box"
-              @click="openPreprint" 
+              @click="openPaper" 
               target="_blank" 
               rel="noopener"
             >
-              {{ $t('about.intro.preprint') }}
+              {{ $t('about.intro.lrecPaper') }}
             </v-btn>
             <v-btn 
               variant="outlined" 
@@ -538,12 +538,8 @@ async function copyCitation(){
   snackbar.value = true
 }
 
-function openProject(){
-  window.open(config.projectPageUrl, '_blank', 'noopener')
-}
-
-function openPreprint(){
-  window.open(config.preprintUrl, '_blank', 'noopener')
+function openPaper(){
+  window.open(config.paperUrl, '_blank', 'noopener')
 }
 
 function performSearch(customQuery = null) {
