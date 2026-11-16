@@ -101,7 +101,7 @@
                   <v-icon color="primary" class="mr-3 mt-1">mdi-check-circle</v-icon>
                 </template>
                 <v-list-item-title class="text-body-1" style="white-space: normal; line-height: 1.6;">
-                  <strong>{{ feature.title }}</strong><br>{{ feature.description }}
+                  <strong>{{ feature.title }}</strong><br><span v-html="feature.description"></span>
                 </v-list-item-title>
               </v-list-item>
             </v-list>
@@ -460,6 +460,10 @@ const features = computed(() => {
       {
         title: 'Perspectives :',
         description: 'le corpus sera progressivement enrichi de nouveaux fonds et de nouvelles langues médiévales, incluant l\'italien et d\'autres traditions.'
+      },
+      {
+        title: 'Une évaluation de la reconnaissance de texte automatisée :',
+        description: 'chaque ligne de texte produite est soumise à un modèle chargé d\'estimer sa qualité du point de vue linguistique et de sa plausibilité générale. Ce dispositif sert de proxy à l\'évaluation de la qualité de transcription, en l\'absence de vérité de terrain. Le système s\'inspire des méthodes présentées dans <a href="https://enc.hal.science/hal-03828529/" target="_blank" rel="noopener" class="text-primary text-decoration-none font-weight-medium">Ground-truth Free Evaluation of HTR on Old French and Latin Medieval Literary Manuscripts</a>. Une bonne ligne correspond à une ligne avec entre 25% et 0% d\'erreurs.'
       }
     ]
   } else {
@@ -487,6 +491,10 @@ const features = computed(() => {
       {
         title: 'Prospects:',
         description: 'the corpus will be progressively enriched with new collections and new medieval languages, including Italian and other traditions.'
+      },
+      {
+        title: 'An evaluation of automated text recognition:',
+        description: 'each produced text line is processed by a model designed to assess its quality from a linguistic and plausibility perspective. This mechanism serves as a proxy for transcription-quality evaluation when no ground truth is available. The system is inspired by the methods described in <a href="https://enc.hal.science/hal-03828529/" target="_blank" rel="noopener" class="text-primary text-decoration-none font-weight-medium">Ground-truth Free Evaluation of HTR on Old French and Latin Medieval Literary Manuscripts</a>. A good line corresponds to a line whose estimated error rate lies between 0% and 25%.'
       }
     ]
   }

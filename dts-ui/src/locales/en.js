@@ -301,6 +301,10 @@ export default {
         {
           title: 'Prospects:',
           description: 'the corpus will be progressively enriched with new collections and new medieval languages, including Italian and other traditions.'
+        },
+        {
+          title: 'An evaluation of automated text recognition:',
+          description: 'each produced text line is processed by a model designed to assess its quality from a linguistic and plausibility perspective. This mechanism serves as a proxy for transcription-quality evaluation when no ground truth is available. The system is inspired by the methods described in <a href="https://enc.hal.science/hal-03828529/" target="_blank" rel="noopener" class="text-primary text-decoration-none font-weight-medium">Ground-truth Free Evaluation of HTR on Old French and Latin Medieval Literary Manuscripts</a>. A good line corresponds to a line whose estimated error rate lies between 0% and 25%.'
         }
       ]
     },

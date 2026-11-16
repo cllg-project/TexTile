@@ -11,6 +11,7 @@ export default {
   paperUrl: 'https://inria.hal.science/hal-05299220',
   preprintUrl: 'https://inria.hal.science/hal-05299220v1',
   catmusUrl: 'https://inria.hal.science/hal-04453952',
+  htrEvaluationUrl: 'https://enc.hal.science/hal-03828529/',
   
   // Project pages
   colafProjectUrl: 'https://colaf.huma-num.fr/',
