@@ -112,39 +112,62 @@ export default {
   },
   search: {
     title: 'Text Search',
-    searchGuide: 'SEARCH GUIDE',
-    searchMethod: 'Search Method',
-    searchType: 'Search Type',
-    traditional: 'Traditional',
-    vector: 'Semantic',
-    hybrid: 'Hybrid',
-    comingSoon: 'Coming Soon',
+    subtitle: 'Search the transcribed text of every manuscript',
+    exportConcordance: 'Export concordance (CSV)',
+    exportConcordanceHint: 'Download every occurrence with its left and right context, in reading order',
+    tabResults: 'Passages',
+    tabConcordance: 'Concordance',
+    tabStats: 'Statistics',
+    concWidth: 'Context (characters)',
+    concSort: 'Sort this page by',
+    concSortOrder: 'Reading order',
+    concSortLeft: 'Left context',
+    concSortRight: 'Right context',
+    concSummary: '{pages} matching pages · {rows} occurrences on this page',
+    statsOccurrences: 'Occurrences',
+    statsPer10k: 'Per 10,000 tokens',
+    statsPer10kHint: 'Occurrences per 10,000 tokens of the manuscripts in the searched scope',
+    statsManuscripts: 'Manuscripts with hits',
+    statsDistinctForms: 'Distinct forms',
+    statsMetric: 'Measure',
+    statsForms: 'Forms found',
+    statsByCentury: 'By century',
+    statsByLanguage: 'By language',
+    statsByManuscript: 'By manuscript',
+    statsUndated: '{count} occurrences in undated manuscripts are not shown above',
+    statsMore: 'Show {count} more',
+    statsLess: 'Show less',
+    statsDownload: 'Download statistics (CSV)',
+    statsComputing: 'Counting occurrences…',
+    statsProgress: '{pages} of {total} pages · {occurrences} occurrences so far',
+    statsPreliminary: 'Preliminary figures, still counting',
+    statsStop: 'Stop',
+    statsStopped: 'Counting was stopped: these figures are partial.',
+    statsCached: 'Saved result from {when}',
+    statsRecompute: 'Recompute',
+    statsBusy: 'The server is busy computing other statistics. Try again in a few seconds.',
+    statsRetry: 'Try again',
+    statsTruncatedOccurrences: 'Counting stopped at the maximum of {count} occurrences: these figures cover the first part of the corpus only.',
+    statsTruncatedTime: 'Counting stopped after {seconds} seconds: these figures cover the first part of the corpus only.',
+    tipsButton: 'Search tips',
+    tryExamples: 'Try',
+    resultsCount: '{count} result | {count} results',
+    modeLabel: 'Match',
     searchButton: 'Search',
-    virtualKeyboard: 'Virtual Keyboard',
     specialKeyboard: 'Special Keyboard',
     languageFilter: 'Language',
     allLanguages: 'All Languages',
-    results: 'Results',
     noResults: 'No results.',
-    showingResults: 'Showing {start}–{end} of {total}',
     pagination: {
-      first: 'first',
-      prev: 'prev',
-      next: 'next',
-      last: 'last',
       page: 'page {current} of {total}'
     },
     placeholders: {
-      traditional: 'Search with Boolean operators (+, -, ｜, *, "phrases")…',
-      vector: 'Search semantically (e.g., "homme pauvre", "cheval")…',
-      hybrid: 'Search with both traditional and semantic methods…'
+      traditional: 'Search with Boolean operators (+, -, ｜, *, "phrases")…'
     },
     mode: {
-      title: 'Search Mode',
       exact: 'Exact Match',
-      partial: 'Partial Match', 
+      partial: 'Partial Match',
       fuzzy: 'Fuzzy Match',
-
       descriptions: {
         exact: 'Search for exact phrase matches only',
         partial: 'Allow partial word matches and substring search',
@@ -153,51 +176,12 @@ export default {
     },
     guides: {
       traditional: {
-        title: 'Search Tips',
         tips: {
           multiWord: 'for multiple word search, e.g. "deus,deum"',
           phrase: 'for exact phrase, e.g. "la bouche"',
-          wildcard: "use '*' as a wildcard to match word prefixes (e.g., 'reg*' matches 'regnum') — only available in Exact Match"
+          wildcard: 'use \'*\' as a wildcard to match word prefixes (e.g., \'reg*\' matches \'regnum\') — only available in Exact Match'
         }
-      },
-      vector: {
-        title: 'Semantic Search Tips',
-        tips: {
-          natural: 'Use natural language queries',
-          conceptual: 'Searches for conceptual similarity',
-          variations: 'Finds spelling variations automatically',
-          abbreviations: 'Works with medieval abbreviations',
-          try1: 'Try:',
-          try2: 'Try:',
-          try3: 'Try:',
-          ranking: 'Results ranked by similarity'
-        },
-        examples: {
-          poor: 'homme pauvre',
-          horse: 'cheval',
-          love: 'amour courtois'
-        }
-      },
-      hybrid: {
-        title: 'Hybrid Search',
-        description: 'Combines traditional exact matching with semantic similarity for comprehensive results.',
-        usage: 'Use any query type - the system will find both exact matches and conceptually similar content.'
       }
-    },
-    sections: {
-      traditional: 'Traditional Search Results',
-      semantic: 'Semantic Search Results'
-    },
-    results: {
-      textMatch: 'text match',
-      semantic: 'semantic',
-      semanticMatches: 'Semantic matches:',
-      language: 'Language:'
-    },
-    descriptions: {
-      traditional: 'Fast exact matching with Boolean operators and wildcards',
-      vector: 'Semantic similarity search - finds conceptually similar content and spelling variants',
-      hybrid: 'Combines traditional and semantic search for comprehensive results'
     }
   },
   about: {
@@ -223,7 +207,7 @@ export default {
       paperTitle: '"CoMMA, a Large-scale Corpus of Multilingual Medieval Archives"',
       paperAuthors: 'by Thibault Clérice, Simon Gabay, Malamatenia Vlachou-Efstathiou, Ariane Pinche, and Benoît Sagot (2025).',
       readFull: 'Read Full About',
-      preprint: 'Preprint (PDF)',
+      lrecPaper: 'LREC Paper (PDF)',
       copyCitation: 'Copy Citation',
       tryItNow: 'Try it Now',
       searchPlaceholder: 'Search through 3.3B tokens of medieval text...',
@@ -360,6 +344,42 @@ export default {
       description: 'For any questions or suggestions regarding the corpus.',
       button: 'Contact the Team'
     }
+  },
+  browse: {
+    title: 'Library',
+    subtitle: 'Search and browse collections and manuscripts',
+    searchLabel: 'Search the library',
+    searchPlaceholder: 'Title, shelfmark, publisher, year… e.g. Smith 19',
+    searchIn: 'Search in {title}',
+    searchingIn: 'Searching in {title}',
+    searchWholeLibrary: 'Search the whole library instead',
+    searchButton: 'Search',
+    language: 'Language',
+    yearFrom: 'From year',
+    yearTo: 'To year',
+    reset: 'Reset',
+    tabManuscripts: 'Manuscripts',
+    tabCollections: 'Collections',
+    resultsCount: '{count} result | {count} results',
+    noResults: 'No results. Try fewer words or remove a filter.',
+    topLevel: 'Collections',
+    emptyLibrary: 'The library is empty.',
+    emptyCollection: 'This collection is empty.',
+    sortDefault: 'Default order',
+    sortTitle: 'Title (A–Z)',
+    sortSize: 'Largest first',
+    collection: 'Collection',
+    manuscript: 'Manuscript',
+    manuscripts: 'Manuscripts',
+    subCollections: 'Sub-collections',
+    contents: 'Contents',
+    items: '{count} item | {count} items',
+    pages: '{count} page | {count} pages',
+    tokens: '{count} tokens',
+    identifier: 'Identifier',
+    read: 'Read',
+    backToLibrary: 'Back to library',
+    notFound: 'This collection could not be found.'
   },
   common: {
     loading: 'Loading...',

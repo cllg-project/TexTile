@@ -427,8 +427,8 @@ const features = computed(() => {
     if (Array.isArray(items) && items.length > 0) {
       return items
     }
-  } catch (e) {
-    console.log('i18n array access failed:', e)
+  } catch {
+    // fall through to the default below
   }
   
   // Fallback based on current locale

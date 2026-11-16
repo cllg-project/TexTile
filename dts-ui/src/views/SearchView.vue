@@ -1,498 +1,214 @@
 <template>
-  <v-container class="py-6">
-    <!-- Search guide -->
-    <v-alert variant="tonal" type="info" class="mb-6">
-      <div class="text-subtitle-1 mb-2">{{ $t('search.searchGuide') }}</div>
-      
-      <!-- Traditional Search Operators (shown only for traditional search) -->
-      <div v-if="searchType === 'traditional'">
-        <!-- <div class="text-subtitle-2 mb-2">{{ $t('search.guides.traditional.title') }}</div> -->
-        <v-row>
-          <v-col cols="12" md="9">
-            <div class="rule"><v-chip size="x-small" label>,</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.multiWord') }}</div>
-            <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.phrase') }}</div>
-            <div class="rule"><v-chip size="x-small" label>"&nbsp;&nbsp;"</v-chip>&nbsp;{{ $t('search.guides.traditional.tips.wildcard') }}</div>
-          </v-col>
-        </v-row>
-      </div>
+  <div>
+    <v-sheet color="primary" class="py-6">
+      <v-container>
+        <h1 class="text-h4 font-weight-bold text-white mb-1">{{ $t('search.title') }}</h1>
+        <p class="text-white opacity-90 mb-4">{{ $t('search.subtitle') }}</p>
 
-      <!-- Semantic Search Guide -->
-      <div v-if="searchType === 'vector'">
-        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.vector.title') }}</div>
-        <v-row>
-          <v-col cols="12" md="6">
-            <div class="rule">• {{ $t('search.guides.vector.tips.natural') }}</div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.conceptual') }}</div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.variations') }}</div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.abbreviations') }}</div>
-          </v-col>
-          <v-col cols="12" md="6">
-            <div class="rule">• {{ $t('search.guides.vector.tips.try1') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.poor') }}</v-chip></div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.try2') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.horse') }}</v-chip></div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.try3') }} <v-chip size="x-small" label>{{ $t('search.guides.vector.examples.love') }}</v-chip></div>
-            <div class="rule">• {{ $t('search.guides.vector.tips.ranking') }}</div>
-          </v-col>
-        </v-row>
-      </div>
-
-      <!-- Hybrid Search Guide -->
-      <div v-if="searchType === 'hybrid'">
-        <div class="text-subtitle-2 mb-2">{{ $t('search.guides.hybrid.title') }}</div>
-        <div class="rule">{{ $t('search.guides.hybrid.description') }}</div>
-        <div class="rule">{{ $t('search.guides.hybrid.usage') }}</div>
-      </div>
-    </v-alert>
-
-    <!-- Search Type Selector -->
-    <!-- <v-card class="mb-4" variant="outlined">
-      <v-card-text class="py-3">
-        <div class="text-subtitle-2 mb-3">{{ $t('search.searchMethod') }}</div>
-        <v-btn-toggle
-          v-model="searchType"
-          mandatory
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        >
-          <v-btn value="traditional" size="small">
-            <v-icon start>mdi-text-search</v-icon>
-            {{ $t('search.traditional') }}
+        <form class="search-form" role="search" @submit.prevent="run(1)">
+          <v-text-field
+            ref="inputRef"
+            v-model="q"
+            :placeholder="$t('search.placeholders.traditional')"
+            variant="solo"
+            density="comfortable"
+            hide-details
+            clearable
+            autofocus
+            class="junicode-input search-input"
+          >
+            <template #append-inner>
+              <v-btn
+                icon="mdi-keyboard-variant"
+                variant="text"
+                size="small"
+                :color="showKeyboard ? 'primary' : undefined"
+                :title="$t('search.specialKeyboard')"
+                :aria-pressed="showKeyboard"
+                @click.stop="showKeyboard = !showKeyboard"
+              />
+            </template>
+          </v-text-field>
+          <v-btn type="submit" color="secondary" size="large" class="search-btn" :loading="loading">
+            {{ $t('search.searchButton') }}
           </v-btn>
-          <v-btn value="vector" size="small" disabled>
-            <v-icon start>mdi-brain</v-icon>
-            {{ $t('search.vector') }}
-            <v-chip size="x-small" class="ml-1" variant="tonal" color="grey">{{ $t('search.comingSoon') }}</v-chip>
-          </v-btn>
-          <v-btn value="hybrid" size="small" disabled>
-            <v-icon start>mdi-merge</v-icon>
-            {{ $t('search.hybrid') }}
-            <v-chip size="x-small" class="ml-1" variant="tonal" color="grey">{{ $t('search.comingSoon') }}</v-chip>
-          </v-btn>
-        </v-btn-toggle>
-        
-        <div class="text-caption text-grey">
-          <div v-if="searchType === 'traditional'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.descriptions.traditional') }}
-          </div>
-          <div v-if="searchType === 'vector'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.descriptions.vector') }}
-          </div>
-          <div v-if="searchType === 'hybrid'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.descriptions.hybrid') }}
-          </div>
-        </div>
-      </v-card-text>
-    </v-card> -->
+        </form>
 
-    <!-- Query bar + search button + keyboard toggle -->
-    <div class="search-controls">
-      <v-text-field
-        ref="inputRef"
-        v-model="q"
-        :placeholder="searchPlaceholder"
-        variant="outlined"
-        density="comfortable"
-        hide-details
-        class="junicode-input search-input"
-        @keydown.enter="run(1)"
-      />
-      <v-select
-        v-model="selectedLanguage"
-        :items="languageOptions"
-        item-title="name"
-        item-value="code"
-        variant="outlined"
-        density="comfortable"
-        hide-details
-        class="language-select"
-        :prepend-inner-icon="selectedLanguage === 'all' ? 'mdi-earth' : 'mdi-web'"
-      >
-        <template #selection="{ item }">
-          <div class="d-flex align-center language-selection-text">
-            <span class="text-caption text-grey mr-1">{{ item.raw.code }}</span>
-            <span class="language-name">{{ item.raw.name }}</span>
-          </div>
-        </template>
-      </v-select>
-      <v-btn 
-        color="primary"
-        @click="run(1)"
-        :loading="loading"
-        variant="elevated"
-        size="large"
-      >
-        <v-icon>mdi-magnify</v-icon>
-        <span class="ml-2 d-none d-sm-inline">{{ $t('search.searchButton') }}</span>
-      </v-btn>
-      <v-btn 
-        @click="showKeyboard = !showKeyboard"
-        :color="showKeyboard ? 'primary' : 'default'"
-        variant="outlined"
-        size="large"
-      >
-        <v-icon>mdi-keyboard-variant</v-icon>
-        <span class="ml-2 d-none d-sm-inline">{{ $t('search.specialKeyboard') }}</span>
-      </v-btn>
-    </div>
-
-    <!-- Search Mode Options (only for traditional search) -->
-    <v-card v-if="searchType === 'traditional'" class="mt-4" variant="outlined">
-      <v-card-text class="py-3">
-        <div class="text-subtitle-2 mb-3">{{ $t('search.mode.title') }}</div>
-        
-        <div class="d-flex align-center gap-4 mb-3">
-          <v-btn-toggle
-            v-model="searchMode"
-            mandatory
-            variant="outlined"
+        <div class="options">
+          <v-select
+            v-model="selectedLanguage"
+            :items="languageOptions"
+            item-title="name"
+            item-value="code"
+            variant="solo"
             density="compact"
-            class="flex-shrink-0"
-          >
-            <v-btn 
-              value="exact" 
-              size="small"
-              :color="searchMode === 'exact' ? 'primary' : undefined"
-            >
-              {{ $t('search.mode.exact') }}
-            </v-btn>
-            <v-btn 
-              value="partial" 
-              size="small"
-              :color="searchMode === 'partial' ? 'success' : undefined"
-            >
-              {{ $t('search.mode.partial') }}
-            </v-btn>
-            <v-btn 
-              value="fuzzy" 
-              size="small"
-              :color="searchMode === 'fuzzy' ? 'warning' : undefined"
-            >
-              {{ $t('search.mode.fuzzy') }}
-            </v-btn>
-          </v-btn-toggle>
-        </div>
+            hide-details
+            class="language-select"
+            :aria-label="$t('search.languageFilter')"
+          />
 
-        <!-- Mode descriptions -->
-        <div class="mt-2 text-caption text-grey">
-          <div v-if="searchMode === 'exact'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.mode.descriptions.exact') }}
+          <div class="mode" role="group" :aria-label="$t('search.modeLabel')">
+            <span class="mode-label">{{ $t('search.modeLabel') }}</span>
+            <v-btn-toggle v-model="searchMode" mandatory density="compact" variant="outlined" class="mode-toggle">
+              <v-btn value="exact" size="small" :title="$t('search.mode.descriptions.exact')">{{ $t('search.mode.exact') }}</v-btn>
+              <v-btn value="partial" size="small" :title="$t('search.mode.descriptions.partial')">{{ $t('search.mode.partial') }}</v-btn>
+              <v-btn value="fuzzy" size="small" :title="$t('search.mode.descriptions.fuzzy')">{{ $t('search.mode.fuzzy') }}</v-btn>
+            </v-btn-toggle>
           </div>
-          <div v-if="searchMode === 'partial'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.mode.descriptions.partial') }}
+
+          <v-btn
+            variant="text"
+            size="small"
+            class="text-white"
+            prepend-icon="mdi-help-circle-outline"
+            :aria-expanded="showTips"
+            @click="showTips = !showTips"
+          >{{ $t('search.tipsButton') }}</v-btn>
+        </div>
+
+        <v-expand-transition>
+          <ul v-if="showTips" class="tips">
+            <li>{{ $t('search.guides.traditional.tips.multiWord') }}</li>
+            <li>{{ $t('search.guides.traditional.tips.phrase') }}</li>
+            <li>{{ $t('search.guides.traditional.tips.wildcard') }}</li>
+            <li class="tips-mode">{{ $t(`search.mode.descriptions.${searchMode}`) }}</li>
+          </ul>
+        </v-expand-transition>
+
+        <v-expand-transition>
+          <v-sheet v-if="showKeyboard" rounded class="mt-3 pa-2">
+            <CatmusKeyboard
+              @insert="insertAtCaret"
+              @backspace="backspaceAtCaret"
+              @space="() => insertAtCaret(' ')"
+            />
+          </v-sheet>
+        </v-expand-transition>
+      </v-container>
+    </v-sheet>
+
+    <v-container class="py-6 results">
+      <v-tabs v-if="lastRun" :model-value="view" color="primary" class="view-tabs" @update:model-value="setView">
+        <v-tab value="results">{{ $t('search.tabResults') }}</v-tab>
+        <v-tab value="concordance">{{ $t('search.tabConcordance') }}</v-tab>
+        <v-tab value="stats">{{ $t('search.tabStats') }}</v-tab>
+      </v-tabs>
+
+      <!-- Both are kept mounted once a search exists: they only load while their tab is open -->
+      <ConcordanceTable v-if="lastRun" v-show="view === 'concordance'" :params="lastRun" :active="view === 'concordance'" />
+      <TermStats v-if="lastRun" v-show="view === 'stats'" :params="lastRun" :active="view === 'stats'" />
+
+      <v-progress-linear v-if="view === 'results' && loading" indeterminate color="primary" />
+
+      <template v-else-if="view === 'results' && loaded && q.trim()">
+        <p v-if="!items.length" class="empty">{{ $t('search.noResults') }}</p>
+        <template v-else>
+          <div class="result-bar">
+            <p class="result-count" role="status">
+              {{ $t('search.resultsCount', { count: $n(total) }, total) }}
+              <span v-if="pages > 1"> · {{ $t('search.pagination.page', { current: page, total: pages }) }}</span>
+            </p>
+            <v-btn
+              v-if="exportHref"
+              :href="exportHref"
+              download
+              size="small"
+              variant="text"
+              color="primary"
+              prepend-icon="mdi-file-delimited-outline"
+              :title="$t('search.exportConcordanceHint')"
+            >{{ $t('search.exportConcordance') }}</v-btn>
           </div>
-          <div v-if="searchMode === 'fuzzy'">
-            <v-icon size="x-small" class="mr-1">mdi-information-outline</v-icon>
-            {{ $t('search.mode.descriptions.fuzzy') }}
-          </div>
-        </div>
-      </v-card-text>
-    </v-card>
 
-    <!-- Virtual keyboard -->
-    <v-expand-transition>
-      <div v-if="showKeyboard" class="mt-2">
-        <CatmusKeyboard
-          @insert="insertAtCaret"
-          @backspace="backspaceAtCaret"
-          @space="() => insertAtCaret(' ')"
-        />
-      </div>
-    </v-expand-transition>
-
-    <!-- Results header -->
-    <div v-if="loaded" class="results-header mt-4 mb-2">
-      <div class="text-body-2 results-info mb-2 mb-sm-0">
-        {{ $t('search.showingResults', { start, end, total }) }}
-      </div>
-      <div class="pagination-controls">
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)" class="d-none d-md-inline-flex">
-          <v-icon start>mdi-page-first</v-icon> {{ $t('search.pagination.first') }}
-        </v-btn>
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(1)" class="d-md-none" icon>
-          <v-icon>mdi-page-first</v-icon>
-        </v-btn>
-        
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)" class="d-none d-sm-inline-flex">
-          <v-icon start>mdi-chevron-left</v-icon> {{ $t('search.pagination.prev') }}
-        </v-btn>
-        <v-btn size="small" variant="text" :disabled="page<=1" @click="run(page-1)" class="d-sm-none" icon>
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
-        
-        <span class="text-caption px-2">{{ $t('search.pagination.page', { current: page, total: pages }) }}</span>
-        
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)" class="d-none d-sm-inline-flex">
-          {{ $t('search.pagination.next') }} <v-icon end>mdi-chevron-right</v-icon>
-        </v-btn>
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(page+1)" class="d-sm-none" icon>
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-btn>
-        
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)" class="d-none d-md-inline-flex">
-          {{ $t('search.pagination.last') }} <v-icon end>mdi-page-last</v-icon>
-        </v-btn>
-        <v-btn size="small" variant="text" :disabled="page>=pages" @click="run(pages)" class="d-md-none" icon>
-          <v-icon>mdi-page-last</v-icon>
-        </v-btn>
-      </div>
-    </div>
-
-    <v-progress-linear v-if="loading" indeterminate class="mt-6" />
-    <v-alert v-else-if="loaded && items.length===0" type="info" variant="tonal" class="mt-6">
-      {{ $t('search.noResults') }}
-    </v-alert>
-
-    <!-- Hybrid Results Display -->
-    <div v-else-if="searchType === 'hybrid' && hybridResults" class="mt-2">
-      <!-- Traditional Results Section -->
-      <div v-if="hybridResults.traditional && hybridResults.traditional.items.length > 0" class="mb-6">
-        <div class="d-flex align-center mb-3">
-          <v-icon class="mr-2" color="primary">mdi-text-search</v-icon>
-          <h3 class="text-h6">{{ $t('search.sections.traditional') }}</h3>
-          <v-chip class="ml-2" size="small" variant="outlined" color="primary">
-            {{ hybridResults.traditional.total }}
-          </v-chip>
-        </div>
-        <v-list density="compact">
-          <v-list-item
-            v-for="(hit, i) in hybridResults.traditional.items"
-            :key="`trad-${i}`"
-            class="py-2 mb-1"
-            rounded
-            @click="open(hit)"
-          >
-            <template #title>
-              <div class="d-flex align-center justify-space-between">
-                <RouterLink
-                  :to="toDoc(hit)"
-                  class="font-weight-medium text-decoration-none"
-                  @click.stop
-                >
-                  {{ hit.title || hit.manuscript_title || hit.name || `Document ${hit.collection}` }} • {{ hit.ref }}
-                </RouterLink>
-                <div class="d-flex align-center gap-1">
-                  <v-chip size="x-small" label variant="tonal" color="primary">{{ $t('search.results.textMatch') }}</v-chip>
-                  <v-chip v-if="hit.score" size="x-small" label variant="outlined">
-                    {{ hit.score.toFixed(1) }}
-                  </v-chip>
-                </div>
-              </div>
-            </template>
-            <v-list-item-subtitle>
-              <span v-html="hit.snippet || hit.content"></span>
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </div>
-
-      <!-- Vector Results Section -->
-      <div v-if="hybridResults.vector && hybridResults.vector.items.length > 0">
-        <div class="d-flex align-center mb-3">
-          <v-icon class="mr-2" color="success">mdi-brain</v-icon>
-          <h3 class="text-h6">{{ $t('search.sections.semantic') }}</h3>
-          <v-chip class="ml-2" size="small" variant="outlined" color="success">
-            {{ hybridResults.vector.total }}
-          </v-chip>
-        </div>
-        <v-list density="compact">
-          <v-list-item
-            v-for="(hit, i) in hybridResults.vector.items"
-            :key="`vec-${i}`"
-            class="py-2 mb-1"
-            rounded
-            @click="open(hit)"
-          >
-            <template #title>
-              <div class="d-flex align-center justify-space-between">
-                <RouterLink
-                  :to="toDoc(hit)"
-                  class="font-weight-medium text-decoration-none"
-                  @click.stop
-                >
-                  {{ hit.title || hit.manuscript_title || hit.name || `Document ${hit.collection}` }} • {{ hit.ref }}
-                </RouterLink>
-                <div class="d-flex align-center gap-1">
-                  <v-chip size="x-small" label variant="tonal" color="success">{{ $t('search.results.semantic') }}</v-chip>
-                  <v-chip v-if="hit.score" size="x-small" label variant="outlined" color="success">
-                    {{ (hit.score * 100).toFixed(0) }}%
-                  </v-chip>
-                </div>
-              </div>
-            </template>
-            <v-list-item-subtitle>
-              <span v-html="hit.highlighted_content || hit.snippet"></span>
-              
-              <!-- Show matched phrases for vector search -->
-              <div v-if="hit.matched_phrases && hit.matched_phrases.length > 0" class="matched-phrases mt-2">
-                <div class="text-caption text-grey mb-1">{{ $t('search.results.semanticMatches') }}</div>
-                <div class="phrase-tags">
-                  <v-chip
-                    v-for="phrase in hit.matched_phrases"
-                    :key="phrase"
-                    size="x-small"
-                    variant="tonal"
-                    color="success"
-                    class="mr-1 mb-1"
-                  >
-                    {{ phrase }}
-                  </v-chip>
-                </div>
-              </div>
-              
-              <div v-if="hit.language" class="text-caption text-grey mt-1">
-                {{ $t('search.results.language') }} {{ hit.language }}
-              </div>
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </div>
-    </div>
-
-    <!-- Regular Results Display (Traditional or Vector) -->
-    <v-list v-else class="mt-2">
-      <v-list-item
-        v-for="(hit, i) in items"
-        :key="i"
-        class="py-3"
-        @click="open(hit)"
-      >
-        <template #title>
-          <div class="d-flex align-center justify-space-between">
-            <RouterLink
-              :to="toDoc(hit)"
-              class="font-weight-medium text-decoration-none"
-              @click.stop
-            >
-              {{ hit.title || hit.manuscript_title || hit.name || `Document ${hit.collection}` }} • {{ hit.ref }}
-            </RouterLink>
-            <div class="d-flex align-center gap-1">
-              <v-chip 
-                size="x-small" 
-                label 
-                variant="tonal"
-                :color="searchType === 'vector' ? 'success' : 'primary'"
-              >
-                {{ searchType === 'vector' ? $t('search.results.semantic') : $t('search.results.textMatch') }}
-              </v-chip>
-              <v-chip 
-                v-if="hit.score" 
-                size="x-small" 
-                label 
-                variant="outlined"
-                :color="searchType === 'vector' ? 'success' : 'primary'"
-              >
-                {{ searchType === 'vector' ? (hit.score * 100).toFixed(0) + '%' : hit.score.toFixed(1) }}
-              </v-chip>
+          <article v-for="(hit, i) in items" :key="`${hit.collection}-${hit.ref}-${i}`" class="hit">
+            <div class="hit-head">
+              <RouterLink :to="toDoc(hit)" class="hit-ref">{{ hit.ref }}</RouterLink>
+              <span class="hit-ms">{{ manuscriptTitle(hit.title || hit.manuscript_title || hit.name, hit.ref) }}</span>
             </div>
-          </div>
+            <p class="hit-snippet" v-html="safeSnippet(hit.highlighted_content || hit.snippet)" />
+          </article>
+
+          <v-pagination
+            v-if="pages > 1"
+            :model-value="page"
+            :length="pages"
+            :total-visible="7"
+            class="mt-6"
+            @update:model-value="goToPage"
+          />
         </template>
-        <v-list-item-subtitle>
-          <span v-html="hit.highlighted_content || hit.snippet"></span>
-          
-          <!-- Show matched phrases for vector search -->
-          <div v-if="hit.matched_phrases && hit.matched_phrases.length > 0" class="matched-phrases mt-2">
-            <div class="text-caption text-grey mb-1">{{ $t('search.results.semanticMatches') }}</div>
-            <div class="phrase-tags">
-              <v-chip
-                v-for="phrase in hit.matched_phrases"
-                :key="phrase"
-                size="x-small"
-                variant="tonal"
-                color="success"
-                class="mr-1 mb-1"
-              >
-                {{ phrase }}
-              </v-chip>
-            </div>
-          </div>
-          
-          <div v-if="hit.language && searchType === 'vector'" class="text-caption text-grey mt-1">
-            {{ $t('search.results.language') }} {{ hit.language }}
-          </div>
-        </v-list-item-subtitle>
-      </v-list-item>
-    </v-list>
+      </template>
 
-    <!-- Bottom pager -->
-    <div v-if="loaded && pages>1" class="d-flex justify-center mt-6">
-      <v-pagination v-model="page" :length="pages" @update:modelValue="run" />
-    </div>
-  </v-container>
+      <div v-else-if="!q.trim() && !lastRun" class="intro">
+        <span class="intro-label">{{ $t('search.tryExamples') }}</span>
+        <v-btn
+          v-for="ex in examples"
+          :key="ex.q"
+          size="small"
+          variant="outlined"
+          class="junicode-input text-none"
+          @click="useExample(ex)"
+        >{{ ex.q }}</v-btn>
+      </div>
+    </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { searchAll } from '../api/dts'
+import { concordanceUrl, searchAll } from '../api/dts'
 import CatmusKeyboard from '../components/CatmusKeyboard.vue'
+import ConcordanceTable from '../components/ConcordanceTable.vue'
+import TermStats from '../components/TermStats.vue'
 import { getLanguageOptions } from '../lib/language-utils'
+import { manuscriptTitle, safeSnippet } from '../lib/catalog'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
+const size = 25
 const q = ref(route.query.q?.toString() || '')
 const page = ref(Number(route.query.page || 1))
-const size = ref(25)
-const searchType = ref(route.query.type || 'traditional')
-
-// Search mode options for traditional search
-const searchMode = ref(route.query.mode || 'exact')
-
-// language filter
+const searchMode = ref(route.query.mode || 'exact') // exact | partial | fuzzy
 const selectedLanguage = ref(route.query.language || 'all')
 
 const loading = ref(false)
-const loaded  = ref(false)
-const total   = ref(0)
-const items   = ref([])
+const loaded = ref(false)
+const total = ref(0)
+const items = ref([])
 
-// Hybrid search results
-const hybridResults = ref(null)
+// The search that produced the results on screen (the input may have been edited since)
+const lastRun = ref(null)
+const exportHref = computed(() => (lastRun.value ? concordanceUrl(lastRun.value) : ''))
+
+const VIEWS = ['results', 'concordance', 'stats']
+const view = ref(VIEWS.includes(route.query.view) ? route.query.view : 'results')
 
 const showKeyboard = ref(false)
+const showTips = ref(false)
 const inputRef = ref()
 
-// Import for translations
-const { t } = useI18n()
-
 const languageOptions = computed(() => getLanguageOptions(t))
+const examples = [
+  { q: 'deus,deum', mode: 'exact' },
+  { q: '"la bouche"', mode: 'exact' },
+  { q: 'reg*', mode: 'exact' },
+]
 
-// Computed properties for dynamic UI
-const searchPlaceholder = computed(() => {
-  console.log('Search placeholder:', t(`search.placeholders.${searchType.value}`))
-  return t(`search.placeholders.${searchType.value}`)
-})
+const pages = computed(() => Math.max(1, Math.ceil(total.value / size)))
 
-const searchTypeIcon = computed(() => {
-  switch (searchType.value) {
-    case 'vector':
-      return 'mdi-brain'
-    case 'hybrid':
-      return 'mdi-merge'
-    default:
-      return 'mdi-text-search'
-  }
-})
-
-const pages = computed(() => Math.max(1, Math.ceil(total.value / size.value)))
-const start = computed(() => total.value ? (page.value - 1) * size.value + 1 : 0)
-const end   = computed(() => Math.min(total.value, start.value + items.value.length - 1))
-
-function getNativeInput(){
+function getNativeInput() {
   return inputRef.value?.$el?.querySelector('input, textarea')
 }
 
-async function insertAtCaret(text){
+async function insertAtCaret(text) {
   const el = getNativeInput()
-  if (!el) { q.value += text; return }
+  if (!el) { q.value = (q.value || '') + text; return }
   const startPos = el.selectionStart ?? q.value.length
-  const endPos   = el.selectionEnd ?? q.value.length
+  const endPos = el.selectionEnd ?? q.value.length
   q.value = q.value.slice(0, startPos) + text + q.value.slice(endPos)
   await nextTick()
   el.focus()
@@ -500,11 +216,11 @@ async function insertAtCaret(text){
   el.setSelectionRange(pos, pos)
 }
 
-async function backspaceAtCaret(){
+async function backspaceAtCaret() {
   const el = getNativeInput()
-  if (!el) { q.value = q.value.slice(0, -1); return }
+  if (!el) { q.value = (q.value || '').slice(0, -1); return }
   const startPos = el.selectionStart ?? q.value.length
-  const endPos   = el.selectionEnd ?? q.value.length
+  const endPos = el.selectionEnd ?? q.value.length
   if (startPos !== endPos) {
     q.value = q.value.slice(0, startPos) + q.value.slice(endPos)
     await nextTick()
@@ -514,344 +230,200 @@ async function backspaceAtCaret(){
     q.value = q.value.slice(0, startPos - 1) + q.value.slice(endPos)
     await nextTick()
     el.focus()
-    const pos = startPos - 1
-    el.setSelectionRange(pos, pos)
+    el.setSelectionRange(startPos - 1, startPos - 1)
   }
 }
 
 // v to u and j to i outside quoted phrases
 function normalizeQueryForBackend(query) {
   if (!query) return ''
-  
-  let normalized = query.normalize('NFD')
-  
-  const parts = normalized.split(',').map(part => part.trim())
-  
-  const processedParts = parts.map(part => {
-    if (part.startsWith('"') && part.endsWith('"')) {
-      return part
-    }
-    
-    return part
-      .replace(/V/g, 'U')
-      .replace(/v/g, 'u')
-      .replace(/J/g, 'I')
-      .replace(/j/g, 'i')
-  })
-  
-  return processedParts.join(',')
+  const parts = query.normalize('NFD').split(',').map((part) => part.trim())
+  return parts.map((part) => {
+    if (part.startsWith('"') && part.endsWith('"')) return part
+    return part.replace(/V/g, 'U').replace(/v/g, 'u').replace(/J/g, 'I').replace(/j/g, 'i')
+  }).join(',')
 }
 
-async function run(p = page.value){
-  if (!q.value.trim()) { 
-    total.value = 0
-    items.value = []
-    hybridResults.value = null
-    loaded.value = true
-    page.value = 1
-    pushState()
-    return 
-  }
-  
-  loading.value = true
-  loaded.value = false
+function setView(value) {
+  view.value = value
+  pushState()
+}
+
+function pushState() {
+  router.replace({
+    name: 'search',
+    query: {
+      view: view.value !== 'results' ? view.value : undefined,
+      q: q.value || undefined,
+      page: page.value > 1 ? page.value : undefined,
+      mode: searchMode.value !== 'exact' ? searchMode.value : undefined,
+      language: selectedLanguage.value !== 'all' ? selectedLanguage.value : undefined,
+    },
+  })
+}
+
+async function run(p = 1) {
   page.value = p
   pushState()
-  
+
+  if (!(q.value || '').trim()) {
+    total.value = 0
+    items.value = []
+    loaded.value = false
+    return
+  }
+
+  loading.value = true
   try {
-    let normalizedQuery = normalizeQueryForBackend(q.value)
-    
     const languageParam = selectedLanguage.value === 'all' ? null : selectedLanguage.value
-    
-    let res
-    if (searchType.value === 'hybrid') {
-      res = await searchAll(normalizedQuery, page.value, size.value, 'hybrid', 'exact', null, languageParam)
-    } else if (searchType.value === 'traditional') {
-      res = await searchAll(normalizedQuery, page.value, size.value, 'traditional', searchMode.value, null, languageParam)
-    } else {
-      // Vector search doesn't use mode
-      res = await searchAll(normalizedQuery, page.value, size.value, searchType.value, 'exact', null, languageParam)
-    }
-    
-    if (searchType.value === 'hybrid') {
-      // Handle hybrid search results
-      hybridResults.value = res
-      total.value = res.total || 0
-      // Combine traditional and vector results for display
-      const traditionalItems = res.traditional?.items || []
-      const vectorItems = res.vector?.items || []
-      items.value = [...traditionalItems, ...vectorItems]
-    } else {
-      // Handle traditional and vector search results
-      hybridResults.value = null
-      total.value = res.total || 0
-      items.value = res.items || []
-    }
+    const normalized = normalizeQueryForBackend(q.value)
+    const res = await searchAll(normalized, page.value, size, 'traditional', searchMode.value, null, languageParam)
+    lastRun.value = { q: normalized, mode: searchMode.value, language: languageParam || '' }
+    total.value = res.total || 0
+    items.value = res.items || []
   } catch (error) {
     console.error('Search failed:', error)
     total.value = 0
     items.value = []
-    hybridResults.value = null
   } finally {
     loading.value = false
     loaded.value = true
   }
 }
 
-
-
-function pushState(){
-  router.replace({ 
-    name: 'search', 
-    query: { 
-      q: q.value || undefined, 
-      page: page.value > 1 ? page.value : undefined,
-      type: searchType.value !== 'traditional' ? searchType.value : undefined,
-      mode: searchType.value === 'traditional' && searchMode.value !== 'exact' ? searchMode.value : undefined,
-      language: selectedLanguage.value !== 'all' ? selectedLanguage.value : undefined
-    } 
-  })
+function goToPage(p) {
+  run(p)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function toDoc(hit){
-  // Use the same normalization for highlighting as we use for search
-  const normalizedQuery = normalizeQueryForBackend(q.value)
-    
+function useExample(ex) {
+  q.value = ex.q
+  searchMode.value = ex.mode
+  run(1)
+}
+
+function toDoc(hit) {
   return {
     name: 'documentRef',
     params: { resource: encodeURIComponent(hit.collection), ref: hit.ref },
-    query: { highlight: normalizedQuery }
+    // the same normalization as the search, so the reader highlights the same hits
+    query: { highlight: normalizeQueryForBackend(q.value) },
   }
 }
 
-function open(hit){ router.push(toDoc(hit)) }
+onMounted(() => { if (q.value.trim()) run(page.value) })
 
-onMounted(() => { run(page.value) })
-// Watch for search type changes to re-run search
-watch(searchType, () => {
-  if (q.value.trim()) {
-    run(1) // Reset to page 1 when changing search type
+// Changing a filter re-runs the current search from the first page
+watch([searchMode, selectedLanguage], () => {
+  if (q.value.trim()) run(1)
+  else pushState()
+})
+
+// Follow external navigation (links, back/forward), ignoring our own URL updates
+watch(() => route.query, (query) => {
+  const next = {
+    view: VIEWS.includes(query.view) ? query.view : 'results',
+    q: query.q?.toString() || '',
+    page: Number(query.page || 1),
+    mode: query.mode || 'exact',
+    language: query.language || 'all',
   }
-})
-
-// Watch for search mode changes
-watch(searchMode, () => {
-  pushState()
-})
-
-watch(selectedLanguage, () => {
-  if (q.value.trim()) {
-    run(1)
-  } else {
-    pushState()
-  }
-})
-
-watch(() => route.query, () => {
-  q.value = route.query.q?.toString() || ''
-  page.value = Number(route.query.page || 1)
-  searchType.value = route.query.type || 'traditional'
-  searchMode.value = route.query.mode || 'exact'
-  selectedLanguage.value = route.query.language || 'all'
-  run(page.value)
+  view.value = next.view
+  if (next.q === q.value && next.page === page.value && next.mode === searchMode.value && next.language === selectedLanguage.value) return
+  q.value = next.q
+  page.value = next.page
+  searchMode.value = next.mode
+  selectedLanguage.value = next.language
+  run(next.page)
 })
 </script>
 
 <style scoped>
-.rule { margin: 4px 0; }
+.search-form { display: flex; gap: 12px; max-width: 880px; }
+.search-input { flex: 1; min-width: 0; }
+.search-btn { align-self: stretch; height: auto !important; }
 
-/* Traditional keyword matches */
-:deep(mark.dts-hit),
-:deep(mark.text-hit) {
-  background: rgba(255, 214, 51, 0.65);
-  padding: 0 .15em;
-  border-radius: 3px;
-  font-weight: bold;
-}
-
-/* Vector semantic matches */
-:deep(mark.vector-match) {
-  background-color: #e1f5fe;
-  border-bottom: 2px solid #03a9f4;
-  font-weight: 500;
-  padding: 0 .15em;
-  border-radius: 3px;
-}
-
-/* Show similarity score on hover */
-:deep(mark.vector-match:hover::after) {
-  content: " (" attr(data-similarity) ")";
-  font-size: 0.8em;
-  color: #666;
-}
-
-/* Matched phrases styling */
-.matched-phrases {
-  margin-top: 8px;
-}
-
-.phrase-tags {
+.options {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 12px;
+  max-width: 880px;
 }
+.language-select { min-width: 190px; max-width: 240px; flex: 0 1 220px; }
+.mode { display: flex; align-items: center; gap: 8px; }
+.mode-label { color: rgba(255, 255, 255, 0.85); font-size: 0.85rem; }
+.mode-toggle { border-color: rgba(255, 255, 255, 0.6); }
+.mode-toggle :deep(.v-btn) { color: #fff; border-color: rgba(255, 255, 255, 0.6); }
+.mode-toggle :deep(.v-btn--active) { background: #fff; color: rgb(var(--v-theme-primary)); }
 
-/* Use Junicode in the text field input for MUFI/combining marks */
+.tips {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  max-width: 880px;
+  font-size: 0.9rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+.tips li + li { margin-top: 4px; }
+.tips-mode { opacity: 0.85; font-style: italic; }
+
+/* Results */
+.result-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; max-width: 880px; margin-bottom: 4px; }
+.result-count { font-size: 0.9rem; opacity: 0.7; margin: 0; }
+.hit, .intro { max-width: 880px; }
+.view-tabs { margin-bottom: 16px; }
+.empty { text-align: center; padding: 48px 0; opacity: 0.7; }
+.hit {
+  padding: 14px 4px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+.hit-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.hit-ref { font-weight: 600; font-size: 1.02rem; text-decoration: none; color: rgb(var(--v-theme-primary)); }
+.hit-ref:hover { text-decoration: underline; }
+.hit-ms { font-size: 0.85rem; opacity: 0.65; }
+.hit-snippet {
+  margin: 6px 0 0;
+  line-height: 1.55;
+  font-family: 'Junicode', ui-serif, serif;
+  font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0;
+}
+.hit-snippet :deep(mark.dts-hit) {
+  background: #ffe9a8;
+  color: inherit;
+  padding: 0 0.1em;
+  border-radius: 2px;
+  font-weight: 600;
+}
+.hit-snippet :deep(.snip-gap) { opacity: 0.45; padding: 0 0.25em; }
+
+.intro { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 24px 0; }
+.intro-label { opacity: 0.65; font-size: 0.9rem; }
+
+/* Junicode in the text field for MUFI/combining marks; ligatures off (important for medieval text) */
 :deep(.junicode-input .v-field__input),
 :deep(.junicode-input input),
 :deep(.junicode-input textarea) {
   font-family: 'Junicode', ui-serif, serif !important;
-  /* Disable ligatures to avoid automatic glyph substitution (important for medieval text) */
   font-feature-settings: 'liga' 0, 'clig' 0, 'hlig' 0, 'calt' 0 !important;
   font-size: 1.05rem;
   line-height: 1.2;
 }
-
-/* Fix placeholder text cutoff */
-:deep(.search-input) {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-:deep(.search-input .v-field) {
-  width: 100% !important;
-}
-
-:deep(.search-input .v-field__input) {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-:deep(.search-input .v-field__field) {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-:deep(.search-input input) {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
 :deep(.search-input input::placeholder) {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  width: 100%;
-}
-
-/* Responsive Search Controls */
-.search-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.language-select {
-  min-width: 180px;
-  max-width: 250px;
-  flex-shrink: 0;
-}
-
-:deep(.language-select .v-field__input) {
-  white-space: nowrap;
-}
-
-.language-selection-text {
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.language-name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-@media (max-width: 768px) {
-  .search-controls {
-    gap: 8px;
-  }
-  
-  .search-controls .v-btn {
-    flex: 1;
-    min-width: 48px;
-  }
-  
-  .search-input {
-    width: 100%;
-    flex-basis: 100%;
-  }
-  
-  .language-select {
-    min-width: 140px;
-  }
-  
-  .language-name {
-    display: none;
-  }
 }
 
 @media (max-width: 600px) {
-  .v-alert .v-row {
-    margin: 0 !important;
-  }
-  
-  .v-alert .v-col {
-    padding: 4px !important;
-  }
-  
-  .rule {
-    font-size: 0.875rem;
-    margin: 2px 0;
-  }
-}
-
-/* Responsive Results Header */
-.results-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.results-info {
-  flex-shrink: 1;
-  min-width: 0;
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  flex-wrap: nowrap;
-}
-
-@media (max-width: 960px) {
-  .results-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .results-info {
-    text-align: center;
-  }
-  
-  .pagination-controls {
-    justify-content: center;
-    gap: 2px;
-  }
-}
-
-@media (max-width: 600px) {
-  .pagination-controls {
-    gap: 1px;
-  }
-  
-  .pagination-controls .text-caption {
-    font-size: 0.7rem;
-    padding: 0 4px !important;
-  }
+  .search-form { flex-direction: column; }
+  .search-btn { height: 44px !important; }
+  .language-select { flex: 1 1 100%; max-width: none; }
+  .mode { flex: 1 1 100%; flex-wrap: wrap; }
+  .mode-toggle { flex: 1 1 100%; }
+  .mode-toggle :deep(.v-btn) { flex: 1 1 0; min-width: 0; padding: 0 6px; font-size: 0.7rem; }
 }
 </style>

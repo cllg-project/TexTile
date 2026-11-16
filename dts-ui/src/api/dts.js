@@ -1,5 +1,5 @@
 // Base URL of dts-api
-const BASE = import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000';
+const BASE = (import.meta.env.VITE_DTS_BASE_URL || 'http://localhost:5000').replace(/\/+$/, '');
 
 /* ----------------------------- utilities ----------------------------- */
 
@@ -30,15 +30,6 @@ function safeJsonParse(text) {
 }
 
 /* ------------------------------- fetchers ---------------------------- */
-
-/**
- * Extract page number from a pagination URL
- */
-function extractPageFromUrl(url) {
-  if (!url) return null;
-  const match = url.match(/[?&]page=(\d+)/);
-  return match ? parseInt(match[1], 10) : null;
-}
 
 /**
  * DTS Entry point (optional, not required by UI but handy for debugging)
@@ -174,7 +165,7 @@ export function parseMembers(resp) {
     };
   }
 
-  // DTS 1-alpha uses "member"
+  // DTS uses "member"
   const items = resp.member || resp.members || [];
   if (!Array.isArray(items)) return { members, pagination };
 
@@ -184,7 +175,9 @@ export function parseMembers(resp) {
     if (!id) continue;
 
     const title = it?.title || it?.label || id;
-    const nbChildren = it?.nb_children || 0;
+    // Our own child count, in the DTS `extensions` object (whose values are arrays)
+    const extCount = it?.extensions?.nb_children;
+    const nbChildren = Number(Array.isArray(extCount) ? extCount[0] : (extCount ?? it?.nb_children)) || 0;
     
     // Extract additional metadata for manuscripts/resources from dublinCore
     const dublinCore = it?.dublinCore || {};
@@ -277,7 +270,7 @@ export function parseMembers(resp) {
 
 /**
  * Extract passage refs from a DTS navigation response.
- * Supports DTS 1-alpha "member": [{ "@type": "CitableUnit", "identifier": "..." }, ...]
+ * Supports DTS "member": [{ "@type": "CitableUnit", "identifier": "..." }, ...]
  * and a few legacy shapes as fallbacks.
  */
 export function extractRefsFromNavigation(nav) {
@@ -406,191 +399,6 @@ export async function fetchManuscriptCount() {
 }
 
 /**
- * Get list of all first-level collections for autocomplete
- * GET /collections/list/?q=...
- */
-export async function fetchCollectionsList(query = '') {
-  const params = new URLSearchParams();
-  if (query.trim()) {
-    params.append('q', query.trim());
-  }
-  
-  const url = `${BASE}/collections/list/?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch collections list (${res.status})`);
-  }
-  return await res.json();
-}
-
-export async function fetchManuscriptsList(query = '', limit = 20, page = 1) {
-  const params = new URLSearchParams();
-  if (query.trim()) {
-    params.append('q', query.trim());
-  }
-  params.append('limit', limit.toString());
-  params.append('page', page.toString());
-  
-  const url = `${BASE}/manuscripts/list/?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch manuscripts list (${res.status})`);
-  }
-  return await res.json();
-}
-
-/**
- * Manuscript catalog search with pagination support
- * - General: GET /manuscripts/?q=...&page=...&size=...
- * - Language: GET /manuscripts/language/?q=...&page=...&size=...
- * - Date ranges: GET /manuscripts/range/?q=800-1400&size=...
- * - Complex dates: GET /manuscripts/date/?exact_start=800&size=...
- * Returns manuscript collections with metadata
- */
-export async function searchManuscripts(q, page = 1, size = 25, searchType = 'general') {
-  const params = new URLSearchParams();
-  
-  let endpoint;
-  
-  if (searchType === 'date') {
-    // Parse date query to determine the best format
-    const dateParams = parseDateQuery(q);
-    
-    // Check if we have at least one valid date parameter
-    const hasDateParams = dateParams.exact_start !== undefined || dateParams.exact_stop !== undefined || 
-                          dateParams.start_year !== undefined || dateParams.stop_year !== undefined;
-    
-    if (!hasDateParams) {
-      throw new Error('Invalid date query. Please use formats like: "0-1600", "800", "800-1400", "after 1200", "before 1500", "13th century"');
-    }
-    
-    // If it's a simple range (start_year and stop_year), use the simpler /manuscripts/range/ endpoint
-    if (dateParams.start_year !== undefined && dateParams.stop_year !== undefined && !dateParams.exact_start && !dateParams.exact_stop) {
-      endpoint = '/manuscripts/range/';
-      const rangeQuery = `${dateParams.start_year}-${dateParams.stop_year}`;
-      params.append('q', rangeQuery);
-      params.append('size', size.toString()); // Range endpoint doesn't use pagination
-    } else {
-      // For complex queries (exact matches, single-sided ranges), use /manuscripts/date/
-      endpoint = '/manuscripts/date/';
-      
-      // Add date-specific parameters
-      if (dateParams.exact_start) params.append('exact_start', dateParams.exact_start.toString());
-      if (dateParams.exact_stop) params.append('exact_stop', dateParams.exact_stop.toString());
-      if (dateParams.start_year) params.append('start_year', dateParams.start_year.toString());
-      if (dateParams.stop_year) params.append('stop_year', dateParams.stop_year.toString());
-      params.append('size', size.toString()); // Date endpoint doesn't use pagination
-    }
-  } else {
-    // For general and language searches with pagination support
-    const endpoints = {
-      general: '/manuscripts/',
-      language: '/manuscripts/language/'
-    };
-    
-    endpoint = endpoints[searchType] || endpoints.general;
-    params.append('q', q);
-    params.append('page', page.toString());
-    params.append('size', size.toString());
-  }
-  
-  const url = `${BASE}${endpoint}?${params.toString()}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const errorText = await res.text().catch(() => '');
-    throw new Error(`Manuscript search failed (${res.status}): ${errorText}`);
-  }
-  return await res.json();
-}
-
-/**
- * Parse date query string into appropriate API parameters
- * Examples:
- * "1300" -> { exact_start: 1300 }
- * "1300-1400" -> { start_year: 1300, stop_year: 1400 }
- * "after 1200" -> { start_year: 1200 }
- * "before 1500" -> { stop_year: 1500 }
- * "exactly 1300" -> { exact_start: 1300 }
- */
-function parseDateQuery(query) {
-  const params = {};
-  const q = query.trim().toLowerCase();
-  
-  // Match any range with hyphen (e.g., "0-1600", "10-1500", "800-1400")
-  const rangeMatch = q.match(/(\d+)\s*-\s*(\d+)/);
-  if (rangeMatch) {
-    params.start_year = parseInt(rangeMatch[1]);
-    params.stop_year = parseInt(rangeMatch[2]);
-    return params;
-  }
-  
-  // Match patterns with "to" (e.g., "800 to 1400")
-  const toMatch = q.match(/(\d+)\s+to\s+(\d+)/);
-  if (toMatch) {
-    params.start_year = parseInt(toMatch[1]);
-    params.stop_year = parseInt(toMatch[2]);
-    return params;
-  }
-  
-  // Match "after YYYY" or "from YYYY" (English and French)
-  const afterMatch = q.match(/(?:after|from|since|après|depuis|dès)\s+(\d+)/);
-  if (afterMatch) {
-    params.start_year = parseInt(afterMatch[1]);
-    return params;
-  }
-  
-  // Match "before YYYY" or "until YYYY" (English and French)
-  const beforeMatch = q.match(/(?:before|until|up to|avant|jusqu'à|jusqu'en)\s+(\d+)/);
-  if (beforeMatch) {
-    params.stop_year = parseInt(beforeMatch[1]);
-    return params;
-  }
-  
-  // Match "exactly YYYY" or "exact YYYY" (English and French)
-  const exactMatch = q.match(/(?:exactly?|exact|exactement|précisément)\s+(\d+)/);
-  if (exactMatch) {
-    params.exact_start = parseInt(exactMatch[1]);
-    return params;
-  }
-  
-  // Match "end in YYYY" or "ended in YYYY" (English and French)
-  const endMatch = q.match(/(?:end(?:ed)?\s+(?:in\s+)?|stop(?:ped)?\s+(?:in\s+)?|fin(?:i)?\s+(?:en\s+)?|terminé\s+(?:en\s+)?)(\d+)/);
-  if (endMatch) {
-    params.exact_stop = parseInt(endMatch[1]);
-    return params;
-  }
-  
-  // Match century patterns (English and French)
-  const centuryMatch = q.match(/(\d{1,2})(?:th|st|nd|rd|ème|e)\s*(?:c(?:entury|\.)?|siècle|s\.?)/);
-  if (centuryMatch) {
-    const century = parseInt(centuryMatch[1]);
-    const startYear = (century - 1) * 100 + 1; // e.g. 13th century = 1201-1300
-    const endYear = century * 100;
-    params.start_year = startYear;
-    params.stop_year = endYear;
-    return params;
-  }
-  
-  // Match "around YYYY" or "circa YYYY" (English and French)
-  const aroundMatch = q.match(/(?:around|circa|about|near|vers|environ|proche de|autour de)\s+(\d+)/);
-  if (aroundMatch) {
-    const year = parseInt(aroundMatch[1]);
-    params.start_year = year - 50;
-    params.stop_year = year + 50;
-    return params;
-  }
-  
-  // Simple year match (treat as exact_start)
-  const yearMatch = q.match(/\b(\d+)\b/);
-  if (yearMatch) {
-    params.exact_start = parseInt(yearMatch[1]);
-    return params;
-  }
-  
-  return params;
-}
-
-/**
  * Helper function for hybrid search
  */
 export async function searchHybrid(q, page = 1, size = 25, resource = null) {
@@ -645,3 +453,136 @@ export function buildDocumentUrl(resource, ref, media = 'html', tree = '', start
 }
 
 export { BASE as DTS_BASE_URL };
+
+/* ------------------------- catalog search (form-based) ------------------------- */
+
+async function getJson(path, params) {
+  const res = await fetch(`${BASE}${path}?${params.toString()}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Request failed (${res.status}) ${detail.slice(0, 200)}`);
+  }
+  return res.json();
+}
+
+/**
+ * Search manuscripts with optional filters.
+ * GET /manuscripts/?q=&language=&start_year=&stop_year=&within=&page=&size=
+ */
+export async function searchCatalogManuscripts({ q = '', language = '', startYear = '', stopYear = '', within = '', page = 1, size = 25 } = {}) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (q.trim()) params.set('q', q.trim());
+  if (language) params.set('language', language);
+  if (startYear !== '' && startYear != null) params.set('start_year', String(startYear));
+  if (stopYear !== '' && stopYear != null) params.set('stop_year', String(stopYear));
+  if (within) params.set('within', within);
+  return getJson('/manuscripts/', params);
+}
+
+/**
+ * Search collections (any depth), diacritics-insensitive.
+ * GET /collections/search/?q=&page=&size=
+ */
+export async function searchCatalogCollections({ q = '', within = '', page = 1, size = 20 } = {}) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  if (q.trim()) params.set('q', q.trim());
+  if (within) params.set('within', within);
+  return getJson('/collections/search/', params);
+}
+
+/** Filter values (languages with counts, date span). GET /manuscripts/facets/ */
+export async function fetchCatalogFacets() {
+  return getJson('/manuscripts/facets/', new URLSearchParams());
+}
+
+function concordanceParams({ q, mode = 'exact', language = '', resource = '', within = '', width = '' } = {}) {
+  const params = new URLSearchParams({ q });
+  if (mode && mode !== 'exact') params.set('mode', mode);
+  if (language) params.set('language', language);
+  if (resource) params.set('resource', resource);
+  if (within) params.set('within', within);
+  if (width) params.set('width', String(width));
+  return params;
+}
+
+/**
+ * URL of the streamed concordance (keyword in context) CSV for a text search.
+ * Same parameters as the text search; `within` limits it to a collection, `width` sets the
+ * number of characters of context on each side.
+ */
+export function concordanceUrl(search) {
+  return `${BASE}/concordance/?${concordanceParams(search).toString()}`;
+}
+
+/** One page of the concordance for a text search: { rows, page, size, total_pages, pages }. */
+export async function fetchConcordance(search, { page = 1, size = 20, signal } = {}) {
+  const params = concordanceParams(search);
+  params.set('format', 'json');
+  params.set('page', String(page));
+  params.set('size', String(size));
+  const res = await fetch(`${BASE}/concordance/?${params.toString()}`, { signal });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Concordance failed (${res.status})`);
+  return res.json();
+}
+
+/** The server refused a heavy request because it is already busy with others (HTTP 503). */
+export class BusyError extends Error {
+  constructor(retryAfter) {
+    super('busy');
+    this.name = 'BusyError';
+    this.retryAfter = retryAfter;
+  }
+}
+
+/**
+ * Frequency statistics of a text search (occurrences, per 10,000 tokens, forms, and the distribution
+ * by manuscript, century and language), streamed while the server counts.
+ *
+ * `onEvent` receives, in order: `{type: 'start', total_pages}`, then `{type: 'progress', pages,
+ * total_pages, occurrences, stats}` about twice a second (`stats` being the figures so far), and
+ * finally `{type: 'done', stats}`. A result computed before is answered with `done` alone.
+ * Resolves when the stream ends; rejects on an `error` event, a refused request, or a network error.
+ * Aborting `signal` stops the server's scan too.
+ */
+export async function streamTermStats(search, { onEvent, signal, refresh = false } = {}) {
+  const params = concordanceParams(search);
+  params.set('format', 'ndjson');
+  if (refresh) params.set('refresh', '1');
+  const res = await fetch(`${BASE}/concordance/stats/?${params.toString()}`, { signal });
+  if (res.status === 503) throw new BusyError(Number(res.headers.get('Retry-After')) || 5);
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Statistics failed (${res.status})`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  const handle = (line) => {
+    if (!line.trim()) return;
+    const event = JSON.parse(line);
+    if (event.type === 'error') throw new Error(event.message || 'Statistics failed');
+    onEvent(event);
+  };
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // the last piece may be a line still being written
+    lines.forEach(handle);
+  }
+  handle(buffer + decoder.decode());
+}
+
+/** The same statistics as a CSV file. */
+export function termStatsCsvUrl(search) {
+  const params = concordanceParams(search);
+  params.set('format', 'csv');
+  return `${BASE}/concordance/stats/?${params.toString()}`;
+}
+
+/** Last page number of a DTS pagination view (`pagination.last` URL), 1 when unknown. */
+export function lastPageOf(pagination) {
+  const last = pagination?.last;
+  if (!last || typeof last !== 'string') return 1;
+  const n = parseInt(new URLSearchParams(last.split('?')[1] || '').get('page'), 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}

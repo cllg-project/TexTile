@@ -59,6 +59,6 @@ npm run lint
 ## Related Projects
 
 - [TexTile Backend](https://github.com/cllg-project/dts-ui) - DTS API backend
-- [MyDapytains](https://github.com/PonteIneptique/MyDapytains) Mydapitains
+- [MyDapytains](https://github.com/distributed-text-services/MyDapytains) Mydapitains
 - [Kraken](https://github.com/mittagessen/kraken) - OCR engine for manuscript recognition
 

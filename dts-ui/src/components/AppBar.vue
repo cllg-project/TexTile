@@ -88,11 +88,9 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
-import { useI18n } from 'vue-i18n'
 import { setLocale, getCurrentLocale } from '../i18n'
 
 const theme = useTheme()
-const { locale } = useI18n()
 
 const isDark = computed(() => theme.global.current.value.dark)
 const nextTheme = computed(() => theme.global.name.value === 'dark' ? 'light' : 'dark')

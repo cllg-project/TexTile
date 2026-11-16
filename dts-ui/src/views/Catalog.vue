@@ -1,1212 +1,328 @@
 <template>
-  <v-container fluid class="py-0 px-0">
-    <v-sheet color="primary" class="py-4">
+  <div>
+    <v-sheet color="primary" class="py-6">
       <v-container>
-        <h1 class="text-h2 font-weight-bold text-white">{{ $t('catalog.title') }}</h1>
-        <p class="text-white opacity-90">{{ $t('catalog.subtitle') }}</p>
+        <h1 class="text-h4 font-weight-bold text-white mb-1">{{ $t('browse.title') }}</h1>
+        <p class="text-white opacity-90 mb-4">{{ $t('browse.subtitle') }}</p>
+
+        <form class="search-form" role="search" @submit.prevent="submit">
+          <v-text-field
+            v-model="form.q"
+            :label="$t('browse.searchLabel')"
+            :placeholder="$t('browse.searchPlaceholder')"
+            prepend-inner-icon="mdi-magnify"
+            variant="solo"
+            density="comfortable"
+            hide-details
+            clearable
+            class="search-input"
+          />
+          <v-btn type="submit" color="secondary" size="large" class="search-btn" :loading="loading">
+            {{ $t('browse.searchButton') }}
+          </v-btn>
+        </form>
+
+        <div class="filters mt-3">
+          <v-select
+            v-model="form.language"
+            :items="languageItems"
+            :label="$t('browse.language')"
+            variant="solo"
+            density="compact"
+            hide-details
+            clearable
+            class="filter"
+          />
+          <v-text-field
+            v-model="form.from"
+            :label="$t('browse.yearFrom')"
+            :placeholder="facets.min_year ? String(Math.floor(facets.min_year)) : ''"
+            type="number"
+            variant="solo"
+            density="compact"
+            hide-details
+            class="filter filter-year"
+          />
+          <v-text-field
+            v-model="form.to"
+            :label="$t('browse.yearTo')"
+            :placeholder="facets.max_year ? String(Math.floor(facets.max_year)) : ''"
+            type="number"
+            variant="solo"
+            density="compact"
+            hide-details
+            class="filter filter-year"
+          />
+          <v-btn v-if="hasCriteria" variant="text" class="text-white" @click="reset">
+            <v-icon start>mdi-close</v-icon>{{ $t('browse.reset') }}
+          </v-btn>
+        </div>
       </v-container>
     </v-sheet>
 
     <v-container class="py-6">
-      <v-row class="mb-4" align="center">
-        <v-col cols="12" md="8" lg="6">
-          <!-- Legacy Browse Mode -->
-          <v-autocomplete
-            v-if="searchMode === 'legacy'"
-            v-model="q"
-            :items="suggestions"
-            item-title="title"
-            item-value="value"
-            :label="$t('catalog.searchPlaceholder')"
-            prepend-inner-icon="mdi-format-list-bulleted"
-            clearable 
-            hide-details 
-            density="comfortable"
-            :loading="isLoadingAutocomplete"
-            @update:model-value="handleCollectionSelection"
-            @update:search="handleSearchInput"
-            @click:clear="handleAutocompleteClear"
-          >
-            <template #item="{ props, item }">
-              <v-list-item
-                v-if="!item.raw.header && !item.raw.divider"
-                v-bind="props"
-                :prepend-icon="item.raw.type === 'collection' ? 'mdi-folder' : 'mdi-file-document-outline'"
-              >
-                <template #append v-if="item.raw.type === 'collection' && item.raw.nb_children">
-                  <v-chip size="x-small" color="primary" variant="flat">
-                    {{ formatNumber(item.raw.nb_children) }}
-                  </v-chip>
-                </template>
-              </v-list-item>
-              <v-list-subheader v-else-if="item.raw.header">
-                {{ item.raw.header }}
-              </v-list-subheader>
-              <v-divider v-else-if="item.raw.divider" />
-            </template>
-          </v-autocomplete>
-          
-          <!-- Metadata Search Mode -->
-          <div v-else class="metadata-search-container">
-            <!-- Search Type Toggle -->
-            <v-btn-toggle
-              v-model="selectedSearchType"
-              mandatory
-              variant="outlined"
-              density="compact"
-              class="search-type-toggle"
-            >
-              <v-btn 
-                v-for="type in searchTypes" 
-                :key="type.value"
-                :value="type.value" 
-                size="small"
-                class="search-type-btn"
-              >
-                <v-icon 
-                  :color="selectedSearchType === type.value ? type.color : 'grey'" 
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ type.icon }}
-                </v-icon>
-                <span class="btn-text">{{ $t(`catalog.searchTypes.${type.value}`) }}</span>
-              </v-btn>
-            </v-btn-toggle>
+      <v-alert v-if="error" type="error" variant="tonal" closable class="mb-4" @click:close="error = ''">{{ error }}</v-alert>
 
-            <!-- Search Input -->
-            <v-text-field
-              v-model="metadataQuery"
-              :label="$t(`catalog.searchTypes.${selectedSearchType}`)"
-              :placeholder="$t(`catalog.placeholders.${selectedSearchType}`)"
-              prepend-inner-icon="mdi-magnify"
-              clearable
-              hide-details
-              density="comfortable"
-              :loading="isLoading"
-              class="search-input"
-              @keyup.enter="performMetadataSearch(metadataQuery, selectedSearchType)"
-            >
-              <template #append-inner>
-                <v-btn 
-                  icon="mdi-magnify" 
-                  variant="text" 
-                  size="small" 
-                  @click="performMetadataSearch(metadataQuery, selectedSearchType)"
-                  :disabled="!metadataQuery?.trim()"
-                />
-              </template>
-            </v-text-field>
-          </div>
-        </v-col>
-        
-        <v-col cols="12" md="4" lg="auto">
-          <v-btn-toggle
-            v-model="searchMode"
-            mandatory
-            variant="outlined"
-            density="compact"
-            class="w-100"
-          >
-            <v-btn value="legacy" size="small" class="flex-grow-1">
-              <v-icon start size="small">mdi-format-list-bulleted</v-icon>
-              <span class="d-none d-sm-inline">{{ $t('catalog.legacyBrowse') }}</span>
-              <span class="d-sm-none">{{ $t('catalog.browse') }}</span>
-            </v-btn>
-            <v-btn value="metadata" size="small" class="flex-grow-1">
-              <v-icon start size="small">mdi-database-search</v-icon>
-              <span class="d-none d-sm-inline">{{ $t('catalog.metadataSearch') }}</span>
-              <span class="d-sm-none">{{ $t('catalog.search') }}</span>
-            </v-btn>
-          </v-btn-toggle>
-        </v-col>
-        
-        <v-spacer />
-        
-        <!-- Sorting Controls (only for legacy browse mode) -->
-        <v-col v-if="searchMode === 'legacy'" cols="auto">
-          <div class="d-flex align-center sorting-controls" style="gap: 12px;">
-            <!-- Alphabetical Sort Button -->
-            <v-btn
-              :variant="sortBy === 'title' ? 'elevated' : 'outlined'"
-              :color="sortBy === 'title' ? 'primary' : 'default'"
-              size="small"
-              class="sort-btn"
-              @click="toggleSort('title')"
-            >
-              <v-icon 
-                :start="true" 
-                size="18"
-                class="sort-icon"
-                :class="{ 'rotate-icon': sortBy === 'title' && sortOrder === 'desc' }"
-              >
-                {{ getSortIcon('title') }}
-              </v-icon>
-              Alphabetical
-            </v-btn>
-            
-            <!-- Count Sort Button -->
-            <v-btn
-              :variant="sortBy === 'nb_children' ? 'elevated' : 'outlined'"
-              :color="sortBy === 'nb_children' ? 'secondary' : 'default'"
-              size="small"
-              class="sort-btn"
-              @click="toggleSort('nb_children')"
-            >
-              <v-icon 
-                :start="true" 
-                size="18"
-                class="sort-icon"
-                :class="{ 'rotate-icon': sortBy === 'nb_children' && sortOrder === 'desc' }"
-              >
-                {{ getSortIcon('nb_children') }}
-              </v-icon>
-              Count
-            </v-btn>
-          </div>
-        </v-col>
-        
-        <!-- expand/collapse buttons -->
-        <!-- <v-btn class="mr-2" variant="tonal" @click="expandAll" :loading="isExpanding">{{ $t('catalog.expandAll') }}</v-btn>
-        <v-btn variant="tonal" @click="collapseAll">{{ $t('catalog.collapseAll') }}</v-btn> -->
-      </v-row>
+      <!-- SEARCH MODE -->
+      <template v-if="hasCriteria">
+        <v-tabs :model-value="tab" color="primary" class="mb-2" @update:model-value="onTab">
+          <v-tab value="manuscripts">
+            {{ $t('browse.tabManuscripts') }}
+            <v-chip size="x-small" class="ml-2" label>{{ $n(manuscripts.total) }}</v-chip>
+          </v-tab>
+          <v-tab value="collections" :disabled="!criteria.q.trim()">
+            {{ $t('browse.tabCollections') }}
+            <v-chip size="x-small" class="ml-2" label>{{ $n(collections.total) }}</v-chip>
+          </v-tab>
+        </v-tabs>
 
-      <v-card>
-        <v-card-text>
-          <!-- Error display -->
-          <v-alert
-            v-if="searchError"
-            type="error"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-            closable
-            @click:close="searchError = ''"
-          >
-            {{ searchError }}
-          </v-alert>
+        <div v-if="loading" class="text-center py-10"><v-progress-circular indeterminate color="primary" /></div>
 
-          <!-- Loading indicator -->
-          <div v-if="isLoading" class="text-center py-8">
-            <v-progress-circular
-              indeterminate
-              size="64"
-              color="primary"
-              class="mb-4"
+        <template v-else-if="tab === 'manuscripts'">
+          <p v-if="!manuscripts.total" class="empty">{{ $t('browse.noResults') }}</p>
+          <template v-else>
+            <p class="result-count" role="status">{{ $t('browse.resultsCount', { count: $n(manuscripts.total) }, manuscripts.total) }}</p>
+            <ManuscriptRow v-for="m in manuscripts.items" :key="m.id" :item="m" />
+            <v-pagination
+              v-if="manuscripts.pages > 1"
+              :model-value="mPage"
+              :length="manuscripts.pages"
+              :total-visible="7"
+              class="mt-6"
+              @update:model-value="goPage('mp', $event)"
             />
-            <p class="text-h6">{{ searchMode === 'metadata' ? 'Searching manuscripts...' : 'Loading catalog...' }}</p>
-          </div>
+          </template>
+        </template>
 
-          <!-- No results -->
-          <div v-else-if="hasSearchQuery && filtered.length === 0 && !searchError" class="text-center py-4 text-grey">
-            <v-icon size="48" class="mb-2">mdi-magnify</v-icon>
-            <p>{{ $t('catalog.noResults') }}</p>
-            <p class="text-caption">
-              {{ searchMode === 'metadata' ? 'Try different metadata terms like "latin", "Tournai", "1301"' : 'Try searching by title, ID, or partial matches' }}
-            </p>
-          </div>
-
-          <!-- Results found -->
-          <div v-else-if="hasSearchQuery" class="mb-3">
-            <v-chip 
-              :color="searchMode === 'metadata' ? currentSearchType.color : 'primary'" 
-              variant="outlined" 
-              size="small"
-            >
-              <v-icon start size="small">{{ searchMode === 'metadata' ? currentSearchType.icon : 'mdi-format-list-bulleted' }}</v-icon>
-              {{ filtered.length }} {{ itemTypeText }}{{ filtered.length !== 1 ? 's' : '' }} found
-              {{ searchMode === 'metadata' ? `(${currentSearchType.value} search)` : '(browse)' }}
-            </v-chip>
-          </div>
-
-          <!-- Pagination info for browse mode -->
-          <div v-else-if="!hasSearchQuery && paginatedResults.length > 0" class="mb-3">
-            <v-chip variant="outlined" size="small" color="primary">
-              <v-icon start size="small">mdi-format-list-bulleted</v-icon>
-              Showing {{ paginatedResults.length }} of {{ filtered.length }} {{ itemTypeText }}{{ filtered.length !== 1 ? 's' : '' }}
-            </v-chip>
-          </div>
-
-          <!-- Catalog Tree -->
-          <div v-if="!isLoading">
-            <CatalogTree :nodes="paginatedResults" ref="treeRef" />
-            
-            <div 
-              v-if="hasMoreItems" 
-              ref="infiniteScrollTrigger"
-              class="infinite-scroll-trigger"
-            >
-              <div v-if="isLoadingMore" class="text-center py-6">
-                <v-progress-circular
-                  indeterminate
-                  color="primary"
-                  size="48"
-                  class="mb-3"
-                />
-                <p class="text-body-1 text-medium-emphasis">Loading more manuscripts</p>
-              </div>
+        <template v-else>
+          <p v-if="!collections.total" class="empty">{{ $t('browse.noResults') }}</p>
+          <template v-else>
+            <p class="result-count" role="status">{{ $t('browse.resultsCount', { count: $n(collections.total) }, collections.total) }}</p>
+            <div class="card-grid">
+              <CollectionCard v-for="c in collections.items" :key="c.id" :collection="c" />
             </div>
+            <v-pagination
+              v-if="collections.pages > 1"
+              :model-value="cPage"
+              :length="collections.pages"
+              :total-visible="7"
+              class="mt-6"
+              @update:model-value="goPage('cp', $event)"
+            />
+          </template>
+        </template>
+      </template>
+
+      <!-- BROWSE MODE: top-level collections -->
+      <template v-else>
+        <div class="d-flex align-center justify-space-between mb-3">
+          <h2 class="text-h6">{{ $t('browse.topLevel') }}</h2>
+          <v-select
+            v-model="sortKey"
+            :items="sortItems"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="max-width: 220px"
+            @update:model-value="goPage('bp', 1)"
+          />
+        </div>
+        <div v-if="loading" class="text-center py-10"><v-progress-circular indeterminate color="primary" /></div>
+        <template v-else>
+          <p v-if="!browse.items.length" class="empty">{{ $t('browse.emptyLibrary') }}</p>
+          <div class="card-grid">
+            <CollectionCard v-for="c in browse.items" :key="c.id" :collection="c" />
           </div>
-        </v-card-text>
-      </v-card>
-
-      <!-- <v-expansion-panels class="mt-4" variant="accordion">
-        <v-expansion-panel>
-          <v-expansion-panel-title>Raw (debug)</v-expansion-panel-title>
-          <v-expansion-panel-text><pre>{{ raw }}</pre></v-expansion-panel-text>
-        </v-expansion-panel>
-      </v-expansion-panels> -->
+          <v-pagination
+            v-if="browse.pages > 1"
+            :model-value="bPage"
+            :length="browse.pages"
+            :total-visible="7"
+            class="mt-6"
+            @update:model-value="goPage('bp', $event)"
+          />
+        </template>
+      </template>
     </v-container>
-  </v-container>
+  </div>
 </template>
+
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts, fetchCollectionsList, fetchManuscriptsList } from '../api/dts'
-import CatalogTree from '../components/CatalogTree.vue'
-import { normalizeLanguageQuery } from '../lib/language-utils'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import {
+  fetchCatalogFacets,
+  fetchRootCollection,
+  lastPageOf,
+  parseMembers,
+  searchCatalogCollections,
+  searchCatalogManuscripts,
+} from '../api/dts'
+import { fromSearchHit } from '../lib/catalog'
+import { formatLanguage } from '../lib/language-utils'
+import ManuscriptRow from '../components/ManuscriptRow.vue'
+import CollectionCard from '../components/CollectionCard.vue'
 
+const MS_SIZE = 25
+const COLL_SIZE = 20
+
+const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
-const raw = ref('')
-const nodes = ref([])
-const q = ref('')
-const metadataQuery = ref('')
-const allResources = ref([]) // Store all resources for comprehensive search
-const isLoading = ref(false)
+// The URL is the source of truth: ?q=&lang=&from=&to=&tab=&mp=&cp=&bp=&sort=
+const criteria = computed(() => ({
+  q: String(route.query.q ?? ''),
+  language: String(route.query.lang ?? ''),
+  from: String(route.query.from ?? ''),
+  to: String(route.query.to ?? ''),
+}))
+const hasCriteria = computed(() => Object.values(criteria.value).some((v) => v.trim() !== ''))
+const mPage = computed(() => Math.max(1, parseInt(route.query.mp, 10) || 1))
+const cPage = computed(() => Math.max(1, parseInt(route.query.cp, 10) || 1))
+const bPage = computed(() => Math.max(1, parseInt(route.query.bp, 10) || 1))
 
-// Autocomplete collections data
-const autocompleteCollections = ref([])
-const autocompleteManuscripts = ref([])
-const isLoadingAutocomplete = ref(false)
+// Form fields: edited freely, applied on submit
+const form = reactive({ q: '', language: null, from: '', to: '' })
+const tab = ref('manuscripts')
+const sortKey = ref(String(route.query.sort || 'default'))
 
-// Sorting controls
-const sortBy = ref('nb_children') // 'default', 'title', 'nb_children'
-const sortOrder = ref('desc') // 'asc', 'desc' - default to high to low for count
+const loading = ref(false)
+const error = ref('')
+const facets = ref({ languages: [], min_year: null, max_year: null })
+const manuscripts = ref({ total: 0, pages: 1, items: [] })
+const collections = ref({ total: 0, pages: 1, items: [] })
+const browse = ref({ pages: 1, items: [] })
 
-// Pagination
-const itemsPerPage = 25
-const displayedItemsCount = ref(itemsPerPage)
-const isLoadingMore = ref(false)
+const languageItems = computed(() =>
+  facets.value.languages.map((l) => ({ title: `${formatLanguage(l.code, t)} (${l.count})`, value: l.code })),
+)
+const sortItems = computed(() => [
+  { title: t('browse.sortDefault'), value: 'default' },
+  { title: t('browse.sortTitle'), value: 'title' },
+  { title: t('browse.sortSize'), value: 'nb_children' },
+])
 
-// Search mode and functionality
-const searchMode = ref('legacy') // 'legacy' or 'metadata'
-const manuscriptResults = ref([]) // Results from manuscript search
-const hasSearchBeenPerformed = ref(false) // Track if a search has been performed
-const searchError = ref('') // Store search error messages
+function syncForm() {
+  form.q = criteria.value.q
+  form.language = criteria.value.language || null
+  form.from = criteria.value.from
+  form.to = criteria.value.to
+}
 
-// Metadata search types configuration
-const selectedSearchType = ref('language')
-
-const searchTypes = [
-  {
-    value: 'language',
-    color: 'success',
-    icon: 'mdi-translate',
-    endpoint: '/manuscripts/language/'
-  },
-  {
-    value: 'date',
-    color: 'warning',
-    icon: 'mdi-calendar',
-    endpoint: '/manuscripts/range/' // Now uses range endpoint for simple ranges
+function pushQuery(next) {
+  const query = {}
+  for (const [k, v] of Object.entries(next)) {
+    if (v === '' || v == null) continue
+    if (['mp', 'cp', 'bp'].includes(k) && Number(v) === 1) continue
+    query[k] = String(v)
   }
-]
+  router.push({ name: 'catalog', query })
+}
 
-const currentSearchType = computed(() => {
-  return searchTypes.find(type => type.value === selectedSearchType.value) || searchTypes[0]
-})
-
-// Build suggestions for legacy browse mode using the new collections endpoint
-const suggestions = computed(() => {
-  const collectionItems = autocompleteCollections.value.map(collection => ({
-    id: collection.identifier,
-    title: collection.title,
-    value: collection.title,
-    nb_children: collection.nb_children,
-    identifier: collection.identifier,
-    type: 'collection'
-  }))
-  
-  const manuscriptItems = autocompleteManuscripts.value.map(manuscript => ({
-    id: manuscript.identifier,
-    title: manuscript.title,
-    value: manuscript.title,
-    url: manuscript.url,
-    identifier: manuscript.identifier,
-    type: 'manuscript'
-  }))
-  
-  if (collectionItems.length > 0 && manuscriptItems.length > 0) {
-    return [
-      { header: 'Collections' },
-      ...collectionItems,
-      { divider: true },
-      { header: 'Manuscripts' },
-      ...manuscriptItems
-    ]
-  } else if (collectionItems.length > 0) {
-    return collectionItems
-  } else if (manuscriptItems.length > 0) {
-    return manuscriptItems
-  }
-  
-  return []
-})
-
-// Helper computed properties for search display
-const hasSearchQuery = computed(() => {
-  if (searchMode.value === 'metadata') {
-    // Only show search query state if search has been performed
-    return metadataQuery.value?.trim() && hasSearchBeenPerformed.value
-  }
-  // For legacy mode, check if there's text AND we're not viewing a selected collection
-  // If a collection is selected, we're browsing, not searching
-  if (currentSelectedCollection.value && q.value === currentSelectedCollection.value.title) {
-    return false // Viewing a collection, not searching
-  }
-  return q.value?.trim()
-})
-
-const currentQuery = computed(() => {
-  return searchMode.value === 'metadata' ? metadataQuery.value : q.value
-})
-
-// Determine the correct item type for display
-const itemTypeText = computed(() => {
-  if (searchMode.value === 'metadata') {
-    return 'manuscript'
-  }
-  
-  // For legacy mode, determine based on what's in the filtered results
-  if (!filtered.value.length) return 'item'
-  
-  const hasCollections = filtered.value.some(item => item.kind === 'collection')
-  const hasResources = filtered.value.some(item => item.kind === 'resource')
-  
-  if (hasCollections && hasResources) {
-    return 'item' // Mixed results
-  } else if (hasCollections) {
-    return 'collection'
-  } else {
-    return 'manuscript'
-  }
-})
-
-// Filtered results based on search mode
-const filtered = computed(() => {
-  if (searchMode.value === 'metadata') {
-    // If we have search results from metadata search, show them
-    if (manuscriptResults.value.length > 0) {
-      return filterTreeForMetadataResults(nodes.value, manuscriptResults.value)
-    }
-    
-    // If there's a query but no results, show empty (only if search was actually performed)
-    if (metadataQuery.value?.trim() && hasSearchBeenPerformed.value) {
-      return []
-    }
-    
-    // No query, show all nodes
-    return nodes.value
-  }
-  
-  // Legacy filtering
-  const s = String(q.value || '').trim().toLowerCase()
-  if (!s) return nodes.value
-  
-  // Check if the search matches a collection title from autocomplete
-  const matchingCollection = autocompleteCollections.value.find(
-    collection => collection.title.toLowerCase() === s.toLowerCase()
-  )
-  
-  const matchingManuscript = autocompleteManuscripts.value.find(
-    manuscript => manuscript.title.toLowerCase() === s.toLowerCase()
-  )
-  
-  // If exact match found, show the loaded collection data
-  if (matchingCollection) {
-    return nodes.value
-  }
-  
-  if (matchingManuscript) {
-    return nodes.value
-  }
-  
-  // Otherwise, filter current nodes
-  const topLevelMatches = nodes.value.filter(n => 
-    n.title.toLowerCase().includes(s) || 
-    String(n.id).toLowerCase().includes(s)
-  )
-  
-  // Include any pre-loaded resources that match (but don't force loading)
-  const resourceMatches = allResources.value.filter(r =>
-    r.title.toLowerCase().includes(s) || 
-    String(r.id).toLowerCase().includes(s)
-  ).filter(r => !topLevelMatches.find(t => t.id === r.id))
-  
-  return [...topLevelMatches, ...resourceMatches]
-})
-
-// Paginated results for display
-const paginatedResults = computed(() => {
-  const allResults = filtered.value
-  
-  // If searching, show all results (no pagination for search)
-  if (hasSearchQuery.value) {
-    return allResults
-  }
-  
-  // Apply pagination for browsing mode
-  const result = allResults.slice(0, displayedItemsCount.value)
-  
-  console.log('paginatedResults computed:', {
-    allResultsLength: allResults.length,
-    displayedItemsCount: displayedItemsCount.value,
-    resultLength: result.length,
-    nodesLength: nodes.value.length
+function submit() {
+  pushQuery({
+    q: (form.q ?? '').trim(),
+    lang: form.language ?? '',
+    from: form.from ?? '',
+    to: form.to ?? '',
   })
-  
-  return result
-})
-
-// Check if there are more items to load
-const hasMoreItems = computed(() => {
-  if (hasSearchQuery.value) return false
-  
-  // For browse mode, check if there are more paginated items from the server
-  // or more local items that haven't been displayed yet
-  return rootPagination.value?.hasNext || displayedItemsCount.value < filtered.value.length
-})
-
-// Function to load more items
-async function loadMoreItems() {
-  // If there are more items from server pagination, load them
-  if (rootPagination.value?.hasNext) {
-    await loadMoreRootItems()
-  } else {
-    // Otherwise, just show more of the already loaded items
-    displayedItemsCount.value += itemsPerPage
-  }
 }
 
-// Reset pagination when search changes
-function resetPagination() {
-  displayedItemsCount.value = itemsPerPage
+function reset() {
+  form.q = ''
+  form.language = null
+  form.from = ''
+  form.to = ''
+  pushQuery({})
 }
 
-// Pagination state for root collection
-const rootPagination = ref(null)
+function goPage(key, page) {
+  const sort = sortKey.value === 'default' ? '' : sortKey.value
+  pushQuery({ ...route.query, sort, [key]: page })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
-// Track current selected collection from autocomplete
-const currentSelectedCollection = ref(null)
+function onTab(value) {
+  pushQuery({ ...route.query, tab: value })
+}
 
-async function load(){
-  isLoading.value = true
+async function load() {
+  loading.value = true
+  error.value = ''
   try {
-    // Only apply sorting to root level, nested levels use default (count desc)
-    const resp = await fetchRootCollection(1, sortBy.value, sortOrder.value)
-    raw.value = typeof resp === 'string' ? resp : JSON.stringify(resp, null, 2)
-    
-    const { members, pagination } = parseMembers(resp)
-    nodes.value = members
-    rootPagination.value = pagination
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Load autocomplete collections data
-async function loadAutocompleteCollections(query = '') {
-  isLoadingAutocomplete.value = true
-  try {
-    const [collectionsResponse, manuscriptsResponse] = await Promise.all([
-      fetchCollectionsList(query),
-      fetchManuscriptsList(query, 20, 1)
-    ])
-    
-    autocompleteCollections.value = collectionsResponse.collections || []
-    autocompleteManuscripts.value = manuscriptsResponse.manuscripts || []
-  } catch (error) {
-    console.error('Failed to load autocomplete data:', error)
-    autocompleteCollections.value = []
-    autocompleteManuscripts.value = []
-  } finally {
-    isLoadingAutocomplete.value = false
-  }
-}
-
-// Handle collection selection and load collection data with pagination
-async function handleCollectionSelection(selectedTitle) {
-  if (!selectedTitle) {
-    // Clear the current collection when the input is cleared
-    currentSelectedCollection.value = null
-    return
-  }
-  
-  const selectedManuscript = autocompleteManuscripts.value.find(
-    manuscript => manuscript.title === selectedTitle
-  )
-  
-  if (selectedManuscript) {
-    const match = selectedManuscript.url.match(/id=([^&]+)/)
-    if (match) {
-      router.push({
-        name: 'document',
-        params: { resource: encodeURIComponent(match[1]) }
-      })
-    }
-    return
-  }
-  
-  // Find the selected collection's identifier from autocomplete data
-  const selectedCollection = autocompleteCollections.value.find(
-    collection => collection.title === selectedTitle
-  )
-  
-  if (!selectedCollection) {
-    console.warn('Selected item not found in autocomplete data')
-    return
-  }
-  
-  isLoading.value = true
-  try {
-    // Load first page of the selected collection with current sorting
-    const resp = await fetchCollectionRaw(selectedCollection.identifier, 'children', 1, sortBy.value, sortOrder.value)
-    const { members, pagination } = parseMembers(resp)
-    
-    // Replace current nodes with first page of selected collection
-    nodes.value = members
-    rootPagination.value = pagination
-    
-    // Track the current selected collection
-    currentSelectedCollection.value = selectedCollection
-    
-    // Reset displayed items count to show proper pagination
-    displayedItemsCount.value = itemsPerPage
-    
-    console.log(`Loaded first ${members.length} items from collection: ${selectedCollection.title}`)
-    
-  } catch (error) {
-    console.error('Failed to load selected collection:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Handle autocomplete clear - restore initial page
-function handleAutocompleteClear() {
-  // The v-autocomplete already clears q.value, so we just need to:
-  currentSelectedCollection.value = null
-  resetPagination()
-  load() // Reload the initial root collection
-  // The watcher will handle reloading autocomplete suggestions
-}
-
-function handleSearchInput(searchValue) {
-  loadAutocompleteCollections(searchValue || '')
-}
-
-async function loadMoreRootItems() {
-  console.log('loadMoreRootItems called, hasNext:', rootPagination.value?.hasNext)
-  
-  if (!rootPagination.value?.hasNext) return
-  
-  isLoadingMore.value = true
-  
-  try {
-    // Extract page number from next URL
-    const nextUrl = rootPagination.value.next
-    const pageMatch = nextUrl.match(/[?&]page=(\d+)/)
-    const nextPage = pageMatch ? parseInt(pageMatch[1], 10) : 2
-    
-    console.log('Fetching page:', nextPage)
-    
-    let resp
-    if (currentSelectedCollection.value) {
-      // Load more from the selected collection
-      resp = await fetchCollectionRaw(currentSelectedCollection.value.identifier, 'children', nextPage, sortBy.value, sortOrder.value)
+    if (hasCriteria.value) {
+      const c = criteria.value
+      const [ms, cs] = await Promise.all([
+        searchCatalogManuscripts({ q: c.q, language: c.language, startYear: c.from, stopYear: c.to, page: mPage.value, size: MS_SIZE }),
+        // Collections only have a title/description, so they are only searched by text
+        c.q.trim()
+          ? searchCatalogCollections({ q: c.q, page: cPage.value, size: COLL_SIZE })
+          : Promise.resolve({ total: 0, items: [] }),
+      ])
+      manuscripts.value = {
+        total: ms.total ?? 0,
+        pages: Math.max(1, Math.ceil((ms.total ?? 0) / MS_SIZE)),
+        items: (ms.items || []).map(fromSearchHit),
+      }
+      collections.value = {
+        total: cs.total ?? 0,
+        pages: Math.max(1, Math.ceil((cs.total ?? 0) / COLL_SIZE)),
+        items: (cs.items || []).map((x) => ({ id: x.identifier, title: x.title, description: x.description, count: x.total_children })),
+      }
+      const wanted = route.query.tab
+      tab.value = wanted === 'collections' || wanted === 'manuscripts'
+        ? wanted
+        : (!manuscripts.value.total && collections.value.total ? 'collections' : 'manuscripts')
     } else {
-      // Only apply sorting to root level
-      resp = await fetchRootCollection(nextPage, sortBy.value, sortOrder.value)
+      const sort = sortKey.value
+      const resp = await fetchRootCollection(bPage.value, sort, sort === 'nb_children' ? 'desc' : 'asc')
+      const { members, pagination } = parseMembers(resp)
+      browse.value = {
+        pages: lastPageOf(pagination),
+        items: members
+          .filter((m) => m.kind === 'collection')
+          .map((m) => ({ id: m.id, title: m.title, count: m.nb_children })),
+      }
     }
-    const { members, pagination } = parseMembers(resp)
-    
-    console.log('Got response:', {
-      membersCount: members?.length,
-      paginationHasNext: pagination?.hasNext,
-      paginationNext: pagination?.next
-    })
-    
-    if (members && members.length > 0) {
-      const beforeLength = nodes.value.length
-      
-      // Add new items to nodes array
-      nodes.value.splice(nodes.value.length, 0, ...members)
-      
-      // IMPORTANT: Update displayedItemsCount to show the new items
-      displayedItemsCount.value = nodes.value.length
-      
-      console.log('Updated nodes from', beforeLength, 'to', nodes.value.length)
-      console.log('Updated displayedItemsCount to', displayedItemsCount.value)
-    }
-    
-    // Update pagination - try triggering reactivity more explicitly
-    const oldPagination = rootPagination.value
-    rootPagination.value = pagination ? { ...pagination } : null
-    
-    console.log('Updated pagination from', oldPagination?.hasNext, 'to', rootPagination.value?.hasNext)
-    
-  } catch (error) {
-    console.error('Failed to load more root items:', error)
+  } catch (e) {
+    error.value = e?.message || String(e)
   } finally {
-    isLoadingMore.value = false
-    console.log('loadMoreRootItems finished, new hasNext:', rootPagination.value?.hasNext)
+    loading.value = false
   }
 }
 
-// Optional: Load all resources from collections (only when needed for comprehensive search)
-async function loadAllResources() {
-  if (allResources.value.length > 0) return // Already loaded
-  
-  isLoading.value = true
-  const discovered = new Set()
-  const toProcess = [...nodes.value]
-  
-  try {
-    while (toProcess.length > 0) {
-      const batch = toProcess.splice(0, 5) // Process in batches to avoid overwhelming the API
-      
-      await Promise.all(batch.map(async (node) => {
-        if (node.kind === 'collection' && !discovered.has(node.id)) {
-          discovered.add(node.id)
-          try {
-            // Load all pages for this collection
-            let page = 1
-            let hasMore = true
-            
-            while (hasMore) {
-              const resp = await fetchCollectionRaw(node.id, 'children', page)
-              const { members, pagination } = parseMembers(resp)
-              
-              members.forEach(member => {
-                if (member.kind === 'resource') {
-                  // Add to allResources if not already present
-                  if (!allResources.value.find(r => r.id === member.id)) {
-                    allResources.value.push(member)
-                  }
-                } else if (member.kind === 'collection' && !discovered.has(member.id)) {
-                  toProcess.push(member)
-                }
-              })
-              
-              hasMore = pagination?.hasNext || false
-              page++
-              
-              // Safety limit to prevent infinite loops
-              if (page > 50) break
-            }
-          } catch (error) {
-            console.warn(`Failed to load collection ${node.id}:`, error)
-          }
-        }
-      }))
-      
-      // Small delay to be nice to the API
-      if (toProcess.length > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Sorting functionality
-function toggleSort(newSortBy) {
-  if (sortBy.value === newSortBy) {
-    // Same button clicked - toggle sort order
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    // Different button clicked - change sort type and reset to ascending
-    sortBy.value = newSortBy
-    sortOrder.value = 'asc'
-  }
-}
-
-function getSortIcon(type) {
-  if (sortBy.value !== type) {
-    // Not active - show neutral icon
-    return type === 'title' ? 'mdi-sort-alphabetical-variant' : 'mdi-sort-numeric-variant'
-  }
-  
-  // Active button - show directional icon
-  if (type === 'title') {
-    return sortOrder.value === 'asc' ? 'mdi-sort-alphabetical-ascending' : 'mdi-sort-alphabetical-descending'
-  } else {
-    return sortOrder.value === 'asc' ? 'mdi-sort-numeric-ascending' : 'mdi-sort-numeric-descending'
-  }
-}
-
-function formatNumber(num) {
-  if (num < 1000) return num.toString()
-  if (num < 1000000) return `${Math.floor(num / 100) / 10}k`
-  return `${Math.floor(num / 100000) / 10}M`
-}
-
-// Expand/collapse functionality
-const treeRef = ref()
-const isExpanding = ref(false)
-
-// infinite scroll
-const infiniteScrollTrigger = ref(null)
-let intersectionObserver = null
-
-function setupInfiniteScroll() {
-  if (!infiniteScrollTrigger.value) return
-  
-  if (intersectionObserver) {
-    intersectionObserver.disconnect()
-  }
-  
-  intersectionObserver = new IntersectionObserver(
-    (entries) => {
-      const entry = entries[0]
-      if (entry.isIntersecting && hasMoreItems.value && !isLoadingMore.value) {
-        loadMoreItems()
-      }
-    },
-    {
-      root: null,
-      rootMargin: '200px',
-      threshold: 0.1
-    }
-  )
-  
-  intersectionObserver.observe(infiniteScrollTrigger.value)
-}
-
-function cleanupInfiniteScroll() {
-  if (intersectionObserver) {
-    intersectionObserver.disconnect()
-    intersectionObserver = null
-  }
-}
-
-async function expandAll() {
-  if (treeRef.value && treeRef.value.expandAll) {
-    isExpanding.value = true
-    try {
-      await treeRef.value.expandAll()
-    } finally {
-      isExpanding.value = false
-    }
-  }
-}
-
-function collapseAll() {
-  if (treeRef.value && treeRef.value.collapseAll) {
-    treeRef.value.collapseAll()
-  }
-}
-
-// Function to filter tree structure while preserving hierarchy for metadata results
-function filterTreeForMetadataResults(treeNodes, searchResults) {
-  // Simply return the search results as flat resources without trying to organize them
-  // This avoids creating fake collections that don't exist on the server
-  return searchResults.map(result => {
-    // Use the collection URL directly as ID for routing (like normal catalog)
-    const collectionId = result.collection
-    
-    let startYear = null
-    let stopYear = null
-    if (result.created && result.created.length > 0) {
-      const createdStr = result.created[0]
-      if (createdStr.includes('/')) {
-        const [start, end] = createdStr.split('/')
-        startYear = parseInt(start, 10)
-        stopYear = parseInt(end, 10)
-      } else {
-        startYear = parseInt(createdStr, 10)
-        stopYear = startYear
-      }
-    }
-    
-    const tokenCount = result.tokens || result.token_count || null
-    
-    let manuscriptTitle = result.title ? result.title.replace(/<\/?mark[^>]*>/g, '') : collectionId
-    
-    return {
-      kind: 'resource',
-      id: collectionId, // Use full collection URL for routing
-      title: manuscriptTitle,
-      // Keep language, date, and token count fields
-      language: result.language,
-      start_year: startYear,
-      stop_year: stopYear,
-      token_count: tokenCount,
-      ocr_quality: result.ocr_quality,
-      identifier: result.identifier,
-      publisher: result.publisher,
-      issued: result.issued,
-      relation: result.relation,
-      page_count: result.page_count,
-      manifest_url: result.manifest_url
-    }
-  })
-}
-
-// Function to recursively expand all collections until resources are reached
-async function expandAllToResources() {
-  if (!treeRef.value || !treeRef.value.expandAll) return
-  
-  // The CatalogTree's expandAll method should handle recursive expansion
-  // But we may need to call it multiple times to ensure deep nesting is expanded
-  let attempts = 0
-  const maxAttempts = 5
-  
-  while (attempts < maxAttempts) {
-    attempts++
-    
-    try {
-      // Call expandAll and wait for it to complete
-      await treeRef.value.expandAll()
-      
-      // Wait a bit for any async loading to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Check if there are still loading indicators (means more expansion might be needed)
-      const loadingElements = document.querySelectorAll('.v-progress-circular')
-      if (loadingElements.length === 0) {
-        // No more loading, expansion is likely complete
-        break
-      }
-    } catch (error) {
-      console.warn('Error during expansion:', error)
-      break
-    }
-  }
-}
-
-// Search functions
-async function performMetadataSearch(query, searchType) {
-  if (!query?.trim()) {
-    manuscriptResults.value = []
-    hasSearchBeenPerformed.value = false
-    searchError.value = ''
-    return
-  }
-  
-  isLoading.value = true
-  hasSearchBeenPerformed.value = true
-  searchError.value = ''
-  
-  try {
-    // Normalize language queries to use short forms
-    let searchQuery = query
-    if (searchType === 'language') {
-      searchQuery = normalizeLanguageQuery(query)
-    }
-    
-    // Use pagination for language and date searches
-    let result
-    if (searchType === 'date') {
-      result = await searchManuscripts(searchQuery, 1, 50, searchType)
-    } else {
-      result = await searchManuscripts(searchQuery, 1, 50, searchType)
-    }
-    
-    const items = result.items || result.manuscripts || []
-    manuscriptResults.value = items
-    
-    // Auto-expand tree to show search results at resource level
-    if (manuscriptResults.value.length > 0) {
-      await nextTick()
-      await new Promise(resolve => setTimeout(resolve, 200))
-      await expandAllToResources()
-    }
-  } catch (error) {
-    console.error('Metadata search failed:', error)
-    manuscriptResults.value = []
-    searchError.value = error.message || 'Search failed. Please try again.'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Watch for search mode changes to clear results
-watch(searchMode, () => {
-  q.value = ''
-  metadataQuery.value = ''
-  manuscriptResults.value = []
-  hasSearchBeenPerformed.value = false
-  searchError.value = ''
-  resetPagination()
-})
-
-// Watch for search type changes to clear results
-watch(selectedSearchType, () => {
-  metadataQuery.value = ''
-  manuscriptResults.value = []
-  hasSearchBeenPerformed.value = false
-  searchError.value = ''
-  resetPagination()
-})
-
-// Reset search performed flag when query is cleared
-watch(metadataQuery, (newValue) => {
-  if (!newValue?.trim()) {
-    hasSearchBeenPerformed.value = false
-    manuscriptResults.value = []
-    searchError.value = ''
-  }
-})
-
-// Reset pagination when legacy search query changes
-watch(q, () => {
-  resetPagination()
-})
-
-// Watch sorting parameters to reload data when changed
-watch([sortBy, sortOrder], () => {
-  if (searchMode.value === 'legacy') {
-    resetPagination()
-    load()
-  }
-})
-
-// Debug watcher for pagination changes
-watch(rootPagination, (newPagination, oldPagination) => {
-  console.log('Pagination changed:', {
-    old: oldPagination,
-    new: newPagination,
-    hasNext: newPagination?.hasNext
-  })
-}, { deep: true })
-
-// Watch for legacy search query changes to update autocomplete
-let autocompleteTimeout = null
-watch(q, (newQuery, oldQuery) => {
-  if (searchMode.value === 'legacy') {
-    // If query was cleared and we had a selected collection, restore to root
-    // But only if newQuery is empty/null (not just different)
-    if (!newQuery && currentSelectedCollection.value && oldQuery) {
-      // User cleared the autocomplete, restore initial state
-      currentSelectedCollection.value = null
-      resetPagination()
-      load() // Reload the initial root collection
-    }
-    
-    // Debounce the autocomplete search
-    clearTimeout(autocompleteTimeout)
-    autocompleteTimeout = setTimeout(() => {
-      // Always reload autocomplete, even for empty queries
-      loadAutocompleteCollections(newQuery || '')
-    }, 300) // 300ms delay
-  }
-})
-
-onMounted(() => {
+watch(() => route.fullPath, () => {
+  if (route.name !== 'catalog') return
+  syncForm()
+  sortKey.value = String(route.query.sort || 'default')
   load()
-  loadAutocompleteCollections() // Load initial autocomplete data
-  
-  nextTick(() => {
-    setTimeout(() => {
-      setupInfiniteScroll()
-    }, 500)
-  })
 })
 
-onBeforeUnmount(() => {
-  cleanupInfiniteScroll()
-})
-
-watch(infiniteScrollTrigger, (newVal) => {
-  if (newVal) {
-    nextTick(() => {
-      setupInfiniteScroll()
-    })
-  }
-})
-
-watch(hasMoreItems, (newVal) => {
-  if (newVal) {
-    nextTick(() => {
-      setupInfiniteScroll()
-    })
-  } else {
-    cleanupInfiniteScroll()
-  }
+onMounted(async () => {
+  syncForm()
+  load()
+  try { facets.value = await fetchCatalogFacets() } catch { /* filters just stay empty */ }
 })
 </script>
 
 <style scoped>
-.infinite-scroll-trigger {
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 2rem;
+.search-form { display: flex; gap: 12px; max-width: 880px; }
+.search-input { flex: 1; }
+.search-btn { align-self: stretch; height: auto !important; }
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; max-width: 880px; }
+.filter { min-width: 180px; max-width: 220px; flex: 1; }
+.filter-year { max-width: 130px; min-width: 110px; }
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 16px;
 }
-
-/* Sorting Controls Styling */
-.sorting-controls {
-  padding: 4px 8px;
-  background: rgba(var(--v-theme-surface), 0.8);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  border: 1px solid rgba(var(--v-theme-outline), 0.12);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.sort-btn {
-  text-transform: none !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.025em !important;
-  border-radius: 8px !important;
-  min-width: 110px !important;
-  height: 36px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.sort-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-  z-index: 1;
-}
-
-.sort-btn:hover::before {
-  left: 100%;
-}
-
-.sort-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.25) !important;
-}
-
-.sort-btn[variant="elevated"] {
-  box-shadow: 
-    0 3px 8px rgba(var(--v-theme-primary), 0.3),
-    0 1px 3px rgba(var(--v-theme-primary), 0.2) !important;
-}
-
-.sort-btn[variant="elevated"]:hover {
-  transform: translateY(-2px);
-  box-shadow: 
-    0 6px 16px rgba(var(--v-theme-primary), 0.35),
-    0 2px 6px rgba(var(--v-theme-primary), 0.25) !important;
-}
-
-.sort-icon {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.rotate-icon {
-  transform: scaleY(-1);
-}
-
-/* Color variations for different sort buttons */
-.sort-btn[color="secondary"][variant="elevated"] {
-  box-shadow: 
-    0 3px 8px rgba(var(--v-theme-secondary), 0.3),
-    0 1px 3px rgba(var(--v-theme-secondary), 0.2) !important;
-}
-
-.sort-btn[color="secondary"][variant="elevated"]:hover {
-  box-shadow: 
-    0 6px 16px rgba(var(--v-theme-secondary), 0.35),
-    0 2px 6px rgba(var(--v-theme-secondary), 0.25) !important;
-}
-
-.sort-btn[color="secondary"]:hover {
-  box-shadow: 0 4px 12px rgba(var(--v-theme-secondary), 0.25) !important;
-}
-
-/* Dark theme support */
-.v-theme--dark .sorting-controls {
-  background: rgba(var(--v-theme-surface), 0.9);
-  border-color: rgba(var(--v-theme-outline), 0.2);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .sorting-controls {
-    padding: 2px 4px;
-    gap: 8px !important;
-  }
-  
-  .sort-btn {
-    min-width: 90px !important;
-    font-size: 0.8rem !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .sort-btn {
-    min-width: 80px !important;
-    padding: 0 8px !important;
-  }
-  
-  .sort-btn .v-icon {
-    font-size: 16px !important;
-  }
-}
-
-/* Metadata Search Responsive Styles */
-.metadata-search-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.search-type-toggle {
-  flex-shrink: 0;
-}
-
-.search-input {
-  flex-grow: 1;
-}
-
-@media (max-width: 768px) {
-  .metadata-search-container {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .search-type-toggle {
-    width: 100%;
-  }
-  
-  .search-type-toggle .v-btn-group {
-    width: 100%;
-  }
-  
-  .search-type-btn {
-    flex: 1;
-  }
-  
-  .search-input {
-    width: 100%;
-  }
-}
-
+.result-count { font-size: 0.9rem; opacity: 0.7; margin-bottom: 4px; }
+.empty { text-align: center; padding: 48px 0; opacity: 0.7; }
 @media (max-width: 600px) {
-  .search-type-btn .btn-text {
-    display: none;
-  }
-  
-  .search-type-btn {
-    min-width: 48px !important;
-    padding: 0 8px !important;
-  }
+  .search-form { flex-direction: column; }
+  .search-btn { height: 44px !important; }
 }
-
 </style>
