@@ -24,8 +24,27 @@
             density="comfortable"
             :loading="isLoadingAutocomplete"
             @update:model-value="handleCollectionSelection"
+            @update:search="handleSearchInput"
             @click:clear="handleAutocompleteClear"
-          />
+          >
+            <template #item="{ props, item }">
+              <v-list-item
+                v-if="!item.raw.header && !item.raw.divider"
+                v-bind="props"
+                :prepend-icon="item.raw.type === 'collection' ? 'mdi-folder' : 'mdi-file-document-outline'"
+              >
+                <template #append v-if="item.raw.type === 'collection' && item.raw.nb_children">
+                  <v-chip size="x-small" color="primary" variant="flat">
+                    {{ formatNumber(item.raw.nb_children) }}
+                  </v-chip>
+                </template>
+              </v-list-item>
+              <v-list-subheader v-else-if="item.raw.header">
+                {{ item.raw.header }}
+              </v-list-subheader>
+              <v-divider v-else-if="item.raw.divider" />
+            </template>
+          </v-autocomplete>
           
           <!-- Metadata Search Mode -->
           <div v-else class="metadata-search-container">
@@ -212,31 +231,20 @@
           <div v-if="!isLoading">
             <CatalogTree :nodes="paginatedResults" ref="treeRef" />
             
-            <!-- Load More Button -->
-            <div v-if="hasMoreItems" class="text-center mt-4">
-              <v-btn 
-                variant="text" 
-                color="primary"
-                size="large"
-                :loading="isLoadingMore"
-                @click="loadMoreItems"
-                class="main-load-more-btn"
-                block
-              >
-                <v-icon start>mdi-dots-horizontal</v-icon>
-                <span v-if="rootPagination?.hasNext">
-                  <span v-if="currentSelectedCollection">
-                    Load More from {{ currentSelectedCollection.title }}
-                  </span>
-                  <span v-else>
-                    Load More Collections
-                  </span>
-                </span>
-                <span v-else>
-                  Show {{ Math.min(itemsPerPage, filtered.length - displayedItemsCount) }} More
-                </span>
-                <v-icon end>mdi-chevron-down</v-icon>
-              </v-btn>
+            <div 
+              v-if="hasMoreItems" 
+              ref="infiniteScrollTrigger"
+              class="infinite-scroll-trigger"
+            >
+              <div v-if="isLoadingMore" class="text-center py-6">
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                  size="48"
+                  class="mb-3"
+                />
+                <p class="text-body-1 text-medium-emphasis">Loading more manuscripts</p>
+              </div>
             </div>
           </div>
         </v-card-text>
@@ -252,10 +260,13 @@
   </v-container>
 </template>
 <script setup>
-import { onMounted, ref, computed, watch, nextTick } from 'vue'
-import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts, fetchCollectionsList } from '../api/dts'
+import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
+import { fetchRootCollection, parseMembers, fetchCollectionRaw, searchManuscripts, fetchCollectionsList, fetchManuscriptsList } from '../api/dts'
 import CatalogTree from '../components/CatalogTree.vue'
 import { normalizeLanguageQuery } from '../lib/language-utils'
+
+const router = useRouter()
 
 const raw = ref('')
 const nodes = ref([])
@@ -266,6 +277,7 @@ const isLoading = ref(false)
 
 // Autocomplete collections data
 const autocompleteCollections = ref([])
+const autocompleteManuscripts = ref([])
 const isLoadingAutocomplete = ref(false)
 
 // Sorting controls
@@ -307,13 +319,39 @@ const currentSearchType = computed(() => {
 
 // Build suggestions for legacy browse mode using the new collections endpoint
 const suggestions = computed(() => {
-  return autocompleteCollections.value.map(collection => ({
+  const collectionItems = autocompleteCollections.value.map(collection => ({
     id: collection.identifier,
-    title: `${collection.title} `,
+    title: collection.title,
     value: collection.title,
     nb_children: collection.nb_children,
-    identifier: collection.identifier // Keep the identifier for selection
+    identifier: collection.identifier,
+    type: 'collection'
   }))
+  
+  const manuscriptItems = autocompleteManuscripts.value.map(manuscript => ({
+    id: manuscript.identifier,
+    title: manuscript.title,
+    value: manuscript.title,
+    url: manuscript.url,
+    identifier: manuscript.identifier,
+    type: 'manuscript'
+  }))
+  
+  if (collectionItems.length > 0 && manuscriptItems.length > 0) {
+    return [
+      { header: 'Collections' },
+      ...collectionItems,
+      { divider: true },
+      { header: 'Manuscripts' },
+      ...manuscriptItems
+    ]
+  } else if (collectionItems.length > 0) {
+    return collectionItems
+  } else if (manuscriptItems.length > 0) {
+    return manuscriptItems
+  }
+  
+  return []
 })
 
 // Helper computed properties for search display
@@ -381,8 +419,16 @@ const filtered = computed(() => {
     collection => collection.title.toLowerCase() === s.toLowerCase()
   )
   
+  const matchingManuscript = autocompleteManuscripts.value.find(
+    manuscript => manuscript.title.toLowerCase() === s.toLowerCase()
+  )
+  
   // If exact match found, show the loaded collection data
   if (matchingCollection) {
+    return nodes.value
+  }
+  
+  if (matchingManuscript) {
     return nodes.value
   }
   
@@ -473,14 +519,17 @@ async function load(){
 async function loadAutocompleteCollections(query = '') {
   isLoadingAutocomplete.value = true
   try {
-    const response = await fetchCollectionsList(query)
-    const collections = response.collections || []
+    const [collectionsResponse, manuscriptsResponse] = await Promise.all([
+      fetchCollectionsList(query),
+      fetchManuscriptsList(query, 20, 1)
+    ])
     
-    // Limit to 10 results for autocomplete performance
-    autocompleteCollections.value = collections
+    autocompleteCollections.value = collectionsResponse.collections || []
+    autocompleteManuscripts.value = manuscriptsResponse.manuscripts || []
   } catch (error) {
-    console.error('Failed to load autocomplete collections:', error)
+    console.error('Failed to load autocomplete data:', error)
     autocompleteCollections.value = []
+    autocompleteManuscripts.value = []
   } finally {
     isLoadingAutocomplete.value = false
   }
@@ -494,13 +543,28 @@ async function handleCollectionSelection(selectedTitle) {
     return
   }
   
+  const selectedManuscript = autocompleteManuscripts.value.find(
+    manuscript => manuscript.title === selectedTitle
+  )
+  
+  if (selectedManuscript) {
+    const match = selectedManuscript.url.match(/id=([^&]+)/)
+    if (match) {
+      router.push({
+        name: 'document',
+        params: { resource: encodeURIComponent(match[1]) }
+      })
+    }
+    return
+  }
+  
   // Find the selected collection's identifier from autocomplete data
   const selectedCollection = autocompleteCollections.value.find(
     collection => collection.title === selectedTitle
   )
   
   if (!selectedCollection) {
-    console.warn('Selected collection not found in autocomplete data')
+    console.warn('Selected item not found in autocomplete data')
     return
   }
   
@@ -536,6 +600,10 @@ function handleAutocompleteClear() {
   resetPagination()
   load() // Reload the initial root collection
   // The watcher will handle reloading autocomplete suggestions
+}
+
+function handleSearchInput(searchValue) {
+  loadAutocompleteCollections(searchValue || '')
 }
 
 async function loadMoreRootItems() {
@@ -679,9 +747,50 @@ function getSortIcon(type) {
   }
 }
 
+function formatNumber(num) {
+  if (num < 1000) return num.toString()
+  if (num < 1000000) return `${Math.floor(num / 100) / 10}k`
+  return `${Math.floor(num / 100000) / 10}M`
+}
+
 // Expand/collapse functionality
 const treeRef = ref()
 const isExpanding = ref(false)
+
+// infinite scroll
+const infiniteScrollTrigger = ref(null)
+let intersectionObserver = null
+
+function setupInfiniteScroll() {
+  if (!infiniteScrollTrigger.value) return
+  
+  if (intersectionObserver) {
+    intersectionObserver.disconnect()
+  }
+  
+  intersectionObserver = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0]
+      if (entry.isIntersecting && hasMoreItems.value && !isLoadingMore.value) {
+        loadMoreItems()
+      }
+    },
+    {
+      root: null,
+      rootMargin: '200px',
+      threshold: 0.1
+    }
+  )
+  
+  intersectionObserver.observe(infiniteScrollTrigger.value)
+}
+
+function cleanupInfiniteScroll() {
+  if (intersectionObserver) {
+    intersectionObserver.disconnect()
+    intersectionObserver = null
+  }
+}
 
 async function expandAll() {
   if (treeRef.value && treeRef.value.expandAll) {
@@ -899,36 +1008,44 @@ watch(q, (newQuery, oldQuery) => {
 onMounted(() => {
   load()
   loadAutocompleteCollections() // Load initial autocomplete data
+  
+  nextTick(() => {
+    setTimeout(() => {
+      setupInfiniteScroll()
+    }, 500)
+  })
+})
+
+onBeforeUnmount(() => {
+  cleanupInfiniteScroll()
+})
+
+watch(infiniteScrollTrigger, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      setupInfiniteScroll()
+    })
+  }
+})
+
+watch(hasMoreItems, (newVal) => {
+  if (newVal) {
+    nextTick(() => {
+      setupInfiniteScroll()
+    })
+  } else {
+    cleanupInfiniteScroll()
+  }
 })
 </script>
 
 <style scoped>
-.main-load-more-btn {
-  text-transform: none !important;
-  font-weight: 500 !important;
-  letter-spacing: normal !important;
-  border: 1px dashed rgba(var(--v-theme-primary), 0.4) !important;
-  border-radius: 12px !important;
-  min-height: 48px !important;
-  transition: all 0.3s ease !important;
-  margin: 0 auto;
-  max-width: 300px;
-}
-
-.main-load-more-btn:hover {
-  border-color: rgba(var(--v-theme-primary), 0.7) !important;
-  background-color: rgba(var(--v-theme-primary), 0.06) !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.25);
-}
-
-.main-load-more-btn:not(.v-btn--loading):hover {
-  transform: translateY(-2px);
-}
-
-.main-load-more-btn.v-btn--loading {
-  opacity: 0.6;
-  transform: none !important;
+.infinite-scroll-trigger {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
 }
 
 /* Sorting Controls Styling */

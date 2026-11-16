@@ -423,6 +423,22 @@ export async function fetchCollectionsList(query = '') {
   return await res.json();
 }
 
+export async function fetchManuscriptsList(query = '', limit = 20, page = 1) {
+  const params = new URLSearchParams();
+  if (query.trim()) {
+    params.append('q', query.trim());
+  }
+  params.append('limit', limit.toString());
+  params.append('page', page.toString());
+  
+  const url = `${BASE}/manuscripts/list/?${params.toString()}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch manuscripts list (${res.status})`);
+  }
+  return await res.json();
+}
+
 /**
  * Manuscript catalog search with pagination support
  * - General: GET /manuscripts/?q=...&page=...&size=...
