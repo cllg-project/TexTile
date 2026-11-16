@@ -62,15 +62,17 @@
               <v-btn value="occurrences" size="small">{{ $t('search.statsOccurrences') }}</v-btn>
             </v-btn-toggle>
             <span v-if="computing" class="note">{{ $t('search.statsPreliminary') }}</span>
-            <span v-else-if="data.cached" class="note">{{ $t('search.statsCached', { when: computedWhen }) }}</span>
+            <span v-else-if="data.cached" class="note" :title="computedExact">{{ $t('search.statsCached', { when: computedWhen }) }}</span>
             <v-spacer />
             <v-btn
               v-if="!computing"
+              icon="mdi-refresh"
               size="small"
               variant="text"
-              prepend-icon="mdi-refresh"
+              :title="$t('search.statsRecompute')"
+              :aria-label="$t('search.statsRecompute')"
               @click="start(true)"
-            >{{ $t('search.statsRecompute') }}</v-btn>
+            />
             <v-btn
               v-if="!computing"
               :href="csvHref"
@@ -145,7 +147,10 @@ let controller = null
 
 const csvHref = computed(() => (props.params ? termStatsCsvUrl(props.params) : ''))
 const percent = computed(() => (progress.value.total ? Math.min(100, (progress.value.pages / progress.value.total) * 100) : 0))
-const computedWhen = computed(() => (data.value?.computed_at ? new Date(data.value.computed_at * 1000).toLocaleString(locale.value) : ''))
+const computedAt = computed(() => (data.value?.computed_at ? new Date(data.value.computed_at * 1000) : null))
+// The date is enough in the toolbar; the exact time is in the tooltip
+const computedWhen = computed(() => (computedAt.value ? computedAt.value.toLocaleDateString(locale.value, { dateStyle: 'medium' }) : ''))
+const computedExact = computed(() => (computedAt.value ? computedAt.value.toLocaleString(locale.value) : ''))
 
 const truncatedMessage = computed(() => {
   const d = data.value
