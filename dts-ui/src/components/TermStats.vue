@@ -219,7 +219,12 @@ const manuscriptItems = computed(() => (view.value?.by_manuscript || [])
     key: m.collection,
     // the tooltip carries the full title, which the short label drops
     title: `${m.title} — ${n(m.occurrences)} ${t('search.statsOccurrences').toLowerCase()}`,
-    to: { name: 'document', params: { resource: encodeURIComponent(m.collection) } },
+    // open the manuscript on a search for the term (the chosen form, if one is picked) instead of its first page
+    to: {
+      name: 'document',
+      params: { resource: encodeURIComponent(m.collection) },
+      query: { highlight: selectedForm.value ?? props.params?.q, mode: props.params?.mode },
+    },
   })))
 
 const key = () => JSON.stringify(props.params)

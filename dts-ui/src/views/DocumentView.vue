@@ -964,7 +964,7 @@ async function doSearch(){
     const params = new URLSearchParams()
     params.append('q', searchQ.value)
     params.append('resource', resource)
-    params.append('mode', 'exact')
+    params.append('mode', ['exact', 'partial', 'fuzzy'].includes(route.query.mode) ? route.query.mode : 'exact')
     params.append('page', '1') // First page for in-document search
     params.append('size', '50') // Reasonable size for in-document search
     
@@ -1270,6 +1270,7 @@ onMounted(async () => {
     if (!openPanels.value.includes(1)) {  // Index 1 is the search panel
       openPanels.value.push(1)
     }
+    doSearch() // list where the term occurs in this manuscript
   }
   
   // Load navigation and metadata together
