@@ -39,21 +39,31 @@
         <div :class="['figures', { 'is-preliminary': computing }]">
           <div class="tiles">
             <div class="tile">
-              <div class="tile-value">{{ $n(data.occurrences) }}</div>
+              <div class="tile-value">{{ $n(view.occurrences) }}</div>
               <div class="tile-label">{{ $t('search.statsOccurrences') }}</div>
             </div>
             <div class="tile" :title="$t('search.statsPer10kHint')">
-              <div class="tile-value">{{ data.per10k == null ? '—' : $n(data.per10k, { maximumFractionDigits: 2 }) }}</div>
+              <div class="tile-value">{{ view.per10k == null ? '—' : $n(view.per10k, { maximumFractionDigits: 2 }) }}</div>
               <div class="tile-label">{{ $t('search.statsPer10k') }}</div>
             </div>
             <div class="tile">
-              <div class="tile-value">{{ data.manuscripts_with_hits }} <small>/ {{ data.manuscripts_in_scope }}</small></div>
+              <div class="tile-value">{{ view.manuscripts_with_hits }} <small>/ {{ data.manuscripts_in_scope }}</small></div>
               <div class="tile-label">{{ $t('search.statsManuscripts') }}</div>
             </div>
             <div class="tile">
               <div class="tile-value">{{ $n(data.distinct_forms) }}</div>
               <div class="tile-label">{{ $t('search.statsDistinctForms') }}</div>
             </div>
+          </div>
+
+          <!-- A search for several forms (deus,deum / reg*): look at one form at a time -->
+          <div v-if="data.forms.length > 1" class="form-picker" role="group" :aria-label="$t('search.statsFormPicker')">
+            <v-chip-group v-model="selectedForm" selected-class="text-primary" mandatory>
+              <v-chip :value="null" size="small" variant="outlined" filter>{{ $t('search.statsAllForms') }}</v-chip>
+              <v-chip v-for="f in data.forms.slice(0, PICKER_SHOWN)" :key="f.form" :value="f.form" size="small" variant="outlined" filter>
+                <span class="form-chip">{{ f.form }}</span>&nbsp;<small>{{ $n(f.occurrences) }}</small>
+              </v-chip>
+            </v-chip-group>
           </div>
 
           <div class="toolbar">
@@ -96,7 +106,7 @@
             <section>
               <h3>{{ $t('search.statsByCentury') }}</h3>
               <BarList :items="centuryItems" />
-              <p v-if="data.undated_occurrences" class="note">{{ $t('search.statsUndated', { count: data.undated_occurrences }) }}</p>
+              <p v-if="view.undated_occurrences" class="note">{{ $t('search.statsUndated', { count: view.undated_occurrences }) }}</p>
 
               <h3 class="mt-6">{{ $t('search.statsByLanguage') }}</h3>
               <BarList :items="languageItems" />
@@ -105,8 +115,8 @@
             <section class="wide">
               <h3>{{ $t('search.statsByManuscript') }}</h3>
               <BarList :items="manuscriptItems" />
-              <v-btn v-if="data.by_manuscript.length > MS_SHOWN" size="small" variant="text" @click="allManuscripts = !allManuscripts">
-                {{ allManuscripts ? $t('search.statsLess') : $t('search.statsMore', { count: data.by_manuscript.length - MS_SHOWN }) }}
+              <v-btn v-if="view.by_manuscript.length > MS_SHOWN" size="small" variant="text" @click="allManuscripts = !allManuscripts">
+                {{ allManuscripts ? $t('search.statsLess') : $t('search.statsMore', { count: view.by_manuscript.length - MS_SHOWN }) }}
               </v-btn>
             </section>
           </div>
@@ -125,6 +135,7 @@ import { formatLanguage } from '../lib/language-utils'
 import BarList from './BarList.vue'
 
 const FORMS_SHOWN = 15
+const PICKER_SHOWN = 12
 const MS_SHOWN = 10
 
 const props = defineProps({
@@ -141,9 +152,18 @@ const error = ref('')
 const data = ref(null) // the figures so far while counting, the final ones afterwards
 const progress = ref({ pages: 0, total: 0, occurrences: 0 })
 const allForms = ref(false)
+const selectedForm = ref(null) // null: every form together
 const allManuscripts = ref(false)
 let loadedKey = ''
 let controller = null
+
+// The figures on screen: the whole search, or the chosen form (which has the same shape).
+// A form that is no longer in the figures (a new search) falls back to the whole.
+const view = computed(() => {
+  const d = data.value
+  const form = selectedForm.value == null ? null : d?.forms?.find((f) => f.form === selectedForm.value)
+  return form ? { ...d, ...form } : d
+})
 
 const csvHref = computed(() => (props.params ? termStatsCsvUrl(props.params) : ''))
 const percent = computed(() => (progress.value.total ? Math.min(100, (progress.value.pages / progress.value.total) * 100) : 0))
@@ -187,13 +207,13 @@ const formItems = computed(() => (data.value?.forms || [])
     display: `${n(f.occurrences)} · ${f.share}%`,
   })))
 
-const centuryItems = computed(() => (data.value?.by_century || []).map((c) =>
+const centuryItems = computed(() => (view.value?.by_century || []).map((c) =>
   item(centuryLabel(c.century, locale.value), c, { key: c.century })))
 
-const languageItems = computed(() => (data.value?.by_language || []).map((l) =>
+const languageItems = computed(() => (view.value?.by_language || []).map((l) =>
   item(formatLanguage(l.language, t), l, { key: l.language })))
 
-const manuscriptItems = computed(() => (data.value?.by_manuscript || [])
+const manuscriptItems = computed(() => (view.value?.by_manuscript || [])
   .slice(0, allManuscripts.value ? undefined : MS_SHOWN)
   .map((m) => item(shelfmark(m.title), m, {
     key: m.collection,
@@ -215,6 +235,7 @@ async function start(refresh = false) {
   busy.value = false
   error.value = ''
   data.value = null
+  selectedForm.value = null
   progress.value = { pages: 0, total: 0, occurrences: 0 }
   loadedKey = key()
   try {
@@ -289,6 +310,8 @@ onBeforeUnmount(() => controller?.abort())
 .tile-value { font-size: 1.7rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
 .tile-value small { font-size: 0.9rem; font-weight: 400; opacity: 0.6; }
 .tile-label { font-size: 0.8rem; opacity: 0.65; margin-top: 2px; }
+.form-picker { margin-bottom: 12px; }
+.form-chip { font-family: 'Junicode', ui-serif, serif; }
 .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
 .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px 40px; }
 .panels .wide { grid-column: 1 / -1; }

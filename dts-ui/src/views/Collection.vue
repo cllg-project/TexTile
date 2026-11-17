@@ -147,7 +147,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { fetchCollectionRaw, lastPageOf, parseMembers, searchCatalogCollections, searchCatalogManuscripts } from '../api/dts'
-import { fromMember, fromSearchHit } from '../lib/catalog'
+import { DEFAULT_SORT, fromMember, fromSearchHit } from '../lib/catalog'
 import ManuscriptRow from '../components/ManuscriptRow.vue'
 import CollectionCard from '../components/CollectionCard.vue'
 
@@ -157,7 +157,7 @@ const { t } = useI18n()
 
 const id = computed(() => String(route.params.id))
 const page = computed(() => Math.max(1, parseInt(route.query.page, 10) || 1))
-const sortKey = computed(() => String(route.query.sort || 'default'))
+const sortKey = computed(() => String(route.query.sort || DEFAULT_SORT))
 const q = computed(() => String(route.query.q ?? '').trim())
 const tab = computed(() => (route.query.tab === 'collections' ? 'collections' : 'manuscripts'))
 const searchText = ref(q.value)
@@ -174,9 +174,8 @@ const pages = ref(1)
 const ancestors = ref([]) // [{ id, title }] from the top, excluding the root and the current collection
 
 const sortItems = computed(() => [
-  { title: t('browse.sortDefault'), value: 'default' },
-  { title: t('browse.sortTitle'), value: 'title' },
   { title: t('browse.sortSize'), value: 'nb_children' },
+  { title: t('browse.sortTitle'), value: 'title' },
 ])
 
 const crumbs = computed(() => [
@@ -188,7 +187,7 @@ const crumbs = computed(() => [
 function setQuery(patch) {
   const query = { ...route.query, ...patch }
   for (const k of Object.keys(query)) {
-    if (query[k] === '' || query[k] == null || (k === 'page' && Number(query[k]) === 1) || (k === 'sort' && query[k] === 'default') || (k === 'tab' && query[k] === 'manuscripts')) delete query[k]
+    if (query[k] === '' || query[k] == null || (k === 'page' && Number(query[k]) === 1) || (k === 'sort' && query[k] === DEFAULT_SORT) || (k === 'tab' && query[k] === 'manuscripts')) delete query[k]
   }
   router.push({ name: 'collection', params: { id: id.value }, query })
 }

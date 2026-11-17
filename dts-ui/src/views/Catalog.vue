@@ -159,7 +159,7 @@ import {
   searchCatalogCollections,
   searchCatalogManuscripts,
 } from '../api/dts'
-import { fromSearchHit } from '../lib/catalog'
+import { DEFAULT_SORT, fromSearchHit } from '../lib/catalog'
 import { formatLanguage } from '../lib/language-utils'
 import ManuscriptRow from '../components/ManuscriptRow.vue'
 import CollectionCard from '../components/CollectionCard.vue'
@@ -186,7 +186,7 @@ const bPage = computed(() => Math.max(1, parseInt(route.query.bp, 10) || 1))
 // Form fields: edited freely, applied on submit
 const form = reactive({ q: '', language: null, from: '', to: '' })
 const tab = ref('manuscripts')
-const sortKey = ref(String(route.query.sort || 'default'))
+const sortKey = ref(String(route.query.sort || DEFAULT_SORT))
 
 const loading = ref(false)
 const error = ref('')
@@ -199,9 +199,8 @@ const languageItems = computed(() =>
   facets.value.languages.map((l) => ({ title: `${formatLanguage(l.code, t)} (${l.count})`, value: l.code })),
 )
 const sortItems = computed(() => [
-  { title: t('browse.sortDefault'), value: 'default' },
-  { title: t('browse.sortTitle'), value: 'title' },
   { title: t('browse.sortSize'), value: 'nb_children' },
+  { title: t('browse.sortTitle'), value: 'title' },
 ])
 
 function syncForm() {
@@ -239,7 +238,7 @@ function reset() {
 }
 
 function goPage(key, page) {
-  const sort = sortKey.value === 'default' ? '' : sortKey.value
+  const sort = sortKey.value === DEFAULT_SORT ? '' : sortKey.value
   pushQuery({ ...route.query, sort, [key]: page })
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
@@ -296,7 +295,7 @@ async function load() {
 watch(() => route.fullPath, () => {
   if (route.name !== 'catalog') return
   syncForm()
-  sortKey.value = String(route.query.sort || 'default')
+  sortKey.value = String(route.query.sort || DEFAULT_SORT)
   load()
 })
 

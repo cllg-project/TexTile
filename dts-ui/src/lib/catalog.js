@@ -1,6 +1,9 @@
 // Helpers shared by the catalog browse/search views.
 
 /** Keep only <mark> tags (search highlights) from a string, escape everything else. */
+/** Collections are listed largest first unless the user picks another order. */
+export const DEFAULT_SORT = 'nb_children'
+
 export function safeMark(html) {
   const escaped = String(html ?? '')
     .replace(/&/g, '&amp;')

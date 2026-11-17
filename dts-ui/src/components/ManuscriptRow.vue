@@ -1,5 +1,10 @@
 <template>
   <article class="ms-row">
+    <div class="ms-actions">
+      <v-btn size="small" variant="tonal" color="primary" :to="{ name: 'document', params: { resource: encodeURIComponent(item.id) } }">
+        {{ $t('browse.read') }}
+      </v-btn>
+    </div>
     <div class="ms-main">
       <RouterLink class="ms-title" :to="{ name: 'document', params: { resource: encodeURIComponent(item.id) } }">
         <span v-html="item.titleHtml" />
@@ -17,11 +22,6 @@
         <span v-if="item.pages != null">{{ $t('browse.pages', { count: $n(item.pages) }, item.pages) }}</span>
         <span v-if="item.tokens != null">{{ $t('browse.tokens', { count: $n(item.tokens) }) }}</span>
       </div>
-    </div>
-    <div class="ms-actions">
-      <v-btn size="small" variant="tonal" color="primary" :to="{ name: 'document', params: { resource: encodeURIComponent(item.id) } }">
-        {{ $t('browse.read') }}
-      </v-btn>
     </div>
   </article>
 </template>
@@ -41,12 +41,13 @@ const years = computed(() => formatYears(props.item.start, props.item.stop))
 .ms-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   padding: 14px 4px;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 .ms-main { min-width: 0; }
+.ms-actions { flex: none; }
 .ms-title {
   display: inline-block;
   font-weight: 500;

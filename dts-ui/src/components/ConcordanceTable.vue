@@ -17,6 +17,15 @@
         :title="$t('search.exportConcordanceHint')"
       >{{ $t('search.exportConcordance') }}</v-btn>
       <v-select
+        v-model="size"
+        :items="sizes"
+        :label="$t('search.concPageSize')"
+        density="compact"
+        variant="outlined"
+        hide-details
+        class="conc-size"
+      />
+      <v-select
         v-model="sortKey"
         :items="sortItems"
         :label="$t('search.concSort')"
@@ -36,6 +45,9 @@
         <p class="summary" role="status">
           {{ $t('search.concSummary', { pages: $n(data.total_pages), rows: $n(rows.length) }) }}
         </p>
+        <v-alert v-if="data.capped" type="info" variant="tonal" density="compact" class="mb-3">
+          {{ $t('search.concCapped', { count: $n(data.pages * data.size) }) }}
+        </v-alert>
         <div class="kwic" role="table" :aria-label="$t('search.tabConcordance')">
           <div v-for="(row, i) in rows" :key="`${row.collection}-${row.ref}-${i}`" class="kwic-row" role="row">
             <span class="kwic-ref" role="cell">
@@ -74,6 +86,8 @@ const props = defineProps({
 
 const { t } = useI18n()
 const widths = [20, 40, 80]
+const sizes = [25, 50, 100] // matching pages per page: each brings all its occurrences, so rows per page vary
+const size = ref(50)
 const width = ref(40)
 const page = ref(1)
 const sortKey = ref('order')
@@ -119,7 +133,7 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    data.value = await fetchConcordance({ ...props.params, width: width.value }, { page: page.value, size: 20, signal: controller.signal })
+    data.value = await fetchConcordance({ ...props.params, width: width.value }, { page: page.value, size: size.value, signal: controller.signal })
     loadedKey = key()
   } catch (e) {
     if (e.name !== 'AbortError') error.value = e?.message || String(e)
@@ -128,7 +142,7 @@ async function load() {
   }
 }
 
-const key = () => JSON.stringify([props.params, width.value, page.value])
+const key = () => JSON.stringify([props.params, width.value, size.value, page.value])
 
 function goTo(p) {
   page.value = p
@@ -136,10 +150,10 @@ function goTo(p) {
 
 // A new search, or a new context width, starts from the first page. Registered before the loader
 // below so that, in the same tick, the loader already sees page 1.
-watch([() => props.params, width], () => { page.value = 1 })
+watch([() => props.params, width, size], () => { page.value = 1 })
 
 // Load when the tab opens, and again if the search, the context width or the page changed
-watch([() => props.active, () => props.params, width, page], () => {
+watch([() => props.active, () => props.params, width, size, page], () => {
   if (props.active && key() !== loadedKey) load()
 }, { immediate: true })
 
@@ -150,6 +164,7 @@ onBeforeUnmount(() => controller?.abort())
 .conc-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; max-width: 1100px; }
 .conc-hint { font-size: 0.85rem; opacity: 0.65; }
 .conc-sort { max-width: 220px; }
+.conc-size { max-width: 190px; }
 .summary { font-size: 0.9rem; opacity: 0.7; margin-bottom: 8px; }
 .empty { text-align: center; padding: 48px 0; opacity: 0.7; }
 

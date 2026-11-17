@@ -514,8 +514,8 @@ export function concordanceUrl(search) {
   return `${BASE}/concordance/?${concordanceParams(search).toString()}`;
 }
 
-/** One page of the concordance for a text search: { rows, page, size, total_pages, pages }. */
-export async function fetchConcordance(search, { page = 1, size = 20, signal } = {}) {
+/** One page of the concordance for a text search: { rows, page, size, total_pages, pages, capped }. */
+export async function fetchConcordance(search, { page = 1, size = 50, signal } = {}) {
   const params = concordanceParams(search);
   params.set('format', 'json');
   params.set('page', String(page));
