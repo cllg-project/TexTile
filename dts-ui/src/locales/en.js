@@ -214,7 +214,11 @@ export default {
       lrecPaper: 'LREC Paper (PDF)',
       copyCitation: 'Copy Citation',
       tryItNow: 'Try it Now',
-      searchPlaceholder: 'Search through 3.3B tokens of medieval text...',
+      searchPlaceholder: 'Search 3.3B tokens of text…',
+      searchPlaceholderManuscript: 'Shelfmark, title, publisher…',
+      searchScope: 'What to search',
+      scopeText: 'Text',
+      scopeManuscript: 'Manuscript',
       downloadCorpus: 'Download Corpus'
     },
     detailed: {

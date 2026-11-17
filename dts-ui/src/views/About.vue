@@ -67,15 +67,45 @@
               <div class="search-container" style="max-width: 500px; flex: 1;">
                 <v-text-field
                   v-model="searchQuery"
-                  :placeholder="$t('about.intro.searchPlaceholder')"
+                  :placeholder="searchScope === 'text' ? $t('about.intro.searchPlaceholder') : $t('about.intro.searchPlaceholderManuscript')"
                   variant="outlined"
                   density="comfortable"
                   class="search-field"
-                  prepend-inner-icon="mdi-magnify"
                   clearable
                   hide-details
                   @keyup.enter="performSearch"
                 >
+                  <!-- Where to search: the text of the pages, or the manuscripts (title, shelfmark…) -->
+                  <template #prepend-inner>
+                    <v-menu>
+                      <template #activator="{ props: menuProps }">
+                        <v-btn
+                          v-bind="menuProps"
+                          variant="text"
+                          size="small"
+                          class="scope-btn"
+                          :aria-label="$t('about.intro.searchScope')"
+                          :prepend-icon="searchScope === 'text' ? 'mdi-text-search' : 'mdi-book-open-page-variant-outline'"
+                          append-icon="mdi-menu-down"
+                        >{{ searchScope === 'text' ? $t('about.intro.scopeText') : $t('about.intro.scopeManuscript') }}</v-btn>
+                      </template>
+                      <v-list density="compact" :selected="[searchScope]" mandatory>
+                        <v-list-item
+                          value="text"
+                          prepend-icon="mdi-text-search"
+                          :title="$t('about.intro.scopeText')"
+                          @click="searchScope = 'text'"
+                        />
+                        <v-list-item
+                          value="manuscript"
+                          prepend-icon="mdi-book-open-page-variant-outline"
+                          :title="$t('about.intro.scopeManuscript')"
+                          @click="searchScope = 'manuscript'"
+                        />
+                      </v-list>
+                    </v-menu>
+                    <v-divider vertical class="mx-1 scope-divider" />
+                  </template>
                   <template #append-inner>
                     <v-btn
                       color="primary"
@@ -98,7 +128,7 @@
           <!-- Quick Search Suggestions -->
           <div class="d-flex justify-center flex-wrap mt-4">
             <v-chip
-              v-for="suggestion in quickSearches"
+              v-for="suggestion in suggestions"
               :key="suggestion.label"
               class="ma-1 suggestion-chip"
               variant="outlined"
@@ -486,7 +516,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import lottie from 'lottie-web'
@@ -515,6 +545,24 @@ const topArrow3 = ref(null)
 
 // Search functionality
 const searchQuery = ref('')
+// "text": the full text of the pages. "manuscript": the catalog (title, shelfmark, publisher, year).
+// The choice is remembered; storage can be blocked, so it is only a convenience.
+const SCOPE_KEY = 'home-search-scope'
+function savedScope() {
+  try { return localStorage.getItem(SCOPE_KEY) === 'manuscript' ? 'manuscript' : 'text' } catch { return 'text' }
+}
+const searchScope = ref(savedScope())
+
+// Examples for the catalog: a shelfmark, a whole fonds, a library
+const manuscriptSearches = [
+  { label: 'Français 412', query: 'Français 412' },
+  { label: 'Smith-Lesouëf', query: 'Smith-Lesouëf' },
+  { label: 'Bibliothèque nationale', query: 'Bibliothèque nationale' },
+]
+const suggestions = computed(() => (searchScope.value === 'text' ? quickSearches.value : manuscriptSearches))
+watch(searchScope, (scope) => {
+  try { localStorage.setItem(SCOPE_KEY, scope) } catch { /* not remembered */ }
+})
 const quickSearches = ref([
   { label: 'amor', query: 'amor' },
   { label: 'loi', query: 'loi,lois,loiz' },
@@ -554,7 +602,13 @@ function performSearch(customQuery = null) {
   const queryToUse = String(queryToSearch || '').trim()
   
   if (!queryToUse) return
-  
+
+  // Manuscripts: the catalog search (it reads `q` from the URL)
+  if (searchScope.value === 'manuscript') {
+    router.push({ name: 'catalog', query: { q: queryToUse } })
+    return
+  }
+
   // Determine search mode based on query characteristics
   let searchMode = 'exact'
   if (queryToUse.includes('*')) {
@@ -1251,6 +1305,9 @@ onMounted(() => {
   border-radius: 24px;
   z-index: -1;
 }
+
+.scope-btn { text-transform: none; letter-spacing: 0; font-weight: 600; padding-inline: 8px; }
+.scope-divider { height: 24px; align-self: center; opacity: 0.4; }
 
 .search-container {
   position: relative;

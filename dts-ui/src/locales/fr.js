@@ -214,7 +214,11 @@ export default {
       lrecPaper: 'Article LREC (PDF)',
       copyCitation: 'Copier la Citation',
       tryItNow: 'Essayez maintenant',
-      searchPlaceholder: 'Rechercher dans 3,3 milliards de tokens de texte médiéval...',
+      searchPlaceholder: 'Rechercher dans 3,3 Md de tokens…',
+      searchPlaceholderManuscript: 'Cote, titre, éditeur…',
+      searchScope: 'Où chercher',
+      scopeText: 'Texte',
+      scopeManuscript: 'Manuscrit',
       downloadCorpus: 'Télécharger le Corpus'
     },
     detailed: {
